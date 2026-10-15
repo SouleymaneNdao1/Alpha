@@ -1,0 +1,43 @@
+# ALPHA — normalisation des fins de ligne (architecture § 1)
+# Tout fichier texte est stocké ET extrait en LF, y compris sous Windows.
+# Indispensable : un script shell ou un Dockerfile en CRLF casse les conteneurs
+# (« /usr/bin/env: 'bash\r': No such file or directory »).
+* text=auto eol=lf
+
+# Rappels explicites (LF forcé même si `text=auto` détectait mal le fichier)
+*.sh                 text eol=lf
+Dockerfile           text eol=lf
+Dockerfile.*         text eol=lf
+*.dockerfile         text eol=lf
+.dockerignore        text eol=lf
+docker-compose*.yml  text eol=lf
+*.yml                text eol=lf
+*.yaml               text eol=lf
+.env*                text eol=lf
+*.conf               text eol=lf
+Caddyfile            text eol=lf
+*.sql                text eol=lf
+*.py                 text eol=lf
+# PowerShell lit très bien le LF ; on garde LF pour un dépôt homogène.
+*.ps1                text eol=lf
+
+# Binaires : aucune conversion
+*.png   binary
+*.jpg   binary
+*.jpeg  binary
+*.gif   binary
+*.ico   binary
+*.webp  binary
+*.pdf   binary
+*.woff  binary
+*.woff2 binary
+*.ttf   binary
+*.xlsx  binary
+*.docx  binary
+*.zip   binary
+*.gz    binary
+*.age   binary
+
+# Fichiers générés : diff réduit dans les revues
+frontend/src/lib/api/schema.d.ts  linguist-generated=true
+package-lock.json                 linguist-generated=true -diff

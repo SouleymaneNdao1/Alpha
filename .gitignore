@@ -1,0 +1,58 @@
+# ALPHA — fichiers à ne jamais versionner
+
+# Secrets et configuration locale
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+secrets/
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+.coverage.*
+htmlcov/
+*.egg-info/
+backend/staticfiles/
+backend/media/
+celerybeat-schedule*
+celerybeat.pid
+
+# Node / Next.js
+node_modules/
+.next/
+out/
+frontend/next-env.d.ts
+*.tsbuildinfo
+npm-debug.log*
+frontend/test-results/
+frontend/playwright-report/
+frontend/blob-report/
+frontend/playwright/.cache/
+
+# Sauvegardes et dumps locaux
+*.dump
+*.sql.gz
+*.age
+backups/
+
+# Journaux
+*.log
+
+# Éditeurs et systèmes
+.idea/
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+*.swp
+.DS_Store
+Thumbs.db
+desktop.ini
+*:Zone.Identifier

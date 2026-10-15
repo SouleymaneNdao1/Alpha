@@ -1,0 +1,14 @@
+# Contexte de build du backend : n'envoyer que le nécessaire au démon Docker.
+**/__pycache__
+**/*.py[cod]
+.venv
+venv
+.pytest_cache
+.ruff_cache
+.mypy_cache
+.coverage
+htmlcov
+staticfiles
+media
+.env
+.env.*

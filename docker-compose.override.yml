@@ -1,0 +1,121 @@
+# =============================================================================
+# ALPHA — surcharge de DÉVELOPPEMENT (architecture § 1.3)
+#
+# Chargée automatiquement par `docker compose` (sans -f) en plus de
+# docker-compose.yml. En recette et en production, on passe explicitement
+# -f docker-compose.yml -f docker-compose.<env>.yml : ce fichier est alors ignoré.
+#
+# Apports : mailpit, ports sur 127.0.0.1 uniquement, code monté en volume,
+# runserver et next dev (rechargement à chaud), service `tests` (profil outils).
+# =============================================================================
+
+x-dev-build-backend: &dev-build-backend
+  context: ./backend
+  target: dev
+  args:
+    # Même UID/GID que l'utilisateur WSL : les fichiers créés dans le conteneur
+    # (migrations générées, etc.) restent modifiables depuis l'hôte.
+    UID: ${ALPHA_UID:-1000}
+    GID: ${ALPHA_GID:-1000}
+
+x-dev-volumes-backend: &dev-volumes-backend
+  - ./backend:/app
+
+services:
+  db:
+    ports:
+      - "127.0.0.1:${ALPHA_PORT_DB:-5432}:5432"
+
+  mailpit:
+    image: axllent/mailpit:v1.30.5
+    restart: unless-stopped
+    environment:
+      MP_MAX_MESSAGES: "2000"
+      MP_SMTP_AUTH_ACCEPT_ANY: "true"
+      MP_SMTP_AUTH_ALLOW_INSECURE: "true"
+      TZ: Africa/Dakar
+    ports:
+      # Interface web et API (tests : http://mailpit:8025/api/v1/ depuis les conteneurs).
+      - "127.0.0.1:${ALPHA_PORT_MAILPIT:-8025}:8025"
+      # SMTP 1025 : uniquement sur le réseau interne (backend, worker).
+    healthcheck:
+      test: ["CMD", "/mailpit", "readyz"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+    networks: [interne]
+
+  migrate:
+    build: *dev-build-backend
+    volumes: *dev-volumes-backend
+
+  backend:
+    build: *dev-build-backend
+    volumes: *dev-volumes-backend
+    command: ["python", "manage.py", "runserver", "0.0.0.0:8000"]
+    ports:
+      # API directe et documentation : http://localhost:8000/api/v1/docs/
+      - "127.0.0.1:${ALPHA_PORT_BACKEND:-8000}:8000"
+    depends_on:
+      mailpit:
+        condition: service_started
+
+  worker:
+    build: *dev-build-backend
+    volumes: *dev-volumes-backend
+    depends_on:
+      mailpit:
+        condition: service_started
+
+  beat:
+    build: *dev-build-backend
+    volumes: *dev-volumes-backend
+
+  frontend:
+    build:
+      context: ./frontend
+      target: dev
+    command: ["npm", "run", "dev", "--", "--hostname", "0.0.0.0", "--port", "3000"]
+    environment:
+      # true si le dépôt est sur le disque Windows (C:\…) : la surveillance
+      # inotify ne traverse pas ce montage. Inutile si le dépôt est dans WSL2.
+      WATCHPACK_POLLING: ${WATCHPACK_POLLING:-false}
+    volumes:
+      - ./frontend:/app
+      # Volumes anonymes : jamais montés depuis l'hôte (§ 1.3).
+      - /app/node_modules
+      - /app/.next
+    ports:
+      - "127.0.0.1:${ALPHA_PORT_FRONTEND:-3000}:3000"
+
+  # Tests (pytest) : `scripts/dev.ps1 test`. Non démarré par `up` (profil).
+  # Reçoit les deux connexions : alpha_owner crée la base de test et migre,
+  # puis la connexion par défaut bascule sur alpha_app (tâche T1).
+  tests:
+    image: alpha-backend:dev
+    build: *dev-build-backend
+    profiles: [outils]
+    init: true
+    restart: "no"
+    command: ["pytest"]
+    volumes: *dev-volumes-backend
+    environment:
+      DJANGO_SETTINGS_MODULE: config.settings.test
+      DJANGO_SECRET_KEY: ${DJANGO_SECRET_KEY:?DJANGO_SECRET_KEY manquant dans .env}
+      DATABASE_URL: postgres://alpha_app:${ALPHA_APP_PASSWORD:?ALPHA_APP_PASSWORD manquant dans .env}@db:5432/${ALPHA_DB_NAME:-alpha}
+      DATABASE_URL_OWNER: postgres://alpha_owner:${ALPHA_OWNER_PASSWORD:?ALPHA_OWNER_PASSWORD manquant dans .env}@db:5432/${ALPHA_DB_NAME:-alpha}
+      ALPHA_DB_APP_ROLE: alpha_app
+      REDIS_URL: redis://redis:6379/2
+      CELERY_BROKER_URL: redis://redis:6379/3
+      ALPHA_CLES_CHIFFREMENT: ${ALPHA_CLES_CHIFFREMENT:?ALPHA_CLES_CHIFFREMENT manquant dans .env}
+      ALPHA_HMAC_POIVRE: ${ALPHA_HMAC_POIVRE:?ALPHA_HMAC_POIVRE manquant dans .env}
+      EMAIL_HOST: mailpit
+      EMAIL_PORT: "1025"
+      ALPHA_MAILPIT_API: http://mailpit:8025/api/v1
+      TZ: Africa/Dakar
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks: [interne]

@@ -1,0 +1,707 @@
+ALPHA
+
+Application web de formalisation des décisions
+
+Workflow décisionnel générique et multi-établissements
+
+CAHIER DES CHARGES
+
+  -----------------------------------------------------------------------
+  Rubrique               Valeur
+  ---------------------- ------------------------------------------------
+  Type de document       Cahier des charges
+
+  Version                V2
+
+  Auteur                 FYXOP
+
+  Domaine                Gouvernance
+
+  Référence              ALPHA-CDC-V2
+
+  Projet                 Élaboration d'un outil de workflow décisionnel
+
+  Date                   12/10/2026
+  -----------------------------------------------------------------------
+
+Historique des versions
+
+  ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+  Version   Auteur        Modification                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   Date
+  --------- ------------- -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- ------------
+  V0        FYXOP         Création du document                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           —
+
+  V1        FYXOP         Précision du périmètre : outil générique, multi-établissements, MFA par application d'authentification, visioconférence Teams, API complète pour le Core Banking, priorisation des exigences, exigences non fonctionnelles chiffrées, planning révisé                                                                                                                                                                                                                                                          10/10/2026
+
+  V2        FYXOP         Alignement sur le prototype : clients cibles (banques, SFD, PME), espace client et inscription par profil, produits et conditions, comité et portefeuille, décisions internes paramétrables, ressources humaines, trésorerie, contrats, gouvernance, obligations fiscales, espace PME, boîte « À traiter », compte utilisateur, espace collaborateur, catalogue des rôles, destinataires externes, historique partout, application mobile, modèle commercial, planning d’un mois à partir du 5 novembre 2026   12/10/2026
+  ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+SOMMAIRE
+
+1. Objectif
+
+2. Principes structurants
+
+3. Liste des exigences
+
+4. Périmètre fonctionnel
+
+5. Périmètre technique
+
+6. Utilisateurs et rôles
+
+7. Modèle commercial
+
+8. Livrables attendus
+
+9. Planning prévisionnel
+
+10. Contraintes
+
+11. Facteurs de succès
+
+Annexe : cartographie de l’application
+
+1. Objectif
+
+ALPHA est une application web qui formalise, automatise et trace les décisions d'une entreprise ou d'un établissement financier. L'outil est générique : il ne se limite pas au crédit. Chaque établissement peut paramétrer ses propres types de dossiers (crédit, achat, engagement de dépense, dérogation, recrutement, etc.), leurs circuits de validation et leurs délais. Le crédit est livré comme premier modèle préconfiguré.
+
+ALPHA est commercialisé par FYXOP à trois types de clients : les banques, les systèmes financiers décentralisés (SFD) et les PME. Chaque client dispose d'un espace totalement cloisonné (mode multi-tenant), en SaaS ou installé sur ses propres serveurs.
+
+Pour une banque ou un SFD, ALPHA couvre le crédit (de la demande du client jusqu'au suivi du portefeuille) et les décisions de gestion interne. Pour une PME, ALPHA couvre les décisions de gestion interne : achats, dépenses, fournisseurs, budget, ressources humaines, trésorerie, contrats, gouvernance et obligations fiscales.
+
+Les objectifs du projet sont :
+
+-   créer un cadre d'échange d'information entre demandeurs, analystes et décideurs ;
+
+-   créer un cadre, automatiser et optimiser le processus de décision ;
+
+-   authentifier les documents et les décisions de l'entreprise ;
+
+-   réduire les délais de traitement des dossiers ;
+
+-   envoyer et recevoir des notifications (email, SMS, tableau de bord) ;
+
+-   assurer la traçabilité et la conservation des décisions et des dossiers afférents ;
+
+-   intégrer des fichiers et des bases d'analyse ;
+
+-   offrir une interface de traitement aux analystes, gestionnaires et décideurs ;
+
+-   gérer les habilitations, les pouvoirs et les délégations ;
+
+-   journaliser toutes les actions pour l'audit ;
+
+-   exposer une API complète permettant l’intégration avec les Core Banking et autres systèmes.
+
+2. Principes structurants
+
+2.1 Outil générique et paramétrable
+
+Le cœur de l'application est un moteur de workflow paramétrable par l'administrateur de chaque établissement, sans intervention du développeur :
+
+-   Types de dossiers : nom, formulaire de saisie (champs, champs obligatoires), pièces exigées, code couleur.
+
+-   Circuits : suite d'étapes (ex. saisie → analyse → scoring → validation → décision), avec rôle responsable de chaque étape.
+
+-   Règles : seuils (montant, score, risque) qui déterminent le niveau de décision et les validations automatiques.
+
+-   Délais (SLA) : délai cible par étape, relances et escalade automatique en cas de dépassement.
+
+-   Délégations : délégation temporaire de pouvoirs (absence, congé), tracée et bornée dans le temps.
+
+2.2 Multi-tenant (multi-établissements)
+
+L'isolation des données entre établissements est une exigence de sécurité de premier rang, prévue dès la conception et non ajoutée après coup :
+
+-   chaque donnée (dossier, fichier, utilisateur, journal, paramètre) est rattachée à un établissement ;
+
+-   le filtrage par établissement est appliqué automatiquement par l'application et doublé au niveau de la base de données (ex. Row Level Security de PostgreSQL) ;
+
+-   les fichiers sont stockés dans des espaces séparés par établissement ;
+
+-   un utilisateur appartient à un seul établissement ; les rôles sont définis par établissement ;
+
+-   des tests automatisés vérifient qu'aucun utilisateur ne peut lire ou modifier les données d'un autre établissement ;
+
+-   le compte super-administrateur (FYXOP) est protégé par MFA obligatoire et toutes ses actions sont journalisées.
+
+2.3 Un même produit pour la banque et la PME
+
+Les modules de gestion interne (décisions internes, ressources humaines, trésorerie, contrats, gouvernance, obligations fiscales, historique, administration) sont communs à la banque et à la PME. Seuls changent les données, les rôles et les circuits paramétrés par chaque client. Les modules propres à la banque (crédit, comité, portefeuille, espace client) et à la PME (fournisseurs, budget, demandes clients) s'ajoutent à ce socle commun.
+
+2.4 Simplicité d’usage
+
+-   Une seule boîte « À traiter » : à la connexion, chaque utilisateur arrive sur la liste de tout ce qui attend sa décision, tous modules confondus, triée par urgence (en retard, aujourd’hui, cette semaine, plus tard).
+
+-   Un menu adapté au rôle : chaque utilisateur ne voit que les modules dont il a besoin (un collaborateur ne voit que son espace et son compte ; un responsable RH ne voit que les RH, ses validations et l’historique).
+
+-   Les mêmes gestes partout : valider, demander un complément, refuser ; signature par code Authenticator pour les décisions engageantes ; historique en bas de chaque écran.
+
+-   Mobile : les décideurs valident depuis leur téléphone (application web installable, voir section 5).
+
+2.5 Rôles, catalogue et destinataires externes
+
+-   Catalogue des rôles : chaque client définit la liste de ses rôles. Un utilisateur ne peut être invité que sur un rôle du catalogue, et un circuit ne peut utiliser que des rôles du catalogue. Un rôle sans titulaire bloque les étapes qui l’utilisent jusqu’à ce qu’il soit pourvu, délégué ou remplacé.
+
+-   Destinataires externes : les personnes qui interviennent sans utiliser ALPHA (administrateurs du conseil, avocat, notaire, commissaire aux comptes, cabinet comptable, expert évaluateur) n’ont pas de compte. Elles reçoivent un PDF par e-mail ou un lien de téléchargement limité dans le temps ; leur réponse est jointe au dossier par l’utilisateur responsable. Envoi, ouverture et réponse sont tracés.
+
+-   Exemple : une banque qui a un juriste l’inscrit comme étape du circuit des contrats ; une PME qui n’en a pas remplace cette étape par un avis externe de son avocat.
+
+2.6 Historique partout
+
+ALPHA est une application de décision : chaque décision doit pouvoir être retrouvée et justifiée. Une demande décidée quitte la liste « à traiter » et rejoint l’historique de son module ; rien n’est supprimé ni modifiable. Chaque écran de décision affiche ses dernières décisions et donne accès à l’historique complet (recherche, filtres, export Excel), au circuit suivi (étapes, auteurs, dates), à la fiche de décision PDF et à la piste d’audit. Une page « Historique des décisions » regroupe tous les modules. Conservation de 10 ans par défaut, paramétrable.
+
+2.7 La décision reste humaine
+
+Les fonctions d'IA et de scoring sont des aides à la décision. Elles produisent des recommandations justifiées, mais aucune décision engageant l'établissement n'est prise par l'IA. Les validations automatiques ne s'appliquent que sous des seuils explicitement paramétrés par l'administrateur.
+
+3. Liste des exigences
+
+Chaque exigence est priorisée : Indispensable (MVP), Important (version finale), Souhaitable (si le délai le permet).
+
+  ---------------------------------------------------------------------------------------------------------------------
+  Exigence                          Résumé                                                              Priorité
+  --------------------------------- ------------------------------------------------------------------- ---------------
+  E1. Respect du frontend proposé   Interface inspirée de Riskless (charte, disposition, composants).   Indispensable
+
+  E2. Sécurité multifactorielle     MFA par application d’authentification, rôles, chiffrement.         Indispensable
+
+  E3. Déploiement facile            Installation conteneurisée, cloud ou sur site.                      Indispensable
+
+  E4. Gestion du contenu            Dossiers, fichiers, circuits, décisions, notifications.             Indispensable
+
+  E5. Édition                       Fiches de décision PDF avec QR code, rapports.                      Indispensable
+
+  E6. Traçabilité                   Pistes d’audit infalsifiables.                                      Indispensable
+
+  E7. Reporting                     Tableaux de bord et exports PDF / Excel.                            Important
+
+  E8. API d’intégration             API REST complète pour Core Banking, CRM, etc.                      Indispensable
+
+  E9. Aide en ligne                 Guide utilisateur accessible depuis l’application.                  Important
+  ---------------------------------------------------------------------------------------------------------------------
+
+3.1 E1 : Respect du frontend proposé
+
+L'interface reprend l'esprit de l'application Riskless (charte graphique, menu latéral, tableaux, tableaux de bord) afin d'assurer une cohérence entre les produits FYXOP. Elle est responsive (ordinateur, tablette, mobile) et en français.
+
+3.2 E2 : Sécurité multifactorielle
+
+-   Double authentification (MFA) : par application d'authentification TOTP (Google Authenticator, Microsoft Authenticator ou équivalent), activée par QR code à la première connexion ; codes de secours fournis ; MFA obligatoire pour tous les utilisateurs internes et administrateurs, et pour les clients et fournisseurs.
+
+-   Mots de passe : stockés hachés (bcrypt ou Argon2), politique de complexité, réinitialisation sécurisée par email.
+
+-   Protection des accès : limitation des tentatives de connexion, verrouillage temporaire, expiration des sessions inactives, alerte en cas de connexion inhabituelle.
+
+-   Habilitations : contrôle d’accès par rôle et par périmètre (service, agence, type de dossier), vérifié côté serveur à chaque requête.
+
+-   Chiffrement : HTTPS (TLS 1.2 minimum) pour tous les échanges ; chiffrement des données sensibles et des fichiers au repos.
+
+-   Portail externe : les comptes créés par des clients ou fournisseurs sont validés par l'administrateur avant activation ; les fichiers déposés sont contrôlés (type, taille, antivirus).
+
+3.3 E3 : Déploiement facile
+
+L'application est livrée sous forme de conteneurs (Docker) avec un script d'installation, pour être déployée en quelques commandes, soit chez un hébergeur (cloud ou VPS, de préférence au Sénégal ou dans l’UEMOA), soit sur les serveurs de l'établissement. Pour l'utilisateur, l'accès se fait par navigateur, sans installation sur le poste.
+
+3.4 E4 : Gestion du contenu
+
+Les fonctions de gestion permettent les actions suivantes :
+
+-   création de compte par le client, le fournisseur ou le service (avec validation par l’administrateur) ;
+
+-   rattachement de tout type de fichier (dans la limite des types et tailles autorisés) ;
+
+-   saisie d’information par formulaires paramétrables, avec pointage des documents exigés ;
+
+-   importation et exportation de canevas (Excel, CSV) ;
+
+-   traitement des dossiers intra-service et inter-services ;
+
+-   fixation des délais de traitement et mesure de performance de chaque dossier ;
+
+-   échanges entre niveaux de traitement (commentaires, demandes de compléments, renvoi) ;
+
+-   authentification des fichiers importés (empreinte numérique enregistrée au dépôt) ;
+
+-   authentification des décisions (signature électronique interne horodatée) ;
+
+-   traitement de listes d’opérations, avec validation globale ou opération par opération ;
+
+-   analyse décisionnelle assistée par IA (voir 3.4.1) ;
+
+-   historique des décisions, filtrable par date, type d’activité, initiateur et décideur ;
+
+-   notifications : dossier en attente, relance selon le délai, décision rendue ;
+
+-   réunion en ligne via Microsoft Teams (voir 3.4.2) ;
+
+-   accès aux outils d’analyse (voir section 4.3) ;
+
+-   monitoring des connexions, des dossiers, des délégations, des clients et fournisseurs ;
+
+-   édition de fiches de décision par niveau de traitement (PDF) authentifiées par QR code ;
+
+-   téléchargement des rapports d’activité (PDF, Excel).
+
+3.4.1 Analyse décisionnelle par IA
+
+-   résumé automatique du dossier et des pièces jointes ;
+
+-   contrôle de cohérence et signalement des pièces ou informations manquantes ;
+
+-   analyse des ratios et du score, et recommandation argumentée (favorable, réservée, défavorable) ;
+
+-   l’IA n’accède qu’aux données de l’établissement de l’utilisateur ; ses avis sont journalisés et affichés comme non contraignants ;
+
+-   les données transmises au fournisseur d’IA sont minimisées (pas de données d’identification inutiles) ; le fournisseur retenu ne doit pas réutiliser les données pour entraîner ses modèles ;
+
+-   la fonction peut être activée ou désactivée par établissement.
+
+3.4.2 Réunion en ligne
+
+La visioconférence n'est pas développée dans l'outil : ALPHA crée une réunion Microsoft Teams liée au dossier (via l'API Microsoft Graph), envoie le lien aux participants et enregistre dans le dossier la date, les participants et le compte rendu.
+
+3.5 E5 : Édition
+
+Les éditions sont générées soit à la demande, soit automatiquement par le programme (par exemple à chaque décision).
+
+-   fiche de décision PDF par niveau de traitement, au format paramétrable par établissement ;
+
+-   chaque fiche porte un QR code renvoyant vers une page de vérification d’ALPHA, qui confirme l’authenticité de la fiche (empreinte SHA-256 du document) et affiche la décision, la date et le décideur ;
+
+-   le QR code ne contient aucune donnée personnelle, seulement un identifiant de vérification.
+
+3.6 E6 : Traçabilité
+
+L'outil conserve une piste d'audit pour toute action initiée ou modifiée par un utilisateur : identifiant de l'utilisateur, établissement, action, objet concerné, valeurs avant et après modification, date et heure, adresse IP. Le journal est en ajout seul (aucune modification ni suppression possible, y compris par un administrateur) et chaîné par empreintes pour détecter toute altération. Il est consultable et exportable par les profils autorisés (audit, contrôle interne).
+
+3.7 E7 : Gestion du reporting
+
+L'outil fournit des tableaux de bord et des rapports sur l'ensemble des activités : volumes de dossiers par type, statut et service ; délais moyens par étape ; dossiers en retard ; taux d'acceptation et de rejet ; activité par utilisateur. Les rapports sont exportables en PDF et Excel et peuvent être programmés (envoi périodique par email).
+
+3.8 E8 : API d’intégration (Core Banking et autres systèmes)
+
+L'application expose une API REST complète, de sorte que toute fonction disponible dans l'interface soit aussi disponible par API. Elle doit permettre à un Core Banking, un CRM ou tout autre système de :
+
+-   créer et mettre à jour des dossiers et y joindre des pièces ;
+
+-   importer des données (clients, encours, historique bancaire) utilisées pour l’analyse et le scoring ;
+
+-   consulter le statut, l’historique et la décision d’un dossier ;
+
+-   être notifié en temps réel des événements (dossier créé, étape franchie, décision rendue) par webhooks ;
+
+-   renvoyer au Core Banking la décision pour exécution (mise en place du crédit, paiement, etc.).
+
+Exigences techniques de l’API : documentation OpenAPI (Swagger) publiée, authentification par OAuth 2.0 ou clés API propres à chaque établissement, versionnement, limitation de débit, journalisation de chaque appel, environnement de test (sandbox).
+
+3.9 E9 : Aide en ligne
+
+L'utilisateur accède depuis chaque page à un guide utilisateur en ligne, adapté à son rôle, ainsi qu'à une page de support (contact, FAQ).
+
+4. Périmètre fonctionnel
+
+4.1 Gestion des demandes
+
+-   saisie et chargement des dossiers clients, fournisseurs et internes (code couleur, formulaire, pointage des documents exigés) ;
+
+-   importation automatique des données via l’API ;
+
+-   vérification automatique de la complétude du dossier avant transmission.
+
+4.2 Workflow décisionnel
+
+-   définition des étapes par type de dossier (ex. saisie → analyse → scoring → validation → décision) ;
+
+-   paramétrage des règles (seuils, critères d’éligibilité, niveau de décision selon le montant ou le risque) ;
+
+-   escalade hiérarchique (analyste → responsable → Direction Générale → comité) ;
+
+-   escalade automatique au niveau supérieur en cas de dépassement du délai ;
+
+-   délégations de pouvoirs temporaires.
+
+4.3 Outils d'analyse
+
+-   moteur de scoring interne paramétrable (grille de critères pondérés), avec possibilité de brancher un scoring externe via l’API ;
+
+-   vérification des antécédents (historique bancaire importé du Core Banking) ;
+
+-   calcul automatique des ratios financiers (endettement, solvabilité, etc.) ;
+
+-   simulateurs : tableau d'amortissement, analyse de revenus, analyse financière d'une entreprise, d'une banque, d'une institution de microfinance, selon les canevas Excel fournis par FYXOP (à joindre en annexe).
+
+4.4 Gestion des décisions
+
+-   validation, rejet ou ajournement (demande de compléments) ;
+
+-   recours : le demandeur peut contester une décision de rejet dans un délai paramétrable ; le recours est examiné par le niveau supérieur ;
+
+-   validation automatique possible sous les seuils paramétrés ;
+
+-   génération des fiches et rapports de décision ;
+
+-   notification des parties prenantes (email, SMS via une passerelle SMS locale, tableau de bord).
+
+4.5 Traçabilité et conformité
+
+-   journalisation des actions (qui a fait quoi, quand) ;
+
+-   archivage sécurisé des dossiers, durée de conservation paramétrable (10 ans par défaut) ;
+
+-   respect de la réglementation bancaire de l’UMOA, notamment les circulaires de la Commission Bancaire de 2017 sur la gouvernance, le contrôle interne et la gestion des risques (n° 01, 03 et 04-2017/CB/C) ;
+
+-   respect de la loi sénégalaise n° 2008-12 sur la protection des données à caractère personnel (déclaration auprès de la CDP).
+
+4.6 Accueil, compte et espace collaborateur
+
+-   À traiter : boîte unique des décisions en attente, tous modules, avec filtres par module et accès direct à chaque demande.
+
+-   Activation du compte : invitation par e-mail, choix du mot de passe, configuration d’Authenticator par QR code, codes de secours.
+
+-   Téléphone perdu : signalement qui bloque immédiatement la signature ; réinitialisation par l’administrateur après vérification d’identité.
+
+-   Mon compte : profil, changement de téléphone Authenticator, appareils connectés, absences avec délégation (validée par le responsable), préférences de notification (e-mail, téléphone, SMS, résumé quotidien).
+
+-   Espace collaborateur : chaque salarié fait ses demandes (congé, absence, avance sur salaire, ordre de mission, note de frais avec photos des reçus, attestation de travail), suit leur avancement et consulte son historique.
+
+4.7 Espace client (banque et SFD)
+
+-   inscription par profil : particulier, entreprise ou fournisseur, avec une fiche d’informations propre à chaque profil ;
+
+-   pièces d’identification et de connaissance du client (KYC) fournies une seule fois à l’inscription ; le compte est validé par la banque ;
+
+-   modification des informations par le client, soumise à validation de la banque ;
+
+-   demandes limitées au crédit et aux financements, et aux services pour entreprises et fournisseurs ;
+
+-   pour chaque nouvelle demande, seules les pièces propres à cette demande sont demandées (garanties, devis, etc.) ;
+
+-   suivi de l’avancement, réponse aux propositions de la banque, messagerie, historique de ses demandes avec la lettre de décision en PDF.
+
+4.8 Crédit : produits, comité et portefeuille
+
+-   Produits et conditions : définis par la direction du crédit (et non par l’administrateur technique) : fourchettes de taux, durées, frais, garanties. L’analyste fixe les conditions de chaque client à l’intérieur des fourchettes ; au-delà, une dérogation est demandée.
+
+-   Comité de crédit : ordre du jour, quorum, vote des membres, procès-verbal signé.
+
+-   Portefeuille et recouvrement : échéances, impayés, alertes (assurance, garanties), rééchelonnement, passage au contentieux, mainlevée.
+
+-   Pouvoirs : barème des délégations par niveau et par produit, réseau d’agences, composition des comités.
+
+4.9 Décisions internes
+
+Engagements de dépense, achats, dérogations, prêts au personnel, listes d’opérations, demandes inter-services. Les types de demandes sont paramétrables par le client (champs, pièces, circuit, contrôle budgétaire), sans développement.
+
+4.10 Ressources humaines
+
+-   demandes RH : congés, missions et avances, avances sur salaire, primes, sanctions (avec entretien préalable), formations, promotions et mutations ;
+
+-   échéances des contrats de travail : fin de CDD, fin de période d’essai, fin de stage, départ à la retraite, renouvellement de CDD ; la décision est ouverte automatiquement avant l’échéance ;
+
+-   recrutements (du besoin à l’embauche) et stages (suivi, gratification, décision de fin de stage) ;
+
+-   missions et notes de frais avec barème paramétrable ; congés et absences avec alerte de sous-effectif ;
+
+-   types de demandes RH paramétrables (circuit, informations demandées, règle appliquée) ;
+
+-   règles (durée maximale d’un CDD, préavis, etc.) paramétrables selon le Code du travail et la convention collective applicables.
+
+4.11 Trésorerie et paiements
+
+Lots de paiements constitués à partir des bons à payer, des salaires et des impôts ; double signature au-delà d’un seuil paramétrable, chaque signature par code Authenticator ; transmission du fichier de virements à la banque ; prévision de trésorerie sur 8 semaines avec seuil d’alerte ; soldes des comptes.
+
+4.12 Contrats
+
+Validation des nouveaux contrats selon un circuit par catégorie (juriste interne ou avis externe en PDF, puis direction) ; registre des contrats ; alerte avant la date limite de préavis pour décider de renouveler, renégocier ou résilier, afin de ne jamais subir une reconduction tacite. Catégories, circuits et délais d’alerte paramétrables.
+
+4.13 Gouvernance
+
+Conseil d’administration et assemblées : convocation et dossier envoyés en PDF aux administrateurs (sans compte), quorum, résultat de chaque résolution saisi en séance par le secrétaire du conseil, procès-verbal généré en PDF et signé, suivi de l’exécution des résolutions (responsable, échéance), archives.
+
+4.14 Obligations fiscales et sociales
+
+Échéancier des déclarations (TVA, retenues sur salaires, cotisations IPRES et sécurité sociale, contribution forfaitaire, acomptes d’impôt sur les sociétés) ; circuit comptabilité → DAF → direction générale avant paiement ; récapitulatif PDF pour le cabinet comptable. Les échéances et les taux sont paramétrables et doivent être validés avec le cabinet comptable ou l’administration fiscale.
+
+4.15 Espace PME
+
+-   Tableau de bord de la direction : décisions en attente, budget, trésorerie, fournisseurs.
+
+-   Fournisseurs et factures : rapprochement commande / livraison / facture, bon à payer, référencement des fournisseurs.
+
+-   Budget : lignes budgétaires, engagé, disponible, virements de crédits et dépassements autorisés.
+
+-   Demandes clients : remises, délais de paiement, ouvertures de compte client.
+
+5. Périmètre technique
+
+  ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+  Domaine                Exigence
+  ---------------------- -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+  Architecture           Application web responsive + API REST ; multi-tenant.
+
+  Base de données        Relationnelle, PostgreSQL recommandé (isolation par établissement au niveau base).
+
+  Sécurité               MFA TOTP, rôles et périmètres, chiffrement en transit et au repos, journal infalsifiable.
+
+  Interopérabilité       API REST complète documentée (OpenAPI), webhooks, intégration Core Banking et CRM, Microsoft Teams (Graph), passerelle SMS.
+
+  Performance            Plusieurs centaines de dossiers par jour et par établissement ; 200 utilisateurs simultanés ; temps de réponse inférieur à 2 secondes pour les écrans courants.
+
+  Disponibilité          Disponibilité cible 99,5 % ; sauvegarde quotidienne chiffrée hors site ; perte de données maximale 24 h ; reprise en moins de 4 h.
+
+  Déploiement            Conteneurs Docker, cloud ou sur site ; environnements de recette et de production séparés.
+
+  Mobile                 Application web installable (PWA) : notifications, consultation hors connexion, signatures mises en file et envoyées au retour du réseau, photos des pièces. Versions banquier, client et direction de PME.
+
+  Intégrations PME       Logiciel comptable (factures, paiements, soldes budgétaires), banque (relevés, virements), logiciel de paie.
+  ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+6. Utilisateurs et rôles
+
+Les rôles ci-dessous sont proposés par défaut ; chaque client les renomme et en crée d’autres dans son catalogue des rôles (voir 2.5).
+
+  -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+  Rôle                                               Fonctionnalité               Description
+  -------------------------------------------------- ---------------------------- ---------------------------------------------------------------------------------------------------------------------------------------
+  Super-administrateur (FYXOP)                       Gestion des établissements   Création des espaces établissements, supervision technique. N’accède pas au contenu des dossiers.
+
+  Administrateur (établissement)                     Règles métier                Types de dossiers, circuits, seuils et critères d’éligibilité.
+
+                                                     Notifications                Paramétrage des alertes email, SMS et tableau de bord.
+
+                                                     Validation des comptes       Contrôle des comptes et utilisateurs créés.
+
+                                                     Affectations                 Périmètres des utilisateurs, délégations, composition des comités.
+
+  Demandeur (agent de saisie, client, fournisseur)   Saisie des demandes          Enregistrement des dossiers et dépôt des pièces ; suivi de l’avancement ; recours.
+
+  Analyste                                           Contrôle de complétude       Vérification des champs et pièces obligatoires.
+
+                                                     Analyse                      Calcul des ratios, scoring, avis de l’IA, avis motivé.
+
+                                                     Escalade                     Transmission au niveau supérieur.
+
+  Responsable de service                             Décision                     Validation, rejet ou ajournement dans la limite de ses pouvoirs.
+
+  Direction Générale                                 Décision                     Validation, rejet ou ajournement dans la limite de ses pouvoirs.
+
+  Comité de décision                                 Décision collégiale          Vote des membres, décision consignée avec la liste des votants.
+
+  Auditeur / contrôle interne                        Consultation                 Accès en lecture aux dossiers, décisions et journaux d’audit.
+
+  Collaborateur                                      Demandes personnelles        Congés, avances, missions, notes de frais, attestations ; suivi et historique.
+
+  Chef de service                                    Avis et décisions            Premier niveau des demandes internes et RH de son service.
+
+  Responsable RH                                     Ressources humaines          Instruction des demandes RH, échéances de contrats, recrutements et stages.
+
+  DAF / trésorier                                    Finances                     Dépenses, lots de paiements, obligations fiscales, contrats.
+
+  Contrôleur de gestion                              Budget                       Contrôle budgétaire des dépenses et achats.
+
+  Juriste                                            Contrats                     Avis juridique sur les contrats (si le client a ce rôle ; sinon avis externe en PDF).
+
+  Secrétaire du conseil                              Gouvernance                  Convocations, saisie des votes, procès-verbaux.
+
+  Destinataires externes (sans compte)               Avis et information          Administrateurs, avocat, notaire, commissaire aux comptes, cabinet comptable : reçoivent des PDF, leur réponse est jointe au dossier.
+  -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+7. Modèle commercial
+
+-   Mode : SaaS hébergé par FYXOP ou installation sur les serveurs du client.
+
+-   Contrat : annuel, renouvelable ; prix sur devis.
+
+-   Paiement : uniquement par virement bancaire, reconnu automatiquement grâce à la référence de la facture.
+
+-   Relances automatiques : e-mails à J-30, J-15, J-7 et J-1 avant l’échéance ; après l’échéance, bandeau d’alerte, puis passage en lecture seule à la fin de la période de grâce, puis suspension de l’accès (données conservées).
+
+-   Console FYXOP : suivi des clients, des contrats, des factures et du recouvrement ; FYXOP n’accède pas au contenu des dossiers.
+
+8. Livrables attendus
+
+-   application fonctionnelle : MVP (exigences « Indispensable ») puis version finale ;
+
+-   code source et scripts de déploiement ;
+
+-   documentation technique (architecture, installation, documentation de l’API) ;
+
+-   documentation utilisateur et guide en ligne ;
+
+-   plan de maintenance et de support ;
+
+-   modules de formation pour les équipes ;
+
+-   installation des versions bêta et finale ;
+
+-   rapport de tests, dont un test d’intrusion (sécurité).
+
+9. Planning prévisionnel
+
+Le projet dure un mois : démarrage le jeudi 5 novembre 2026, mise en service du pilote le vendredi 4 décembre 2026. Le développement est assisté par IA, ce qui permet de tenir ce délai ; en contrepartie, les exigences « Indispensable » passent en premier et les fonctions « Souhaitable » peuvent glisser après le pilote.
+
+Déjà réalisé : cahier des charges, prototype cliquable complet (banque, PME, mobile), questionnaire pour la banque pilote.
+
+À obtenir avant le 5 novembre : réponses au questionnaire et documents demandés à la banque pilote, accès de test au Core Banking, liste des utilisateurs du pilote, choix de l’hébergeur, de la passerelle SMS et du fournisseur d’IA.
+
+  ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+  Semaine                               Dates                      Contenu
+  ------------------------------------- -------------------------- -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+  Semaine 1 · Socle                     5 → 11 novembre            Modèle de données multi-établissements (le cadrage et le prototype sont déjà faits), connexion avec Authenticator, activation du compte, utilisateurs et catalogue des rôles, journal d’audit, boîte « À traiter », Mon compte.
+
+  Semaine 2 · Workflow et crédit        12 → 18 novembre           Moteur de circuits paramétrables, types de demandes, pièces et formulaires ; espace client et inscription par profil ; analyse, scoring, décisions et comité ; fiches de décision PDF avec QR code ; historique sur chaque écran.
+
+  Semaine 3 · Gestion interne et PME    19 → 25 novembre           Décisions internes, ressources humaines, trésorerie et paiements, contrats, gouvernance, obligations fiscales ; espace collaborateur ; espace PME (fournisseurs, budget, demandes clients) ; destinataires externes en PDF.
+
+  Semaine 4 · Intégrations et recette   26 novembre → 2 décembre   API et webhooks, raccordement au Core Banking, application mobile, rapports, facturation et relances ; tests d’isolation entre établissements, test de sécurité, corrections, recette par FYXOP.
+
+  Mise en service du pilote             3 → 4 décembre             Installation chez l’établissement pilote, formation des utilisateurs, démarrage.
+
+  Pilote puis production                À partir du 7 décembre     Suivi du pilote, ajustements, mise en production après validation.
+  ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Le code produit doit néanmoins être relu, notamment les parties sécurité (authentification, habilitations, isolation entre établissements), avant la recette.
+
+10. Contraintes
+
+-   respect des délais et du budget ;
+
+-   conformité réglementaire stricte (UMOA, protection des données personnelles) ;
+
+-   haute disponibilité et sécurité, selon les niveaux définis en section 5 ;
+
+-   isolation complète des données entre établissements.
+
+11. Facteurs de succès
+
+-   bonne maîtrise de l'environnement à développer ;
+
+-   réactivité des échanges entre FYXOP et le prestataire ;
+
+-   disponibilité d’un établissement pilote et de ses données de test ;
+
+-   accès à la documentation des Core Banking à intégrer.
+
+Annexe : cartographie de l’application
+
++---------------------------------+-------------------------------------------------------------------+---------------------------------------+
+| Module                          | Fonctionnalités                                                   | Pages                                 |
++=================================+===================================================================+=======================================+
+| Accès                           | Authentification et MFA                                           | Page d'accueil et de connexion        |
+|                                 |                                                                   |                                       |
+|                                 | Gestion des utilisateurs                                          | Page de support                       |
+|                                 |                                                                   |                                       |
+|                                 | Création de compte client / fournisseur                           | Politique de confidentialité et CGU   |
+|                                 |                                                                   |                                       |
+|                                 |                                                                   | Portail client / fournisseur          |
++---------------------------------+-------------------------------------------------------------------+---------------------------------------+
+| Gestion de contenu              | Saisie par formulaire                                             | Page de gestion des dossiers          |
+|                                 |                                                                   |                                       |
+|                                 | Rattachement de fichiers                                          |                                       |
+|                                 |                                                                   |                                       |
+|                                 | Import / export de canevas                                        |                                       |
++---------------------------------+-------------------------------------------------------------------+---------------------------------------+
+| Workflow décisionnel            | Traitement intra et inter-services                                | Page de gestion des dossiers          |
+|                                 |                                                                   |                                       |
+|                                 | Délais et performance                                             | Page de niveau de traitement          |
+|                                 |                                                                   |                                       |
+|                                 | Échanges entre niveaux                                            | Page historique des décisions         |
+|                                 |                                                                   |                                       |
+|                                 | Authentification des fichiers et décisions                        |                                       |
+|                                 |                                                                   |                                       |
+|                                 | Listes d’opérations                                               |                                       |
+|                                 |                                                                   |                                       |
+|                                 | Analyse par IA                                                    |                                       |
+|                                 |                                                                   |                                       |
+|                                 | Historique des décisions                                          |                                       |
+|                                 |                                                                   |                                       |
+|                                 | Notifications                                                     |                                       |
+|                                 |                                                                   |                                       |
+|                                 | Réunion Teams                                                     |                                       |
++---------------------------------+-------------------------------------------------------------------+---------------------------------------+
+| Outils d’analyse                | Tableau d'amortissement                                           | Page de simulation financière         |
+|                                 |                                                                   |                                       |
+|                                 | Analyse de revenus                                                | Page de décision                      |
+|                                 |                                                                   |                                       |
+|                                 | Analyse financière entreprise / banque / microfinance             |                                       |
+|                                 |                                                                   |                                       |
+|                                 | Scoring                                                           |                                       |
++---------------------------------+-------------------------------------------------------------------+---------------------------------------+
+| Tableau de bord                 | Monitoring des connexions                                         | Tableau de bord                       |
+|                                 |                                                                   |                                       |
+|                                 | Monitoring du traitement des dossiers                             | Page de sécurité (connexions)         |
+|                                 |                                                                   |                                       |
+|                                 | Monitoring des délégations                                        | Page des habilitations et délégations |
+|                                 |                                                                   |                                       |
+|                                 | Monitoring des clients et fournisseurs                            |                                       |
++---------------------------------+-------------------------------------------------------------------+---------------------------------------+
+| Éditions                        | Fiches de décision par niveau                                     | Système de génération de fiches       |
+|                                 |                                                                   |                                       |
+|                                 | Authentification par QR code                                      | Page de vérification QR code          |
+|                                 |                                                                   |                                       |
+|                                 | Rapports d’activité (PDF, Excel)                                  | Page des rapports                     |
++---------------------------------+-------------------------------------------------------------------+---------------------------------------+
+| Administration                  | Établissements (super-admin)                                      | Pages de paramétrage                  |
+|                                 |                                                                   |                                       |
+|                                 | Types de dossiers, circuits, seuils                               | Utilisateurs et rôles                 |
+|                                 |                                                                   |                                       |
+|                                 | Catalogue des rôles, destinataires externes                       | Portail API                           |
+|                                 |                                                                   |                                       |
+|                                 | Clés API et webhooks                                              |                                       |
++---------------------------------+-------------------------------------------------------------------+---------------------------------------+
+| Accueil et compte               | Boîte « À traiter »                                               | À traiter                             |
+|                                 |                                                                   |                                       |
+|                                 | Activation, téléphone perdu                                       | Activation du compte                  |
+|                                 |                                                                   |                                       |
+|                                 | Absences et délégation                                            | Mon compte                            |
+|                                 |                                                                   |                                       |
+|                                 | Notifications                                                     |                                       |
++---------------------------------+-------------------------------------------------------------------+---------------------------------------+
+| Espace collaborateur            | Congés, absences, avances, missions, notes de frais, attestations | Mon espace collaborateur              |
++---------------------------------+-------------------------------------------------------------------+---------------------------------------+
+| Gestion interne (banque et PME) | Décisions internes                                                | Une page par module, avec historique  |
+|                                 |                                                                   |                                       |
+|                                 | Ressources humaines                                               |                                       |
+|                                 |                                                                   |                                       |
+|                                 | Trésorerie et paiements                                           |                                       |
+|                                 |                                                                   |                                       |
+|                                 | Contrats                                                          |                                       |
+|                                 |                                                                   |                                       |
+|                                 | Gouvernance                                                       |                                       |
+|                                 |                                                                   |                                       |
+|                                 | Obligations fiscales et sociales                                  |                                       |
++---------------------------------+-------------------------------------------------------------------+---------------------------------------+
+| Espace PME                      | Tableau de bord                                                   | Pages PME                             |
+|                                 |                                                                   |                                       |
+|                                 | Fournisseurs et factures                                          |                                       |
+|                                 |                                                                   |                                       |
+|                                 | Budget                                                            |                                       |
+|                                 |                                                                   |                                       |
+|                                 | Demandes clients                                                  |                                       |
++---------------------------------+-------------------------------------------------------------------+---------------------------------------+
+| Traçabilité                     | Historique des décisions (tous modules)                           | Historique                            |
+|                                 |                                                                   |                                       |
+|                                 | Journal d’audit                                                   | Journal                               |
+|                                 |                                                                   |                                       |
+|                                 | Rapports                                                          | Rapports                              |
++---------------------------------+-------------------------------------------------------------------+---------------------------------------+
+| Offre SaaS                      | Site commercial                                                   | Landing page                          |
+|                                 |                                                                   |                                       |
+|                                 | Souscription                                                      | Facturation                           |
+|                                 |                                                                   |                                       |
+|                                 | Facturation et relances                                           | Accès suspendu                        |
+|                                 |                                                                   |                                       |
+|                                 | Console FYXOP                                                     |                                       |
++---------------------------------+-------------------------------------------------------------------+---------------------------------------+
+| Mobile                          | Validation par les décideurs                                      | Application web installable           |
+|                                 |                                                                   |                                       |
+|                                 | Suivi client                                                      |                                       |
+|                                 |                                                                   |                                       |
+|                                 | Direction de PME                                                  |                                       |
++---------------------------------+-------------------------------------------------------------------+---------------------------------------+
+
+Outils d’analyse : voir les fichiers Excel joints par FYXOP.
+
+Frontend : similaire à celui de Riskless.

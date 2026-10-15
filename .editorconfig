@@ -1,0 +1,33 @@
+# ALPHA — conventions d'édition (https://editorconfig.org)
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+indent_style = space
+indent_size = 2
+
+[*.py]
+indent_size = 4
+max_line_length = 100
+
+[*.{sh,bash}]
+indent_style = tab
+indent_size = 4
+
+# Windows PowerShell 5.1 lit un script sans BOM comme ANSI : les accents des
+# messages seraient corrompus. Le BOM UTF-8 est donc obligatoire pour .ps1.
+[*.ps1]
+charset = utf-8-bom
+indent_size = 4
+
+[Makefile]
+indent_style = tab
+
+[*.md]
+trim_trailing_whitespace = false
+
+[{Dockerfile,Dockerfile.*}]
+indent_size = 4
