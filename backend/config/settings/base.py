@@ -39,16 +39,19 @@ INSTALLED_APPS = [
 ]
 
 # --- Middlewares (ordre du § 3.3) ---------------------------------------------------
-# Les middlewares suivants sont ajoutés par les tâches indiquées, à leur place :
-#   alpha.tenancy.middleware.TenantContextMiddleware         (B2) après RequestIdMiddleware
-#   alpha.comptes.middleware.SessionActiviteMiddleware       (B5) après AuthenticationMiddleware
-#   alpha.tenancy.middleware.StatutEtablissementMiddleware   (B2) en dernier
+# À ajouter par la tâche B5, à sa place :
+#   alpha.comptes.middleware.SessionActiviteMiddleware  après AuthenticationMiddleware,
+#   avant StatutEtablissementMiddleware.
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "alpha.core.middleware.RequestIdMiddleware",
+    # Ouvre la transaction la plus externe et pose le contexte tenant (B2).
+    "alpha.tenancy.middleware.TenantContextMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
+    # SUSPENDU → 403, LECTURE_SEULE → 423 sur écriture (B2).
+    "alpha.tenancy.middleware.StatutEtablissementMiddleware",
     # En-tête X-Frame-Options (anti-clickjacking), en complément de Caddy.
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
@@ -114,9 +117,11 @@ SESSION_COOKIE_SECURE = True
 SESSION_COOKIE_SAMESITE = "Lax"
 SESSION_COOKIE_PATH = "/"
 SESSION_EXPIRE_AT_BROWSER_CLOSE = True
-# Durée maximale d'une session (P2 : 12 h) ; inactivité et durée par établissement
+# Plafond technique de la session Django : 24 h, valeur maximale autorisée pour
+# ParametresEtablissement.duree_max_session_h (P2, réglable de 1 à 24 h, 12 h par
+# défaut). L'inactivité et la durée maximale propres à chaque établissement sont
 # contrôlées par SessionActiviteMiddleware (B5).
-SESSION_COOKIE_AGE = 12 * 60 * 60
+SESSION_COOKIE_AGE = 24 * 60 * 60
 
 # --- CSRF (§ 4.1) ----------------------------------------------------------------------
 CSRF_COOKIE_NAME = "alpha_csrf"

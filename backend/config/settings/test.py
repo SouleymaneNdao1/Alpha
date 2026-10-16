@@ -12,6 +12,21 @@ if ALPHA_DATABASE_URL_OWNER:  # noqa: F405
         "CONN_MAX_AGE": 0,
         "ATOMIC_REQUESTS": True,
     }
+    # B2 : connexion « applicatif » en alpha_app (DATABASE_URL) sur la MÊME base
+    # de test (miroir de « default », donc jamais créée ni vidée par elle), pour
+    # vérifier la RLS et les droits du rôle applicatif. Les tests qui l'utilisent
+    # sont transactionnels (les données posées par « default » doivent être
+    # validées pour être visibles d'une autre connexion).
+    # T1 remplacera ce montage par la bascule de « default » sur alpha_app.
+    DATABASES["applicatif"] = {  # noqa: F405
+        **env.db_url_config(env("DATABASE_URL")),  # noqa: F405
+        "CONN_MAX_AGE": 0,
+        "ATOMIC_REQUESTS": False,
+        "TEST": {"MIRROR": "default"},
+    }
+
+# Application réservée aux tests : modèle tenant générique (NoteTest) avec sa RLS.
+INSTALLED_APPS = [*INSTALLED_APPS, "tests.appli_test"]  # noqa: F405
 
 # HTTP dans le client de test : cookies sans Secure pour pouvoir les relire.
 SESSION_COOKIE_SECURE = False
