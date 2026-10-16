@@ -5,7 +5,7 @@
 | Référence | ALPHA-ARCH-S1 |
 | Sources | ALPHA-CDC-V2 (12/10/2026), prototype HTML (écrans 01, 01b, 01c, 01d, 12, 13, 18) |
 | Sprint | Semaine 1 · 5 → 11 novembre 2026 |
-| Stack | Django 5.1 + DRF 3.15, PostgreSQL 16, Celery 5 + Redis 7, Next.js 15 (App Router, TypeScript), Mailpit, docker-compose |
+| Stack | Django 5.2 LTS + DRF 3.17, PostgreSQL 16, Celery 5 + Redis 7, Next.js 15 (App Router, TypeScript), Mailpit, docker-compose |
 | Destinataires | agents backend, frontend, tests, devops |
 
 Conventions du document :
@@ -57,7 +57,7 @@ alpha/
 │   │   └── plateforme/              # console super-administrateur FYXOP
 │   └── tests/                       # tests transverses (isolation, RLS, sécurité) ; tests unitaires dans chaque app
 ├── frontend/
-│   ├── Dockerfile                   # node:20-alpine, build "standalone"
+│   ├── Dockerfile                   # node:22-alpine, build "standalone"
 │   ├── package.json
 │   ├── next.config.ts               # rewrites /api → backend en dev ; output: "standalone"
 │   ├── tailwind.config.ts           # jetons de la charte (section 7.3)
@@ -94,7 +94,7 @@ L'admin Django (`django.contrib.admin`) n'est **pas** monté : il contournerait 
 
 ### 1.2 Dépendances principales
 
-Backend : `django~=5.1`, `djangorestframework~=3.15`, `drf-spectacular`, `psycopg[binary]~=3.2`, `django-environ`, `argon2-cffi`, `pyotp`, `segno` (QR SVG), `cryptography` (MultiFernet), `celery[redis]`, `django-redis`, `openpyxl` (export du journal), `user-agents`, `gunicorn`. Dev/test : `pytest-django`, `factory-boy`, `freezegun`, `ruff`, `mypy` (optionnel).
+Backend : `django==5.2.*` (LTS), `djangorestframework~=3.17`, `drf-spectacular`, `psycopg[binary]~=3.3`, `django-environ`, `argon2-cffi`, `pyotp`, `segno` (QR SVG), `cryptography` (MultiFernet), `celery[redis]`, `django-redis`, `openpyxl` (export du journal), `user-agents`, `gunicorn`. Dev/test : `pytest-django`, `factory-boy`, `freezegun`, `ruff`, `mypy` (optionnel).
 
 Frontend : `next@15`, `react@19`, `typescript`, `@tanstack/react-query`, `react-hook-form`, `zod`, `tailwindcss`, `openapi-typescript`, `@playwright/test`, `otplib` (E2E uniquement).
 
