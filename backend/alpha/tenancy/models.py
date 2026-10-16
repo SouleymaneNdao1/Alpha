@@ -226,6 +226,16 @@ class ParametresEtablissement(TenantModel):
     retention_audit_annees = models.SmallIntegerField(
         "durée de conservation du journal (années)", default=10
     )
+    # Ancrage quotidien du journal (décision P7, § 10) : premier destinataire, le
+    # contrôle interne / l'auditeur du client. Le second (adresse sécurité FYXOP)
+    # est un réglage de plateforme : ALPHA_EMAIL_SECURITE_FYXOP. Ajout B4.
+    email_controle_interne = models.EmailField(
+        "adresse du contrôle interne (ancrage du journal d'audit)",
+        blank=True,
+        default="",
+        help_text="Reçoit chaque jour la dernière empreinte de la chaîne d'audit. "
+        "Vide : l'ancre n'est envoyée qu'à FYXOP.",
+    )
 
     # Modules du menu (dérivés du type d'établissement ; S2/S3).
     modules_actifs = ArrayField(models.TextField(), default=list, blank=True)

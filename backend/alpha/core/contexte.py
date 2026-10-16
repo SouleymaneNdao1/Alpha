@@ -4,7 +4,8 @@ Les valeurs sont portées par des ``contextvars`` : chaque thread gunicorn et
 chaque tâche Celery a son propre contexte, sans fuite d'une requête à l'autre.
 
 Lecture (partout dans le code) :
-    tenant_courant(), scope_courant(), utilisateur_courant(), ip(), request_id()
+    tenant_courant(), scope_courant(), utilisateur_courant(), ip(), request_id(),
+    user_agent()
 
 Écriture (réservée aux middlewares, à ``contexte_tenant`` et au décorateur
 ``tache_tenant``) : ``definir(...)`` renvoie des jetons à rendre à
@@ -34,6 +35,8 @@ _scope: ContextVar[str] = ContextVar("alpha_scope", default=SCOPE_ANONYMOUS)
 _utilisateur: ContextVar[uuid.UUID | None] = ContextVar("alpha_utilisateur", default=None)
 _ip: ContextVar[str | None] = ContextVar("alpha_ip", default=None)
 _request_id: ContextVar[str | None] = ContextVar("alpha_request_id", default=None)
+# Ajout B4 : le journal d'audit enregistre le user agent du client (§ 6.1).
+_user_agent: ContextVar[str | None] = ContextVar("alpha_user_agent", default=None)
 
 _VARIABLES: dict[str, ContextVar[Any]] = {
     "tenant": _tenant,
@@ -41,6 +44,7 @@ _VARIABLES: dict[str, ContextVar[Any]] = {
     "utilisateur": _utilisateur,
     "ip": _ip,
     "request_id": _request_id,
+    "user_agent": _user_agent,
 }
 
 
@@ -69,6 +73,11 @@ def request_id() -> str | None:
     return _request_id.get()
 
 
+def user_agent() -> str | None:
+    """En-tête User-Agent du client (tronqué à 300 caractères), ou None hors requête."""
+    return _user_agent.get()
+
+
 def _normaliser_uuid(valeur: Any) -> uuid.UUID | None:
     if valeur is None or valeur == "":
         return None
@@ -80,7 +89,7 @@ def _normaliser_uuid(valeur: Any) -> uuid.UUID | None:
 def definir(**valeurs: Any) -> dict[str, Token[Any]]:
     """Pose une ou plusieurs valeurs du contexte et renvoie les jetons de restauration.
 
-    Clés acceptées : tenant, scope, utilisateur, ip, request_id.
+    Clés acceptées : tenant, scope, utilisateur, ip, request_id, user_agent.
     """
     inconnues = set(valeurs) - set(_VARIABLES)
     if inconnues:

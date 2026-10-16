@@ -1,4 +1,4 @@
-"""Outils communs aux tests (B2).
+"""Outils communs aux tests (B2, B4).
 
 Connexions disponibles dans config.settings.test :
 - ``default``    : alpha_owner (BYPASSRLS), crée et migre la base de test ;
@@ -11,12 +11,35 @@ utilisent ``applicatif`` sont donc transactionnels (``transaction=True``).
 from __future__ import annotations
 
 import pytest
+from django.db.backends.postgresql.operations import DatabaseOperations
 
 from alpha.tenancy.contexte import contexte_tenant
 from alpha.tenancy.models import Etablissement, ParametresEtablissement
 
 ALIAS_APP = "applicatif"
 BASES_APP = ["default", ALIAS_APP]
+
+# --- B4 : vidage de la base entre deux tests transactionnels --------------------------------
+# Les tests ``transaction=True`` vident la base par TRUNCATE (connexion propriétaire),
+# ce que refuse le trigger evenement_audit_sans_truncate. Le seul contournement, en
+# test uniquement : désactiver ce trigger le temps du vidage (alpha_owner possède la
+# table). La tâche T1 reprendra ce montage avec le reste de l'infrastructure de test.
+_sql_flush_origine = DatabaseOperations.sql_flush
+
+
+def _sql_flush_journal_audit(self, style, tables, *args, **kwargs):
+    instructions = _sql_flush_origine(self, style, tables, *args, **kwargs)
+    if "evenement_audit" not in tables or not instructions:
+        return instructions
+    trigger = "evenement_audit_sans_truncate"
+    return [
+        f"ALTER TABLE evenement_audit DISABLE TRIGGER {trigger};",
+        *instructions,
+        f"ALTER TABLE evenement_audit ENABLE TRIGGER {trigger};",
+    ]
+
+
+DatabaseOperations.sql_flush = _sql_flush_journal_audit
 
 
 class RouteurApplicatif:
