@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import uuid
 
+from django.conf import settings
 from django.contrib.postgres.fields import ArrayField
 from django.db import models
 from django.db.models import Q
@@ -42,8 +43,9 @@ class StatutEtablissement(models.TextChoices):
 class Etablissement(models.Model):
     """Établissement client (tenant). Pas de ``TenantManager`` : la RLS filtre seule.
 
-    ``cree_par`` (FK vers ``utilisateur``, § 2.2) sera ajouté par la tâche B3,
-    quand le modèle ``Utilisateur`` existera.
+    ``cree_par`` (§ 2.2) désigne le super-administrateur FYXOP qui a provisionné
+    l'établissement ; la colonne est ajoutée par ``tenancy.0002`` (tâche B3), car
+    ``utilisateur`` dépend lui-même d'``etablissement``.
     """
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
@@ -57,6 +59,15 @@ class Etablissement(models.Model):
     fuseau_horaire = models.CharField("fuseau horaire", max_length=40, default="Africa/Dakar")
     cree_le = models.DateTimeField("créé le", auto_now_add=True)
     modifie_le = models.DateTimeField("modifié le", auto_now=True)
+    cree_par = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        verbose_name="créé par",
+        on_delete=models.RESTRICT,
+        null=True,
+        blank=True,
+        editable=False,
+        related_name="+",
+    )
 
     class Meta:
         db_table = "etablissement"
@@ -270,3 +281,87 @@ class ParametresEtablissement(TenantModel):
 
     def __str__(self) -> str:
         return f"Paramètres de {self.etablissement_id}"
+
+
+# --- Manager non filtré pour les modèles hors TenantModel ----------------------------------
+
+
+class ObjetsGlobauxMixin(models.Model):
+    """Ajoute ``objets_globaux`` (non filtré) à un modèle qui n'hérite pas de ``TenantModel``.
+
+    Mêmes restrictions d'usage que ``TenantModel.objets_globaux`` (vérifiées par
+    ``tests/test_rls_couverture.py``). Le modèle doit déclarer
+    ``Meta.default_manager_name = "objects"`` pour que son manager filtré reste
+    le manager par défaut.
+    """
+
+    objets_globaux = models.Manager()
+
+    class Meta:
+        abstract = True
+
+
+# --- Tables « tenant ou plateforme » (§ 3.5, tables marquées (*)) -------------------------
+
+
+class TenantOuPlateformeManager(models.Manager.from_queryset(TenantQuerySet)):
+    """Manager des tables (*) pouvant contenir des lignes du super-admin.
+
+    - portée « tenant » : lignes de l'établissement courant ;
+    - portée « platform » : lignes sans établissement de l'utilisateur courant
+      (miroir applicatif de la politique ``isolation_tenant_ou_plateforme``) ;
+    - autre portée : ``TenantNonDefini`` (échec fermé).
+
+    Ces tables doivent avoir une colonne ``utilisateur_id``.
+    """
+
+    def get_queryset(self):
+        qs = super().get_queryset()
+        tid = contexte.tenant_courant()
+        if tid is not None:
+            return qs.filter(etablissement_id=tid)
+        if contexte.scope_courant() == contexte.SCOPE_PLATFORM:
+            return qs.filter(
+                etablissement_id__isnull=True, utilisateur_id=contexte.utilisateur_courant()
+            )
+        raise TenantNonDefini()
+
+
+class TenantOuPlateformeModel(TenantModel):
+    """Base abstraite des tables (*) du § 3.5 : ``etablissement`` NULL pour le super-admin.
+
+    La migration qui crée la table doit appeler ``activer_rls(table, plateforme=True)``.
+    Hérite de ``TenantModel`` pour être couverte par le test de couverture RLS.
+    """
+
+    etablissement = models.ForeignKey(
+        "tenancy.Etablissement",
+        on_delete=models.RESTRICT,
+        null=True,
+        blank=True,
+        editable=False,
+    )
+
+    objects = TenantOuPlateformeManager()
+    objets_globaux = models.Manager()  # noqa: DJ012 - second manager, pas un champ
+
+    class Meta:
+        abstract = True
+
+    def delete(self, *args, **kwargs):
+        self._verifier_tenant()
+        return super(TenantModel, self).delete(*args, **kwargs)
+
+    def _verifier_tenant(self) -> None:
+        tid = contexte.tenant_courant()
+        if tid is not None:
+            if self.etablissement_id is None:
+                self.etablissement_id = tid
+            elif self.etablissement_id != tid:
+                raise ViolationTenant()
+            return
+        if contexte.scope_courant() == contexte.SCOPE_PLATFORM:
+            if self.etablissement_id is not None:
+                raise ViolationTenant()
+            return
+        raise TenantNonDefini()
