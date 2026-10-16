@@ -39,3 +39,45 @@ dev = [
     "freezegun==1.5.5",
     "ruff==0.17.1",
 ]
+
+# --- Outils (tâche B1) ---------------------------------------------------------
+
+[tool.pytest.ini_options]
+DJANGO_SETTINGS_MODULE = "config.settings.test"
+testpaths = ["tests", "alpha"]
+python_files = ["test_*.py"]
+addopts = "-ra --strict-markers --strict-config"
+filterwarnings = ["error::RuntimeWarning"]
+
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+extend-exclude = ["**/migrations/*.py"]
+
+[tool.ruff.lint]
+select = [
+    "E",   # pycodestyle
+    "W",
+    "F",   # pyflakes
+    "I",   # tri des imports
+    "B",   # bugbear
+    "UP",  # pyupgrade
+    "DJ",  # bonnes pratiques Django
+    "S",   # sécurité (bandit)
+    "SIM",
+    "RUF",
+]
+ignore = [
+    "RUF001", "RUF002", "RUF003",  # typographie française (« », apostrophes, espaces insécables)
+    "RUF012",                      # attributs de classe mutables (Meta, DRF)
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**/*.py" = ["S101", "S105", "S106"]
+"**/tests/**/*.py" = ["S101", "S105", "S106"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["alpha", "config"]
+
+[tool.ruff.format]
+quote-style = "double"
