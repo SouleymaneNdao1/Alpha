@@ -1,0 +1,117 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/*
+ * Charte ALPHA — jetons relevés dans le CSS du prototype (architecture § 7.3).
+ * Mode clair uniquement : le prototype n'a pas de thème sombre.
+ */
+:root {
+  /* Couleurs de base */
+  --encre: #0f172a;            /* texte principal, bouton primaire, barre latérale */
+  --marque: #1e3a8a;           /* survol du primaire, menu actif, focus des champs */
+  --fond: #f1f4f8;             /* fond de page */
+  --surface: #ffffff;          /* cartes, champs */
+  --bordure: #e2e8f0;          /* cartes, en-têtes de tableau, compteurs */
+  --bordure-champ: #808b9c;    /* champs, bouton secondaire */
+  --ligne: #eef2f6;            /* séparateurs de lignes de tableau */
+  --entete-tableau: #f8fafc;   /* fond des th */
+  --survol: #f1f5f9;           /* survol du secondaire, fond du sélecteur segmenté */
+  --texte-2: #334155;          /* libellés, compteurs */
+  --texte-attenue: #475569;    /* onglets inactifs, th, sous-titres */
+  --texte-discret: #94a3b8;    /* titres de groupes du menu (sur fond sombre) */
+  --menu-texte: #cbd5e1;       /* entrées de menu inactives */
+  --menu-survol: #1e293b;      /* survol d'une entrée de menu */
+  --succes: #15803d;           /* bouton de validation (.btn-g) */
+  --succes-survol: #166534;
+  --danger-texte: #b91c1c;     /* « En retard » */
+  --alerte-texte: #a16207;     /* « Aujourd'hui », contour :focus-visible */
+  --alerte-texte-2: #b45309;
+  --accent: #fbbf24;           /* logo ALPHA */
+  --desactive: #cbd5e1;        /* .btn-off */
+  --desactive-texte: #475569;
+
+  /* Badges (pilules de statut) */
+  --badge-vert-fond: #dcfce7;  --badge-vert-texte: #14532d;
+  --badge-ambre-fond: #fef3c7; --badge-ambre-texte: #78350f;
+  --badge-rouge-fond: #fee2e2; --badge-rouge-texte: #7f1d1d;
+  --badge-bleu-fond: #dbeafe;  --badge-bleu-texte: #1e3a8a;
+  --badge-gris-fond: #e2e8f0;  --badge-gris-texte: #334155;
+
+  /* Rayons */
+  --rayon-champ: 8px;          /* boutons et champs */
+  --rayon-carte: 10px;
+  --rayon-segment: 6px;
+
+  /* Ombres (les seules présentes dans le prototype) */
+  --ombre-segment: 0 1px 2px rgba(15, 23, 42, 0.12);
+  --ombre-flottante: 0 10px 30px rgba(15, 23, 42, 0.25);
+  --ombre-menu-actif: inset 3px 0 0 #1e3a8a;
+
+  /* Voile derrière les modales et panneaux latéraux (encre à 55 %) */
+  --voile: rgba(15, 23, 42, 0.55);
+
+  /* Polices : variables posées par next/font sur <html> (src/app/polices.ts) */
+  --police-sans: var(--font-plex-sans), "IBM Plex Sans", system-ui, sans-serif;
+  --police-mono: var(--font-plex-mono), "IBM Plex Mono", ui-monospace, monospace;
+}
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+  body {
+    margin: 0;
+    background: var(--fond);
+    color: var(--encre);
+    font-family: var(--police-sans);
+    font-size: 14px;
+    line-height: 1.5;
+  }
+  a {
+    color: var(--marque);
+  }
+  a:hover {
+    color: var(--encre);
+  }
+  /* Focus visible obligatoire (prototype : outline 2px #A16207) */
+  :focus-visible {
+    outline: 2px solid var(--alerte-texte);
+    outline-offset: 2px;
+  }
+  /* Les dialogues natifs prennent le focus eux-mêmes : pas de contour sur le cadre */
+  dialog:focus-visible {
+    outline: none;
+  }
+}
+
+@layer components {
+  /*
+   * Cible tactile d'au moins 44 × 44 px sans changer la mesure visuelle du
+   * prototype (boutons de 40 px, onglets de 42 px) : la zone cliquable est
+   * étendue par un pseudo-élément transparent.
+   */
+  .cible-tactile {
+    position: relative;
+  }
+  .cible-tactile::after {
+    content: "";
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 100%;
+    height: 100%;
+    min-width: 44px;
+    min-height: 44px;
+    transform: translate(-50%, -50%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
