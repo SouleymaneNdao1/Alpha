@@ -146,6 +146,11 @@ X_FRAME_OPTIONS = "DENY"
 # dev) : sert à lire l'IP réelle dans X-Forwarded-For (RequestIdMiddleware).
 ALPHA_NB_PROXIES_CONFIANCE = env.int("ALPHA_NB_PROXIES_CONFIANCE", default=1)
 
+# --- Comptes (§ 2.2, tâche B3) ---------------------------------------------------------
+# Utilisateur ALPHA : e-mail (citext) unique sur toute la plateforme (P1), UUID,
+# sans PermissionsMixin (auth.Group / auth.Permission ne sont pas utilisés, § 1.1).
+AUTH_USER_MODEL = "comptes.Utilisateur"
+
 # --- Mots de passe (§ 4.9) ----------------------------------------------------------
 # Argon2id uniquement : aucun autre hacheur n'est accepté.
 PASSWORD_HASHERS = ["django.contrib.auth.hashers.Argon2PasswordHasher"]
