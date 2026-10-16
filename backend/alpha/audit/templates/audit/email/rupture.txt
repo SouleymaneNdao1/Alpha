@@ -1,0 +1,16 @@
+{% autoescape off %}ALERTE DE SÉCURITÉ
+
+Le contrôle d'intégrité du journal d'audit a détecté une rupture de la chaîne
+d'empreintes.
+
+Chaîne : {{ raison_sociale }} ({{ code }})
+Contrôle : {{ lance_le|date:"d/m/Y H:i" }} (heure de Dakar)
+Premier rang invalide (seq) : {{ controle.premier_seq_invalide }}
+Motif : {{ controle.message }}
+Référence du contrôle : {{ controle.id }}
+
+Une rupture signifie qu'un événement du journal a pu être modifié ou supprimé
+en dehors de l'application. Ne modifiez rien et contactez la sécurité FYXOP.
+
+ALPHA — FYXOP
+{% endautoescape %}

@@ -1,0 +1,21 @@
+{% autoescape off %}Bonjour,
+
+Voici l'ancre quotidienne du journal d'audit ALPHA.
+
+Chaîne : {{ raison_sociale }} ({{ code }})
+Contrôle d'intégrité : {{ lance_le|date:"d/m/Y H:i" }} (heure de Dakar) — chaîne intacte
+Événements vérifiés : {{ controle.nb_evenements }}
+Dernier rang (seq) : {{ controle.dernier_seq|default:"aucun événement" }}
+Dernière empreinte (SHA-256) : {{ controle.dernier_hash|default:"-" }}
+Référence du contrôle : {{ controle.id }}
+
+Merci de conserver cet e-mail sans le modifier. Chaque événement du journal est
+lié au précédent par son empreinte : si un événement antérieur à ce rang était
+modifié ou supprimé, l'empreinte ci-dessus ne correspondrait plus. Cet e-mail,
+conservé hors d'ALPHA, permet donc de prouver l'intégrité du journal à cette date.
+
+Ce message est envoyé automatiquement chaque jour ; il ne contient aucune donnée
+métier.
+
+ALPHA — FYXOP
+{% endautoescape %}

@@ -34,3 +34,49 @@ urlpatterns = [
     path("ecriture/", vue_ecriture),
     path("api/v1/auth/deconnexion", vue_ecriture),
 ]
+
+
+# --- B4 : règle des vues d'authentification (§ 3.3, § 6.1) ---------------------------------
+
+
+def vue_echec_retourne_401(request: HttpRequest) -> JsonResponse:
+    """Écrit l'événement puis RETOURNE une erreur : l'événement est conservé."""
+    from alpha.audit.models import Categorie
+    from alpha.audit.services import journaliser
+
+    journaliser("auth.connexion.echec", Categorie.CONNEXION, objet_libelle="retour@test")
+    return JsonResponse({"code": "IDENTIFIANTS_INVALIDES"}, status=401)
+
+
+def vue_echec_leve_exception(request: HttpRequest) -> JsonResponse:
+    """Écrit l'événement puis LÈVE : le point de sauvegarde de la vue annule l'événement."""
+    from django.core.exceptions import PermissionDenied
+
+    from alpha.audit.models import Categorie
+    from alpha.audit.services import journaliser
+
+    journaliser("auth.connexion.echec", Categorie.CONNEXION, objet_libelle="exception@test")
+    raise PermissionDenied
+
+
+def vue_echec_hors_transaction(request: HttpRequest) -> JsonResponse:
+    """Lève, mais l'événement est écrit par la connexion indépendante : il est conservé."""
+    from django.core.exceptions import PermissionDenied
+
+    from alpha.audit.models import Categorie
+    from alpha.audit.services import journaliser
+
+    journaliser(
+        "auth.connexion.echec",
+        Categorie.CONNEXION,
+        objet_libelle="independant@test",
+        hors_transaction=True,
+    )
+    raise PermissionDenied
+
+
+urlpatterns += [
+    path("audit/echec-401/", vue_echec_retourne_401),
+    path("audit/echec-exception/", vue_echec_leve_exception),
+    path("audit/echec-independant/", vue_echec_hors_transaction),
+]

@@ -8,6 +8,7 @@ obligatoire absente fait échouer le démarrage avec ImproperlyConfigured.
 from pathlib import Path
 
 import environ
+from celery.schedules import crontab
 from kombu import Queue
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
@@ -88,6 +89,16 @@ DATABASES["default"].update(
         "ATOMIC_REQUESTS": True,
     }
 )
+# Connexion indépendante du journal d'audit (B4) : même base et même rôle que
+# « default », mais hors de la transaction de la requête. Utilisée seulement par
+# journaliser(..., hors_transaction=True), pour un événement qui doit survivre à
+# l'annulation de la transaction appelante (§ 3.3, § 6.1).
+DATABASES["audit"] = {
+    **DATABASES["default"],
+    "ATOMIC_REQUESTS": False,
+    "TEST": {"MIRROR": "default"},
+}
+ALPHA_AUDIT_ALIAS_INDEPENDANT = "audit"
 # Rôle applicatif injecté dans les RunSQL (GRANT, politiques RLS) : § 3.1.
 ALPHA_DB_APP_ROLE = env("ALPHA_DB_APP_ROLE", default="alpha_app")
 # Connexion propriétaire (alpha_owner) : uniquement migrate, tests et exploitation.
@@ -194,6 +205,16 @@ EMAIL_TIMEOUT = 10
 DEFAULT_FROM_EMAIL = env("DEFAULT_FROM_EMAIL", default="ALPHA <no-reply@alpha.localhost>")
 SERVER_EMAIL = DEFAULT_FROM_EMAIL
 
+# --- Journal d'audit (§ 6, décision P7) ------------------------------------------------------
+# Adresse sécurité FYXOP (réglage de plateforme) : ancre quotidienne de toutes les
+# chaînes et alerte immédiate en cas de rupture. Vide : aucun envoi vers FYXOP.
+ALPHA_EMAIL_SECURITE_FYXOP = env("ALPHA_EMAIL_SECURITE_FYXOP", default="")
+# Points de raccordement (B3) : chemins pointés, None tant que Utilisateur n'existe pas.
+#   uuid -> alpha.audit.services.Acteur | None   (libellé figé de l'acteur courant)
+ALPHA_AUDIT_RESOLVEUR_ACTEUR = None
+#   etablissement_id -> list[str]                (titulaires de audit.lecture, alerte de rupture)
+ALPHA_AUDIT_DESTINATAIRES_AUDIT_LECTURE = None
+
 # --- Django REST framework (§ 5) ----------------------------------------------------------
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": [
@@ -253,8 +274,19 @@ CELERY_TASK_QUEUES = (
     Queue("celery", routing_key="celery"),
 )
 CELERY_TASK_CREATE_MISSING_QUEUES = False
-# Planification (§ 6.5) : complétée par les tâches B4, B5, B8 et B9.
-CELERY_BEAT_SCHEDULE: dict = {}
+# Planification (§ 6.5, heure de Dakar) : complétée par les tâches B5, B8 et B9.
+CELERY_BEAT_SCHEDULE: dict = {
+    # B4 : contrôle d'intégrité de toutes les chaînes d'audit (une sous-tâche par chaîne).
+    "audit-verifier-toutes-chaines": {
+        "task": "audit.verifier_toutes_chaines",
+        "schedule": crontab(hour=2, minute=0),
+    },
+    # B4 : ancre quotidienne (dernier seq/hash) au contrôle interne et à FYXOP (P7).
+    "audit-envoyer-ancres": {
+        "task": "audit.envoyer_ancres",
+        "schedule": crontab(hour=2, minute=30),
+    },
+}
 
 # --- Journaux ------------------------------------------------------------------------------
 LOGGING = {

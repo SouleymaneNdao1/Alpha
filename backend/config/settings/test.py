@@ -25,6 +25,14 @@ if ALPHA_DATABASE_URL_OWNER:  # noqa: F405
         "TEST": {"MIRROR": "default"},
     }
 
+    # B4 : connexion indépendante du journal d'audit, en alpha_app, miroir de la même base.
+    DATABASES["audit"] = {  # noqa: F405
+        **env.db_url_config(env("DATABASE_URL")),  # noqa: F405
+        "CONN_MAX_AGE": 0,
+        "ATOMIC_REQUESTS": False,
+        "TEST": {"MIRROR": "default"},
+    }
+
 # Application réservée aux tests : modèle tenant générique (NoteTest) avec sa RLS.
 INSTALLED_APPS = [*INSTALLED_APPS, "tests.appli_test"]  # noqa: F405
 
@@ -35,6 +43,9 @@ CSRF_COOKIE_SECURE = False
 ALPHA_DOC_API_ACTIVE = True
 # Pas de proxy devant le client de test.
 ALPHA_NB_PROXIES_CONFIANCE = 0
+
+# Adresse sécurité FYXOP fictive (ancrage et alertes du journal d'audit).
+ALPHA_EMAIL_SECURITE_FYXOP = "securite@fyxop.test"
 
 # Tâches Celery exécutées dans le processus de test (pas de worker dans le service « tests »).
 CELERY_TASK_ALWAYS_EAGER = True

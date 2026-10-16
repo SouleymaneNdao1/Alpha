@@ -78,6 +78,7 @@ ignore = [
 # SQL des migrations construit par f-string : les seuls éléments interpolés sont
 # des identifiants validés par alpha.tenancy.rls._ident (aucune donnée externe).
 "alpha/tenancy/rls.py" = ["S608"]
+"alpha/audit/sql.py" = ["S608"]
 
 [tool.ruff.lint.isort]
 known-first-party = ["alpha", "config"]
