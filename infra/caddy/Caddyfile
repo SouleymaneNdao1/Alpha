@@ -1,0 +1,220 @@
+# =============================================================================
+# ALPHA — Caddy, point d'entrée HTTPS unique du VPS (tâche D3)
+#
+# Projet compose « alpha-proxy » (docker-compose.proxy.yml), commun à la recette
+# et à la production. Caddy rejoint les réseaux alpha-recette-web et
+# alpha-prod-web ; il ne voit NI la base NI Redis.
+#
+#   https://<ALPHA_DOMAINE_PROD>     /api/*  -> prod-backend:8000 (gunicorn)
+#                                    reste   -> prod-frontend:3000 (Next standalone)
+#   https://<ALPHA_DOMAINE_RECETTE>  idem vers recette-*, plus /mailpit/ et la
+#                                    documentation de l'API, protégés par mot de passe
+#
+# Les réécritures /api de Next.js sont figées au build (sortie standalone) :
+# c'est donc ICI que /api est routé vers Django, sur la même origine que le
+# frontend (cookies SameSite=Lax, pas de CORS).
+#
+# Valeurs lues dans l'environnement du conteneur ({$VAR}), elles-mêmes issues de
+# .env.caddy (voir .env.caddy.example). Vérifier après toute modification :
+#   scripts/deploy.sh proxy          (caddy validate, puis rechargement sans coupure)
+# =============================================================================
+{
+	# Compte ACME (Let's Encrypt, repli automatique sur ZeroSSL).
+	email {$ALPHA_ACME_EMAIL}
+
+	# API d'administration de Caddy : boucle locale du conteneur uniquement.
+	admin localhost:2019
+
+	servers {
+		# HTTP/1.1, HTTP/2 et HTTP/3 (QUIC, port 443/udp).
+		protocols h1 h2 h3
+		timeouts {
+			read_header 10s
+			read_body 60s
+			write 120s
+			idle 2m
+		}
+		# Pas de trusted_proxies : Caddy est en bordure. L'en-tête X-Forwarded-For
+		# reçu d'un client est ignoré et remplacé par l'adresse réelle du client ;
+		# Django lui fait confiance (ALPHA_NB_PROXIES_CONFIANCE=1).
+	}
+}
+
+# --- TLS : 1.2 minimum (exigence du cahier des charges) -------------------------
+# Suites par défaut de Caddy : ECDHE + AEAD uniquement (AES-GCM, ChaCha20-Poly1305).
+(tls_alpha) {
+	tls {
+		protocols tls1.2 tls1.3
+	}
+}
+
+# --- Journal d'accès -------------------------------------------------------------
+# JSON sur la sortie standard (journaux Docker, rotation par daemon.json).
+# Caddy masque déjà Cookie, Set-Cookie et Authorization. On masque en plus les
+# JETONS présents dans les URL (activation, réenrôlement, réinitialisation du
+# mot de passe) : un lien encore valide ne doit jamais traîner dans un journal.
+(journal_acces) {
+	log {
+		output stdout
+		format filter {
+			wrap json
+			fields {
+				request>uri regexp "((?:activation|reenrolement|reinitialisation)/|jeton=)[^/?&#]+" "${1}***"
+				request>headers>Referer regexp "((?:activation|reenrolement|reinitialisation)/|jeton=)[^/?&#]+" "${1}***"
+			}
+		}
+	}
+}
+
+# --- En-têtes de sécurité communs -----------------------------------------------
+(entetes_securite) {
+	header {
+		# HSTS 1 an, sous-domaines du site inclus. Pas de « preload » : décision
+		# du titulaire du domaine, quasi irréversible (voir docs/ops/deploiement.md § 12).
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options "nosniff"
+		# « ? » : valeur par défaut, que la route Mailpit remplace par SAMEORIGIN.
+		?X-Frame-Options "DENY"
+		Referrer-Policy "same-origin"
+		Cross-Origin-Opener-Policy "same-origin"
+		Cross-Origin-Resource-Policy "same-origin"
+		Permissions-Policy "accelerometer=(), autoplay=(), camera=(), display-capture=(), geolocation=(), gyroscope=(), magnetometer=(), microphone=(), midi=(), payment=(), publickey-credentials-get=(self), usb=(), interest-cohort=()"
+		# Application privée : aucune indexation par les moteurs de recherche.
+		X-Robots-Tag "noindex, nofollow"
+		-Server
+		-X-Powered-By
+	}
+}
+
+# --- CSP -----------------------------------------------------------------------------
+# Réponses de l'API (JSON) : rien ne doit s'exécuter ni se charger.
+(csp_api) {
+	header Content-Security-Policy "default-src 'none'; frame-ancestors 'none'; base-uri 'none'; form-action 'none'"
+}
+
+# Pages Next.js. Next 15 (App Router) injecte des scripts en ligne pour
+# l'hydratation : 'unsafe-inline' reste nécessaire dans script-src tant que le
+# frontend ne pose pas sa propre CSP à nonce (middleware.ts). Le « ? » fait que
+# Caddy n'écrit cet en-tête QUE si Next n'en a pas déjà posé un : le jour où le
+# frontend passe aux nonces, sa CSP (plus stricte) prend le dessus sans
+# toucher à ce fichier.
+(csp_frontend) {
+	header ?Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self'; media-src 'self'; worker-src 'self' blob:; manifest-src 'self'; frame-src 'none'; frame-ancestors 'none'; object-src 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests"
+}
+
+# Documentation interactive de l'API (Swagger, recette uniquement). drf-spectacular
+# charge swagger-ui depuis le CDN jsdelivr et ajoute un script d'initialisation
+# en ligne. Remplacée par 'self' seul si le backend adopte drf-spectacular-sidecar
+# et SpectacularSwaggerSplitView (voir docs/ops/deploiement.md, § 12).
+(csp_doc_api) {
+	header Content-Security-Policy "default-src 'none'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; img-src 'self' data: https://cdn.jsdelivr.net; font-src 'self' https://cdn.jsdelivr.net; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'none'"
+}
+
+# Mailpit (recette) : interface web à une page, websocket sur la même origine.
+(csp_mailpit) {
+	header Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self' data:; connect-src 'self' wss:; frame-src 'self'; frame-ancestors 'self'; object-src 'none'; base-uri 'self'; form-action 'self'"
+	# Mailpit affiche les messages dans une iframe de la même origine.
+	header X-Frame-Options "SAMEORIGIN"
+}
+
+# --- Socle d'une instance ALPHA ----------------------------------------------------
+# import application <prefixe> 127.0.0.1/32 <IP ou plages autorisées pour la console…>
+#   (127.0.0.1/32 toujours présent : liste jamais vide, console fermée par défaut)
+#   <prefixe> : « prod » ou « recette » (alias réseau prod-backend, recette-frontend…)
+(application) {
+	import tls_alpha
+	import journal_acces
+	import entetes_securite
+	encode zstd gzip
+
+	# Taille maximale d'une requête (pièces jointes à partir du sprint 2).
+	request_body {
+		max_size 25MB
+	}
+
+	# Console super-administrateur FYXOP (décision P6) : uniquement depuis les
+	# adresses autorisées (IP fixe de FYXOP et/ou plage du VPN WireGuard).
+	# 404 plutôt que 403 : on ne révèle pas l'existence de la console.
+	@console_hors_liste {
+		path /console /console/* /api/v1/plateforme /api/v1/plateforme/*
+		not remote_ip {args[1:]}
+	}
+	handle @console_hors_liste {
+		respond "Page introuvable." 404
+	}
+
+	# Sonde de santé publique (Uptime Kuma, hors du VPS) : aucune donnée.
+	handle /api/v1/sante/ {
+		import csp_api
+		reverse_proxy {args[0]}-backend:8000
+	}
+
+	handle /api/* {
+		import csp_api
+		reverse_proxy {args[0]}-backend:8000 {
+			# X-Forwarded-For/-Proto/-Host sont transmis par défaut par Caddy :
+			# Django (IP réelle, HTTPS) et le middleware Next (redirections) s'en servent.
+			# Fin propre des connexions lors d'un rechargement de Caddy.
+			stream_close_delay 5m
+		}
+	}
+
+	handle {
+		import csp_frontend
+		reverse_proxy {args[0]}-frontend:3000
+	}
+
+	# Service momentanément indisponible (déploiement, redémarrage) : message
+	# en français plutôt qu'une page vide.
+	handle_errors 502 503 504 {
+		header Content-Type "text/plain; charset=utf-8"
+		header Retry-After "60"
+		respond "ALPHA est momentanément indisponible. Merci de réessayer dans quelques minutes." 503
+	}
+}
+
+# Outils de recette protégés par mot de passe (HTTP Basic, empreinte bcrypt).
+(outils_recette) {
+	basic_auth {
+		{$ALPHA_RECETTE_OUTILS_UTILISATEUR:recette} {$ALPHA_RECETTE_OUTILS_HASH}
+	}
+}
+
+# =============================================================================
+# PRODUCTION
+# =============================================================================
+{$ALPHA_DOMAINE_PROD} {
+	# Documentation et schéma de l'API, page de démonstration des composants :
+	# coupés en production, ici en plus du backend et du frontend (défense en profondeur).
+	@interdit_prod path /api/v1/docs /api/v1/docs/* /api/v1/schema /api/v1/schema/* /demo /demo/*
+	handle @interdit_prod {
+		respond "Page introuvable." 404
+	}
+
+	import application prod 127.0.0.1/32 {$ALPHA_IP_CONSOLE_PROD}
+}
+
+# =============================================================================
+# RECETTE
+# =============================================================================
+{$ALPHA_DOMAINE_RECETTE} {
+	# Mailpit (décision P11) : tous les e-mails de la recette, aucun envoi réel.
+	@mailpit path /mailpit /mailpit/*
+	handle @mailpit {
+		import outils_recette
+		import csp_mailpit
+		reverse_proxy recette-mailpit:8025
+	}
+
+	# Documentation interactive et schéma OpenAPI : testeurs connectés aux outils
+	# de recette uniquement (mot de passe ci-dessous). Au sprint 1, le backend
+	# sert le schéma sans session : c'est Caddy qui le protège (docs/ops/deploiement.md § 12).
+	@doc_api path /api/v1/docs /api/v1/docs/* /api/v1/schema /api/v1/schema/*
+	handle @doc_api {
+		import outils_recette
+		import csp_doc_api
+		reverse_proxy recette-backend:8000
+	}
+
+	import application recette 127.0.0.1/32 {$ALPHA_IP_CONSOLE_RECETTE}
+}

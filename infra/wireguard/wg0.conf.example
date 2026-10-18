@@ -1,0 +1,26 @@
+# =============================================================================
+# ALPHA — VPN WireGuard pour l'accès à la console super-administrateur (P6, option B)
+#
+# À utiliser quand FYXOP n'a PAS d'adresse IP fixe. Le VPN ne sert qu'à joindre
+# le VPS lui-même (tunnel partiel) : pas de routage vers Internet, pas de NAT.
+#
+# Installation sur le VPS (docs/ops/deploiement.md § 9.2) :
+#   sudo apt install wireguard
+#   sudo sh -c 'umask 077; wg genkey > /etc/wireguard/serveur.key; wg pubkey < /etc/wireguard/serveur.key > /etc/wireguard/serveur.pub'
+#   sudo install -m 600 infra/wireguard/wg0.conf.example /etc/wireguard/wg0.conf   # puis compléter les [Peer]
+#   sudo ufw allow 51820/udp
+#   sudo systemctl enable --now wg-quick@wg0
+# Puis dans .env.caddy : ALPHA_IP_CONSOLE_PROD=10.66.0.0/24 (et/ou l'IP fixe), et
+#   scripts/deploy.sh proxy
+# =============================================================================
+[Interface]
+Address = 10.66.0.1/24
+ListenPort = 51820
+# La clé privée reste dans un fichier à part (jamais dans ce fichier ni dans Git).
+PostUp = wg set %i private-key /etc/wireguard/serveur.key
+
+# Un bloc [Peer] par administrateur FYXOP, une adresse fixe chacun.
+[Peer]
+# Prénom Nom — poste FYXOP (date d'ajout)
+PublicKey = CLE_PUBLIQUE_DU_POSTE_A_RENSEIGNER
+AllowedIPs = 10.66.0.2/32

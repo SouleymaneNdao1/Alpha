@@ -1,0 +1,17 @@
+# ALPHA — veille du VPS (conteneurs, disque, mémoire, âge des sauvegardes) et
+# battement de cœur vers la surveillance externe. docs/ops/monitoring.md.
+[Unit]
+Description=ALPHA : veille du VPS
+Wants=docker.service
+After=docker.service
+
+[Service]
+Type=oneshot
+WorkingDirectory=/opt/alpha
+ExecStart=/opt/alpha/scripts/veille.sh systeme
+TimeoutStartSec=3min
+Nice=5
+SyslogIdentifier=alpha-veille
+PrivateTmp=yes
+ProtectHome=read-only
+NoNewPrivileges=yes

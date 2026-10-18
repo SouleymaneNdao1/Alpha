@@ -1,0 +1,254 @@
+# =============================================================================
+# ALPHA — surcharge de RECETTE (architecture § 1.3, tâche D3)
+#
+# Toujours utilisée via scripts/deploy.sh, qui exécute l'équivalent de :
+#   ALPHA_VERSION=<version> docker compose -p alpha-recette --env-file .env.recette \
+#       -f docker-compose.yml -f docker-compose.recette.yml <commande>
+#
+# Même structure que la production (mêmes images, même durcissement), avec :
+#   - projet compose distinct « alpha-recette » : réseaux, volumes, base et
+#     secrets séparés de la production (même VPS pour le pilote, § 1.3) ;
+#   - Mailpit (décision P11) : TOUS les e-mails sont capturés, aucun n'atteint
+#     une vraie boîte. Interface sur https://<domaine recette>/mailpit/, protégée
+#     par mot de passe par Caddy (.env.caddy) ;
+#   - AUCUN accès Internet pour les conteneurs (pas de réseau `sortie`) : même
+#     un SMTP réel mal configuré ne pourrait pas envoyer de message ;
+#   - documentation de l'API (config.settings.recette) derrière le mot de passe
+#     des outils de recette ;
+#   - budget mémoire ≈ 2 Go (§ 1.3), moins de processus qu'en production.
+# =============================================================================
+
+# Journaux centralisés dans journald (docs/ops/monitoring.md § 4) : un seul
+# magasin pour les conteneurs ET les minuteurs systemd (sauvegarde, veille),
+# rotation par taille et par âge (infra/journald/alpha.conf).
+# Lecture : scripts/deploy.sh journaux <env> [service] ou journalctl -t <tag>.
+x-journaux: &journaux
+  driver: journald
+  options:
+    tag: "{{.Name}}"
+
+x-image-backend: &image-backend
+  image: alpha-backend:${ALPHA_VERSION:?ALPHA_VERSION manquant, passez par scripts/deploy.sh}
+  pull_policy: never
+
+x-env-recette: &env-recette
+  DJANGO_SETTINGS_MODULE: config.settings.recette
+  # Voir docs/ops/deploiement.md § 12 (documentation de l'API derrière le mot de passe des outils, /demo visible).
+  ALPHA_ENVIRONNEMENT: recette
+  DJANGO_ALLOWED_HOSTS: ${ALPHA_DOMAINE_RECETTE:?ALPHA_DOMAINE_RECETTE manquant dans .env.recette},127.0.0.1,localhost,backend
+  ALPHA_URL_FRONTEND: https://${ALPHA_DOMAINE_RECETTE:?ALPHA_DOMAINE_RECETTE manquant dans .env.recette}
+  ALPHA_NB_PROXIES_CONFIANCE: "1"
+  ALPHA_HSTS_SECONDES: ${ALPHA_HSTS_SECONDES:-31536000}
+  ALPHA_HSTS_PRELOAD: ${ALPHA_HSTS_PRELOAD:-false}
+  ALPHA_NIVEAU_JOURNAL: ${ALPHA_NIVEAU_JOURNAL:-INFO}
+  # P11 : Mailpit par défaut (voir .env.recette.example).
+  EMAIL_HOST: ${EMAIL_HOST:-mailpit}
+  EMAIL_PORT: ${EMAIL_PORT:-1025}
+  EMAIL_HOST_USER: ${EMAIL_HOST_USER:-}
+  EMAIL_HOST_PASSWORD: ${EMAIL_HOST_PASSWORD:-}
+  EMAIL_USE_TLS: ${EMAIL_USE_TLS:-false}
+  EMAIL_USE_SSL: ${EMAIL_USE_SSL:-false}
+  DEFAULT_FROM_EMAIL: ${DEFAULT_FROM_EMAIL:-ALPHA Recette <no-reply@recette.alpha.invalid>}
+  ALPHA_EMAIL_SECURITE_FYXOP: ${ALPHA_EMAIL_SECURITE_FYXOP:-securite@recette.alpha.invalid}
+  ALPHA_MEDIA_ROOT: /app/media
+
+x-durci: &durci
+  read_only: true
+  tmpfs:
+    - /tmp
+  cap_drop: [ALL]
+  security_opt:
+    - no-new-privileges:true
+
+# Même sonde que la production (voir docker-compose.prod.yml).
+x-sonde-backend: &sonde-backend
+  test:
+    - CMD
+    - python
+    - -c
+    - |
+      import sys, urllib.request, urllib.error
+      try:
+          code = urllib.request.urlopen("http://127.0.0.1:8000/api/v1/sante/", timeout=4).status
+      except urllib.error.HTTPError as e:
+          code = e.code
+      except Exception:
+          sys.exit(1)
+      sys.exit(0 if code < 500 else 1)
+  interval: 30s
+  timeout: 6s
+  retries: 5
+  start_period: 40s
+
+services:
+  db:
+    command:
+      - postgres
+      - -c
+      - shared_buffers=128MB
+      - -c
+      - effective_cache_size=384MB
+      - -c
+      - work_mem=4MB
+      - -c
+      - maintenance_work_mem=64MB
+      - -c
+      - max_connections=40
+      - -c
+      - log_min_duration_statement=1000
+      - -c
+      - password_encryption=scram-sha-256
+    shm_size: 128m
+    deploy:
+      resources:
+        limits:
+          memory: 640m
+    stop_grace_period: 60s
+    logging: *journaux
+
+  redis:
+    command: ["redis-server", "--appendonly", "yes", "--save", "", "--maxmemory", "96mb", "--maxmemory-policy", "volatile-lru"]
+    volumes:
+      - redisdata:/data
+    deploy:
+      resources:
+        limits:
+          memory: 128m
+    logging: *journaux
+
+  mailpit:
+    image: axllent/mailpit:v1.30.5
+    restart: unless-stopped
+    init: true
+    environment:
+      # Servi sous https://<domaine recette>/mailpit/ par Caddy.
+      MP_WEBROOT: /mailpit/
+      MP_MAX_MESSAGES: "2000"
+      # SMTP sur le réseau interne uniquement ; aucun relais configuré
+      # (MP_SMTP_RELAY_*) : Mailpit ne réexpédie RIEN.
+      MP_SMTP_AUTH_ACCEPT_ANY: "true"
+      MP_SMTP_AUTH_ALLOW_INSECURE: "true"
+      TZ: Africa/Dakar
+    healthcheck:
+      test: ["CMD", "/mailpit", "readyz"]
+      interval: 30s
+      timeout: 3s
+      retries: 5
+    networks:
+      interne: {}
+      web:
+        aliases: [recette-mailpit]
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop: [ALL]
+    security_opt:
+      - no-new-privileges:true
+    deploy:
+      resources:
+        limits:
+          memory: 128m
+    logging: *journaux
+
+  migrate:
+    <<: [*image-backend, *durci]
+    # Jamais de construction ici : « !reset » doit figurer dans le service
+    # lui-même (il est perdu à travers une fusion YAML « <<: »).
+    build: !reset null
+    environment:
+      <<: *env-recette
+    deploy:
+      resources:
+        limits:
+          memory: 384m
+    logging: *journaux
+
+  backend:
+    <<: [*image-backend, *durci]
+    build: !reset null
+    command: ["sh", "-c", "exec gunicorn config.wsgi:application --bind 0.0.0.0:8000 --workers $${ALPHA_GUNICORN_WORKERS:-2} --threads 2 --timeout 60 --graceful-timeout 25 --max-requests 2000 --max-requests-jitter 200 --forwarded-allow-ips '*' --worker-tmp-dir /tmp"]
+    environment:
+      <<: *env-recette
+      ALPHA_GUNICORN_WORKERS: ${ALPHA_GUNICORN_WORKERS:-2}
+    volumes:
+      - media:/app/media
+    networks:
+      interne: {}
+      web:
+        aliases: [recette-backend]
+    healthcheck: *sonde-backend
+    depends_on:
+      mailpit:
+        condition: service_started
+    stop_grace_period: 30s
+    deploy:
+      resources:
+        limits:
+          memory: 448m
+    logging: *journaux
+
+  worker:
+    <<: [*image-backend, *durci]
+    build: !reset null
+    command: ["sh", "-c", "exec celery -A config worker -Q defaut,celery -c $${ALPHA_CELERY_CONCURRENCE:-1} -l info --max-tasks-per-child 200"]
+    environment:
+      <<: *env-recette
+      ALPHA_CELERY_CONCURRENCE: ${ALPHA_CELERY_CONCURRENCE:-1}
+    volumes:
+      - media:/app/media
+    depends_on:
+      mailpit:
+        condition: service_started
+    stop_grace_period: 90s
+    deploy:
+      resources:
+        limits:
+          memory: 320m
+    logging: *journaux
+
+  beat:
+    <<: [*image-backend, *durci]
+    build: !reset null
+    environment:
+      <<: *env-recette
+    deploy:
+      resources:
+        limits:
+          memory: 160m
+    logging: *journaux
+
+  frontend:
+    image: alpha-frontend:${ALPHA_VERSION:?ALPHA_VERSION manquant, passez par scripts/deploy.sh}
+    build: !reset null
+    pull_policy: never
+    <<: *durci
+    tmpfs:
+      - /tmp
+      - /app/.next/cache
+    environment:
+      NODE_ENV: production
+      HOSTNAME: 0.0.0.0
+      PORT: "3000"
+      ALPHA_ENVIRONNEMENT: recette
+    networks:
+      interne: {}
+      web:
+        aliases: [recette-frontend]
+    stop_grace_period: 20s
+    deploy:
+      resources:
+        limits:
+          memory: 320m
+    logging: *journaux
+
+volumes:
+  media:
+  redisdata:
+
+networks:
+  # Aucun accès Internet pour toute la recette (P11 : aucun e-mail réel).
+  interne:
+    internal: true
+  web:
+    name: alpha-recette-web
+    external: true

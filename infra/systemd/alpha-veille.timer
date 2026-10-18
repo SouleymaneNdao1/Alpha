@@ -1,0 +1,11 @@
+# ALPHA — veille toutes les 5 minutes.   systemctl enable --now alpha-veille.timer
+[Unit]
+Description=ALPHA : veille du VPS toutes les 5 minutes
+
+[Timer]
+OnBootSec=3min
+OnUnitActiveSec=5min
+AccuracySec=30s
+
+[Install]
+WantedBy=timers.target

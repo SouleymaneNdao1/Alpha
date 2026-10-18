@@ -1,0 +1,17 @@
+# ALPHA — vérification indépendante des chaînes d'audit (%i = prod ou recette) ;
+# alerte la surveillance externe si une chaîne est rompue (code 2).
+[Unit]
+Description=ALPHA : vérification des chaînes d'audit (%i)
+Wants=docker.service
+After=docker.service
+
+[Service]
+Type=oneshot
+WorkingDirectory=/opt/alpha
+ExecStart=/opt/alpha/scripts/veille.sh audit %i
+TimeoutStartSec=1h
+Nice=10
+SyslogIdentifier=alpha-audit-%i
+PrivateTmp=yes
+ProtectHome=read-only
+NoNewPrivileges=yes

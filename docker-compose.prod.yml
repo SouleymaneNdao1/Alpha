@@ -1,0 +1,245 @@
+# =============================================================================
+# ALPHA — surcharge de PRODUCTION (architecture § 1.3, tâche D3)
+#
+# Toujours utilisée via scripts/deploy.sh, qui exécute l'équivalent de :
+#   ALPHA_VERSION=<version> docker compose -p alpha-prod --env-file .env.prod \
+#       -f docker-compose.yml -f docker-compose.prod.yml <commande>
+# (-f explicite : docker-compose.override.yml, propre au développement, est ignoré.)
+#
+# Différences avec le développement :
+#   - images de production (cible `prod` des Dockerfiles) construites par
+#     `scripts/deploy.sh construire <tag>` et étiquetées par version : la même
+#     image passe de la recette à la production ; retour arrière = version
+#     précédente. Ce fichier ne construit JAMAIS rien (build: !reset) ;
+#   - aucun port publié : seul Caddy (projet « alpha-proxy ») joint backend et
+#     frontend, par le réseau externe alpha-prod-web ;
+#   - réseau `interne` sans accès Internet (db, redis) ; seuls backend et worker
+#     sortent (réseau `sortie`, SMTP réel) ;
+#   - conteneurs applicatifs en lecture seule, sans capacités Linux ;
+#   - limites mémoire (budget prod ≈ 4,5 Go sur 8, § 1.3), journaux tournants ;
+#   - pas de Mailpit.
+# =============================================================================
+
+# Journaux centralisés dans journald (docs/ops/monitoring.md § 4) : un seul
+# magasin pour les conteneurs ET les minuteurs systemd (sauvegarde, veille),
+# rotation par taille et par âge (infra/journald/alpha.conf).
+# Lecture : scripts/deploy.sh journaux <env> [service] ou journalctl -t <tag>.
+x-journaux: &journaux
+  driver: journald
+  options:
+    tag: "{{.Name}}"
+
+x-image-backend: &image-backend
+  image: alpha-backend:${ALPHA_VERSION:?ALPHA_VERSION manquant, passez par scripts/deploy.sh}
+  pull_policy: never
+
+# Variables propres à la production, ajoutées à celles de docker-compose.yml.
+x-env-prod: &env-prod
+  DJANGO_SETTINGS_MODULE: config.settings.prod
+  # Nom de l'environnement, disponible pour les journaux et les futurs réglages ;
+  # côté backend, c'est DJANGO_SETTINGS_MODULE qui coupe la documentation de l'API
+  # (voir docs/ops/deploiement.md § 12).
+  ALPHA_ENVIRONNEMENT: production
+  DJANGO_ALLOWED_HOSTS: ${ALPHA_DOMAINE_PROD:?ALPHA_DOMAINE_PROD manquant dans .env.prod},127.0.0.1,localhost,backend
+  ALPHA_URL_FRONTEND: https://${ALPHA_DOMAINE_PROD:?ALPHA_DOMAINE_PROD manquant dans .env.prod}
+  # Caddy est l'unique proxy devant Django (IP réelle dans X-Forwarded-For).
+  ALPHA_NB_PROXIES_CONFIANCE: "1"
+  ALPHA_HSTS_SECONDES: ${ALPHA_HSTS_SECONDES:-31536000}
+  ALPHA_HSTS_PRELOAD: ${ALPHA_HSTS_PRELOAD:-false}
+  ALPHA_NIVEAU_JOURNAL: ${ALPHA_NIVEAU_JOURNAL:-INFO}
+  EMAIL_HOST: ${EMAIL_HOST:?EMAIL_HOST manquant dans .env.prod}
+  EMAIL_PORT: ${EMAIL_PORT:-587}
+  EMAIL_HOST_USER: ${EMAIL_HOST_USER:-}
+  EMAIL_HOST_PASSWORD: ${EMAIL_HOST_PASSWORD:-}
+  EMAIL_USE_TLS: ${EMAIL_USE_TLS:-true}
+  EMAIL_USE_SSL: ${EMAIL_USE_SSL:-false}
+  DEFAULT_FROM_EMAIL: ${DEFAULT_FROM_EMAIL:?DEFAULT_FROM_EMAIL manquant dans .env.prod}
+  ALPHA_EMAIL_SECURITE_FYXOP: ${ALPHA_EMAIL_SECURITE_FYXOP:?ALPHA_EMAIL_SECURITE_FYXOP manquant dans .env.prod}
+  # Répertoire des fichiers déposés (volume « media », sauvegardé chaque nuit).
+  ALPHA_MEDIA_ROOT: /app/media
+
+# Durcissement commun aux conteneurs applicatifs (utilisateurs non root).
+x-durci: &durci
+  read_only: true
+  tmpfs:
+    - /tmp
+  cap_drop: [ALL]
+  security_opt:
+    - no-new-privileges:true
+
+# Sonde du backend : /api/v1/sante/ (à fournir par le backend, voir
+# docs/ops/monitoring.md). Toute réponse HTTP < 500 compte comme « vivant » :
+# tant que la route n'existe pas, le 404 de Django prouve déjà que gunicorn et
+# Django répondent ; ensuite, la route renverra 503 si la base ou Redis manquent.
+# (/api/v1/schema/ n'est plus utilisable : il sera coupé en production.)
+x-sonde-backend: &sonde-backend
+  test:
+    - CMD
+    - python
+    - -c
+    - |
+      import sys, urllib.request, urllib.error
+      try:
+          code = urllib.request.urlopen("http://127.0.0.1:8000/api/v1/sante/", timeout=4).status
+      except urllib.error.HTTPError as e:
+          code = e.code
+      except Exception:
+          sys.exit(1)
+      sys.exit(0 if code < 500 else 1)
+  interval: 15s
+  timeout: 6s
+  retries: 5
+  start_period: 40s
+
+services:
+  db:
+    # Réglages pour 2 Go de mémoire (§ 1.3 : shared_buffers=512MB).
+    command:
+      - postgres
+      - -c
+      - shared_buffers=512MB
+      - -c
+      - effective_cache_size=1536MB
+      - -c
+      - work_mem=8MB
+      - -c
+      - maintenance_work_mem=128MB
+      - -c
+      - max_connections=60
+      - -c
+      - wal_compression=on
+      - -c
+      - log_min_duration_statement=1000
+      - -c
+      - log_lock_waits=on
+      - -c
+      - password_encryption=scram-sha-256
+    shm_size: 256m
+    deploy:
+      resources:
+        limits:
+          memory: 2g
+    stop_grace_period: 60s
+    logging: *journaux
+
+  redis:
+    # Persistance AOF : les tâches Celery en file survivent à un redémarrage.
+    # volatile-lru : seules les clés à durée de vie (cache) peuvent être évincées,
+    # jamais les messages du broker.
+    command: ["redis-server", "--appendonly", "yes", "--save", "", "--maxmemory", "192mb", "--maxmemory-policy", "volatile-lru"]
+    volumes:
+      - redisdata:/data
+    deploy:
+      resources:
+        limits:
+          memory: 256m
+    logging: *journaux
+
+  migrate:
+    <<: [*image-backend, *durci]
+    # Jamais de construction ici : « !reset » doit figurer dans le service
+    # lui-même (il est perdu à travers une fusion YAML « <<: »).
+    build: !reset null
+    environment:
+      <<: *env-prod
+    deploy:
+      resources:
+        limits:
+          memory: 512m
+    logging: *journaux
+
+  backend:
+    <<: [*image-backend, *durci]
+    build: !reset null
+    # Pas de --access-logfile : Caddy journalise déjà les accès, en masquant les
+    # jetons des URL (activation, réinitialisation) que gunicorn écrirait en clair.
+    command: ["sh", "-c", "exec gunicorn config.wsgi:application --bind 0.0.0.0:8000 --workers $${ALPHA_GUNICORN_WORKERS:-3} --threads 2 --timeout 60 --graceful-timeout 25 --max-requests 2000 --max-requests-jitter 200 --forwarded-allow-ips '*' --worker-tmp-dir /tmp"]
+    environment:
+      <<: *env-prod
+      ALPHA_GUNICORN_WORKERS: ${ALPHA_GUNICORN_WORKERS:-3}
+    volumes:
+      - media:/app/media
+    networks:
+      interne: {}
+      sortie: {}
+      web:
+        aliases: [prod-backend]
+    healthcheck: *sonde-backend
+    stop_grace_period: 30s
+    deploy:
+      resources:
+        limits:
+          memory: 1g
+    logging: *journaux
+
+  worker:
+    <<: [*image-backend, *durci]
+    build: !reset null
+    command: ["sh", "-c", "exec celery -A config worker -Q defaut,celery -c $${ALPHA_CELERY_CONCURRENCE:-2} -l info --max-tasks-per-child 200"]
+    environment:
+      <<: *env-prod
+      ALPHA_CELERY_CONCURRENCE: ${ALPHA_CELERY_CONCURRENCE:-2}
+    volumes:
+      - media:/app/media
+    networks:
+      interne: {}
+      sortie: {}
+    # Arrêt « à chaud » : Celery termine les tâches en cours avant de s'arrêter.
+    stop_grace_period: 90s
+    deploy:
+      resources:
+        limits:
+          memory: 512m
+    logging: *journaux
+
+  beat:
+    <<: [*image-backend, *durci]
+    build: !reset null
+    environment:
+      <<: *env-prod
+    deploy:
+      resources:
+        limits:
+          memory: 256m
+    logging: *journaux
+
+  frontend:
+    image: alpha-frontend:${ALPHA_VERSION:?ALPHA_VERSION manquant, passez par scripts/deploy.sh}
+    build: !reset null
+    pull_policy: never
+    <<: *durci
+    tmpfs:
+      - /tmp
+      - /app/.next/cache
+    environment:
+      NODE_ENV: production
+      HOSTNAME: 0.0.0.0
+      PORT: "3000"
+      # Lue à l’exécution par Next : « production » masque /demo (src/app/demo/page.tsx).
+      ALPHA_ENVIRONNEMENT: production
+    networks:
+      interne: {}
+      web:
+        aliases: [prod-frontend]
+    stop_grace_period: 20s
+    deploy:
+      resources:
+        limits:
+          memory: 512m
+    logging: *journaux
+
+volumes:
+  # Fichiers déposés par les utilisateurs (pièces jointes à venir) : sauvegardés.
+  media:
+  redisdata:
+
+networks:
+  # Réseau des services : aucun accès à Internet (db et redis n'en ont pas besoin).
+  interne:
+    internal: true
+  # Sortie Internet (SMTP) pour backend et worker uniquement.
+  sortie:
+  # Partagé avec Caddy ; créé par `scripts/deploy.sh reseaux` (interne, sans sortie).
+  web:
+    name: alpha-prod-web
+    external: true
