@@ -23,17 +23,25 @@ from alpha.tenancy.contexte import contexte_tenant
 from alpha.tenancy.exceptions import ViolationTenant
 from tests.appli_test.models import NoteTest
 
-from .conftest import ALIAS_APP
+from .bd import ALIAS_APP, ALIAS_AUDIT
 
 UTILISATEUR = uuid.UUID("11111111-2222-4333-8444-555555555555")
 
 
+def _contexte_de_la_chaine(etablissement_id):
+    """Contexte qui peut LIRE une chaîne sous alpha_app (RLS ``audit_lecture``)."""
+    if etablissement_id is None:
+        return contexte_tenant(None, scope=contexte.SCOPE_PLATFORM)
+    return contexte_tenant(etablissement_id)
+
+
 def _relire(evenement) -> EvenementAudit:
-    """Relit l'événement (connexion propriétaire). Sans pk (insertion sans RETURNING,
-    ligne illisible sous le contexte courant) : le dernier événement écrit."""
-    if evenement.pk is None:
-        return EvenementAudit.objects.order_by("-id").first()
-    return EvenementAudit.objects.get(pk=evenement.pk)
+    """Relit l'événement sous le contexte de sa chaîne. Sans pk (insertion sans RETURNING,
+    ligne illisible sous le contexte d'écriture) : le dernier événement de la chaîne."""
+    with _contexte_de_la_chaine(evenement.etablissement_id):
+        if evenement.pk is None:
+            return EvenementAudit.objects.filter(etablissement=None).order_by("-id").first()
+        return EvenementAudit.objects.get(pk=evenement.pk)
 
 
 # --- Contexte et acteur ------------------------------------------------------------------------
@@ -237,27 +245,29 @@ def test_par_defaut_l_evenement_suit_la_transaction(etab_a):
     with pytest.raises(RuntimeError), contexte_tenant(etab_a.id):
         journaliser("role.modifie", Categorie.PARAMETRAGE)
         raise RuntimeError("action annulée")
-    assert not EvenementAudit.objects.exists()
+    with contexte_tenant(etab_a.id):
+        assert not EvenementAudit.objects.exists()
 
 
-@pytest.mark.django_db(transaction=True, databases=["default", ALIAS_APP, "audit"])
+@pytest.mark.django_db(transaction=True, databases=[ALIAS_APP, ALIAS_AUDIT])
 def test_hors_transaction_survit_a_l_annulation(etab_a):
     with pytest.raises(RuntimeError), contexte_tenant(etab_a.id, using=ALIAS_APP):
         evenement = journaliser("auth.connexion.echec", Categorie.CONNEXION, hors_transaction=True)
         assert evenement.seq == 1
         raise RuntimeError("vue annulée")
-    lignes = list(EvenementAudit.objects.values_list("etablissement_id", "action"))
+    with contexte_tenant(etab_a.id):
+        lignes = list(EvenementAudit.objects.values_list("etablissement_id", "action"))
     assert lignes == [(etab_a.id, "auth.connexion.echec")]
     # La connexion indépendante est en alpha_app (soumise à la RLS), pas en propriétaire.
-    with connections["audit"].cursor() as curseur:
+    with connections[ALIAS_AUDIT].cursor() as curseur:
         curseur.execute("SELECT current_user")
         assert curseur.fetchone()[0] == connections[ALIAS_APP].settings_dict["USER"]
-    with transaction.atomic(using="audit"), connections["audit"].cursor() as curseur:
+    with transaction.atomic(using=ALIAS_AUDIT), connections[ALIAS_AUDIT].cursor() as curseur:
         curseur.execute("SELECT count(*) FROM evenement_audit")
         assert curseur.fetchone()[0] == 0  # sans contexte : rien de lisible
 
 
-@pytest.mark.django_db(transaction=True, databases=["default", "audit"])
+@pytest.mark.django_db(transaction=True, databases=[ALIAS_APP, ALIAS_AUDIT])
 @override_settings(ROOT_URLCONF="tests.appli_test.vues")
 def test_regle_des_vues_d_authentification(client):
     """§ 3.3 : une vue qui RETOURNE 401 garde l'événement ; une vue qui LÈVE le perd,
@@ -265,5 +275,6 @@ def test_regle_des_vues_d_authentification(client):
     assert client.post("/audit/echec-401/").status_code == 401
     assert client.post("/audit/echec-exception/").status_code == 403
     assert client.post("/audit/echec-independant/").status_code == 403
-    conserves = set(EvenementAudit.objects.values_list("objet_libelle", flat=True))
+    with _contexte_de_la_chaine(None):  # requêtes anonymes : chaîne de la plateforme
+        conserves = set(EvenementAudit.objects.values_list("objet_libelle", flat=True))
     assert conserves == {"retour@test", "independant@test"}

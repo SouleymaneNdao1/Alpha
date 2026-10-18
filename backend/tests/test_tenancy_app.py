@@ -1,8 +1,9 @@
 """Barrière applicative (tâche B2) : TenantManager, TenantModel.save, contexte_tenant,
 middlewares et décorateur tache_tenant.
 
-Ces tests passent par la connexion ``default`` (alpha_owner, BYPASSRLS) : la RLS
-ne filtre rien, ce qui isole le comportement du code applicatif.
+Ces tests passent par la connexion ``default`` (alpha_app, montage T1) : la RLS
+s'applique AUSSI. Pour vérifier qu'une écriture a bien eu lieu (ou non), on relit
+donc sous le contexte de l'établissement concerné.
 """
 
 from __future__ import annotations
@@ -53,7 +54,8 @@ def test_tenant_manager_filtre_sur_le_contexte(etab_a, etab_b):
         assert list(ParametresEtablissement.objects.values_list("etablissement", flat=True)) == [
             etab_a.id
         ]
-    assert NoteTest.objets_globaux.count() == 2
+    with contexte_tenant(etab_b.id):
+        assert [n.texte for n in NoteTest.objects.all()] == ["sfd-b"]
 
 
 def test_parametres_valeurs_par_defaut_validees(etab_a):
@@ -86,7 +88,8 @@ def test_save_renseigne_l_etablissement_courant(etab_a):
 def test_save_refuse_un_autre_etablissement(etab_a, etab_b):
     with contexte_tenant(etab_a.id), pytest.raises(ViolationTenant):
         NoteTest(texte="intrus", etablissement=etab_b).save()
-    assert NoteTest.objets_globaux.count() == 0
+    with contexte_tenant(etab_b.id):
+        assert NoteTest.objects.count() == 0
 
 
 def test_save_refuse_sans_contexte(etab_a):
@@ -110,7 +113,9 @@ def test_bulk_create_controle_l_etablissement(etab_a, etab_b):
         NoteTest.objects.bulk_create([NoteTest(texte="1"), NoteTest(texte="2")])
         with pytest.raises(ViolationTenant):
             NoteTest.objects.bulk_create([NoteTest(texte="3", etablissement=etab_b)])
-    assert set(NoteTest.objets_globaux.values_list("etablissement", flat=True)) == {etab_a.id}
+        assert NoteTest.objects.count() == 2
+    with contexte_tenant(etab_b.id):
+        assert NoteTest.objects.count() == 0
 
 
 # --- contexte_tenant ------------------------------------------------------------------------
@@ -143,7 +148,8 @@ def test_contexte_tenant_restaure_aussi_apres_une_exception(etab_a, etab_b):
         assert contexte.tenant_courant() == etab_a.id
         # Le point de sauvegarde annulé rétablit les variables SQL… et annule l'écriture.
         assert _variables_sql() == (str(etab_a.id), "tenant")
-    assert NoteTest.objets_globaux.count() == 0
+    with contexte_tenant(etab_b.id):
+        assert NoteTest.objects.count() == 0
 
 
 def test_contexte_tenant_conserve_l_utilisateur_par_defaut(etab_a):
@@ -175,6 +181,12 @@ def test_contexte_tenant_refuse_un_objet_orm(etab_a):
 
 
 # --- Middlewares --------------------------------------------------------------------------
+
+
+def _changer_statut(etablissement: Etablissement, statut: str) -> None:
+    """Changement de statut : écriture réservée à la portée « platform » (RLS)."""
+    with contexte_tenant(None, scope=contexte.SCOPE_PLATFORM):
+        Etablissement.objects.filter(id=etablissement.id).update(statut=statut)
 
 
 def _client_tenant(etablissement: Etablissement, scope: str = "tenant") -> Client:
@@ -237,7 +249,7 @@ def test_lecture_du_contexte_de_session(rf, session, attendu):
 
 @override_settings(ROOT_URLCONF="tests.appli_test.vues")
 def test_statut_lecture_seule_refuse_les_ecritures(etab_a):
-    Etablissement.objects.filter(id=etab_a.id).update(statut="LECTURE_SEULE")
+    _changer_statut(etab_a, "LECTURE_SEULE")
     client = _client_tenant(etab_a)
     assert client.get("/ecriture/").status_code == 200
     reponse = client.post("/ecriture/")
@@ -250,7 +262,7 @@ def test_statut_lecture_seule_refuse_les_ecritures(etab_a):
 @pytest.mark.parametrize("statut", ["SUSPENDU", "ARCHIVE"])
 @override_settings(ROOT_URLCONF="tests.appli_test.vues")
 def test_statut_suspendu_refuse_tout(etab_a, statut):
-    Etablissement.objects.filter(id=etab_a.id).update(statut=statut)
+    _changer_statut(etab_a, statut)
     client = _client_tenant(etab_a)
     reponse = client.get("/contexte/")
     assert reponse.status_code == 403
@@ -312,9 +324,11 @@ def test_tache_tenant_est_atomique(etab_a):
 
     with transaction.atomic(), pytest.raises(RuntimeError):
         _tache_qui_echoue(str(etab_a.id))
-    assert NoteTest.objets_globaux.count() == 0
+    with contexte_tenant(etab_a.id):
+        assert NoteTest.objects.count() == 0
 
 
 def test_creer_etablissement_outil(db):
     etab = creer_etablissement("pme-c", type="PME")
-    assert ParametresEtablissement.objets_globaux.filter(etablissement=etab).exists()
+    with contexte_tenant(etab.id):
+        assert ParametresEtablissement.objects.filter(etablissement=etab).exists()

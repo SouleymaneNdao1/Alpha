@@ -1,7 +1,9 @@
 """Vérification des chaînes, détection d'altération, commande et ancrage (B4, § 6.4, § 6.5, P7).
 
-Les altérations sont faites comme le ferait un administrateur de la base : par la
-connexion propriétaire, trigger d'immutabilité désactivé le temps de l'opération.
+Les vérifications tournent sous alpha_app (``default``, montage T1). Les altérations
+sont faites comme le ferait un administrateur de la base : par l'alias ``proprietaire``
+(alpha_owner), trigger d'immutabilité désactivé le temps de l'opération. Les relectures
+« toutes chaînes confondues » passent aussi par ``proprietaire`` (hors RLS).
 """
 
 from __future__ import annotations
@@ -14,7 +16,7 @@ from django.conf import settings
 from django.core import mail
 from django.core.management import call_command
 from django.core.management.base import CommandError
-from django.db import connection, transaction
+from django.db import connections, transaction
 from django.test import override_settings
 
 from alpha.audit import canonique, tasks
@@ -31,9 +33,9 @@ from alpha.tenancy.contexte import contexte_tenant
 from alpha.tenancy.models import ParametresEtablissement
 from config.celery import app as application_celery
 
-from .conftest import ALIAS_APP, BASES_APP
+from .bd import ALIAS_APP, ALIAS_PROPRIETAIRE, BASES_PROPRIETAIRE
 
-pytestmark = pytest.mark.django_db(transaction=True, databases=BASES_APP)
+pytestmark = pytest.mark.django_db(transaction=True, databases=BASES_PROPRIETAIRE)
 
 FYXOP = "securite@fyxop.test"
 AUDITEUR_A = "controle.interne@banque-a.test"
@@ -49,7 +51,10 @@ def _ecrire(etablissement_id, n: int) -> None:
 
 def _alterer(requete: str, params=None) -> None:
     """Modification « hors application » : trigger désactivé par le propriétaire."""
-    with transaction.atomic(), connection.cursor() as curseur:
+    with (
+        transaction.atomic(using=ALIAS_PROPRIETAIRE),
+        connections[ALIAS_PROPRIETAIRE].cursor() as curseur,
+    ):
         curseur.execute("ALTER TABLE evenement_audit DISABLE TRIGGER evenement_audit_sans_maj")
         curseur.execute(requete, params or [])
         curseur.execute("ALTER TABLE evenement_audit ENABLE TRIGGER evenement_audit_sans_maj")
@@ -61,7 +66,13 @@ def _verifier(etablissement_id) -> ControleIntegriteAudit:
 
 
 def _evenement(etab, seq) -> EvenementAudit:
-    return EvenementAudit.objects.get(etablissement=etab, seq=seq)
+    with contexte_tenant(etab.id):
+        return EvenementAudit.objects.get(etablissement=etab, seq=seq)
+
+
+def _controles():
+    """Tous les contrôles, toutes chaînes confondues (lecture hors RLS par le propriétaire)."""
+    return ControleIntegriteAudit.objects.using(ALIAS_PROPRIETAIRE)
 
 
 @pytest.fixture
@@ -195,7 +206,8 @@ def test_rupture_journalisee_et_alerte_envoyee(chaine_a):
     mail.outbox.clear()
     controle = _verifier(chaine_a.id)
     assert controle.statut == StatutControle.ROMPUE
-    alerte = EvenementAudit.objects.get(etablissement=chaine_a, action=ACTION_RUPTURE)
+    with contexte_tenant(chaine_a.id):
+        alerte = EvenementAudit.objects.get(etablissement=chaine_a, action=ACTION_RUPTURE)
     assert (alerte.categorie, alerte.acteur_type) == (Categorie.SECURITE, "SYSTEME")
     assert alerte.objet_id == str(controle.id)
     assert [m.to for m in mail.outbox] == [[FYXOP]]
@@ -212,7 +224,8 @@ def test_erreur_technique_enregistree(chaine_a, monkeypatch):
     monkeypatch.setattr(verification, "_parcourir", panne)
     controle = _verifier(chaine_a.id)
     assert controle.statut == StatutControle.ERREUR
-    assert ControleIntegriteAudit.objects.get(pk=controle.pk).statut == "ERREUR"
+    with contexte_tenant(chaine_a.id):
+        assert ControleIntegriteAudit.objects.get(pk=controle.pk).statut == "ERREUR"
 
 
 # --- Commande verifier_chaine_audit -------------------------------------------------------------
@@ -225,7 +238,7 @@ def test_commande_tous(chaine_a, etab_b):
     assert "banque-a : INTACTE — 5 événement(s)" in texte
     assert "sfd-b : INTACTE" in texte
     assert "plateforme : INTACTE" in texte
-    assert set(ControleIntegriteAudit.objects.values_list("declencheur", flat=True)) == {"MANUEL"}
+    assert set(_controles().values_list("declencheur", flat=True)) == {"MANUEL"}
 
 
 def test_commande_code_de_sortie_2_si_rompue(chaine_a):
@@ -279,14 +292,14 @@ def test_ancrage_enregistre_un_controle_et_prepare_les_emails(auditeur_a, etab_b
 
     tasks.envoyer_ancres.delay()
 
-    controle_a = ControleIntegriteAudit.objects.get(etablissement=auditeur_a)
+    controle_a = _controles().get(etablissement=auditeur_a)
     assert (controle_a.statut, controle_a.declencheur, controle_a.dernier_seq) == (
         "INTACTE",
         "PLANIFIE",
         3,
     )
-    assert ControleIntegriteAudit.objects.filter(etablissement=etab_b).count() == 1
-    assert ControleIntegriteAudit.objects.filter(etablissement__isnull=True).count() == 1
+    assert _controles().filter(etablissement=etab_b).count() == 1
+    assert _controles().filter(etablissement__isnull=True).count() == 1
 
     par_destinataire: dict[str, list] = {}
     for message in mail.outbox:
@@ -307,10 +320,10 @@ def test_ancrage_enregistre_un_controle_et_prepare_les_emails(auditeur_a, etab_b
 def test_ancrage_reutilise_le_controle_de_la_nuit(auditeur_a):
     _ecrire(auditeur_a.id, 2)
     tasks.verifier_toutes_chaines.delay()  # 02:00
-    assert ControleIntegriteAudit.objects.filter(etablissement=auditeur_a).count() == 1
+    assert _controles().filter(etablissement=auditeur_a).count() == 1
     mail.outbox.clear()
     tasks.envoyer_ancre.delay(str(auditeur_a.id))  # 02:30
-    assert ControleIntegriteAudit.objects.filter(etablissement=auditeur_a).count() == 1
+    assert _controles().filter(etablissement=auditeur_a).count() == 1
     assert sorted(m.to[0] for m in mail.outbox) == sorted([AUDITEUR_A, FYXOP])
 
 
@@ -335,4 +348,4 @@ def test_aucun_email_si_la_transaction_est_annulee(auditeur_a):
         ancrage.ancrer(auditeur_a.id)
         raise RuntimeError("annulation")
     assert mail.outbox == []
-    assert not ControleIntegriteAudit.objects.exists()
+    assert not _controles().exists()
