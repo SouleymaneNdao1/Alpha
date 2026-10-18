@@ -13,11 +13,15 @@ Les routes métier sont ajoutées par les tâches suivantes :
 """
 
 from django.conf import settings
-from django.urls import path
+from django.urls import include, path
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 
 urlpatterns = [
     path("api/v1/schema/", SpectacularAPIView.as_view(), name="schema"),
+    # Administration de l'établissement (§ 5.5, B7).
+    path("api/v1/admin/", include("alpha.comptes.urls_admin")),
+    path("api/v1/admin/", include("alpha.organisation.urls_admin")),
+    path("api/v1/admin/", include("alpha.tenancy.urls_admin")),
 ]
 
 if settings.ALPHA_DOC_API_ACTIVE:
