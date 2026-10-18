@@ -145,6 +145,17 @@ class AffectationRoleQuerySet(TenantQuerySet):
         jour = a_la_date or timezone.localdate()
         return self.filter(Q(fin__isnull=True) | Q(fin__gte=jour), debut__lte=jour)
 
+    def en_cours(self, a_la_date: datetime.date | None = None):
+        """Affectations commencées et non terminées (``fin`` NULL), au sens des habilitations.
+
+        Ajout B7 : c'est la définition retenue pour les permissions de l'API et pour
+        l'invariant « dernier administrateur ». Une affectation terminée par
+        l'administrateur (``fin`` = jour de clôture) cesse d'ouvrir des droits
+        immédiatement, alors que ``actives()`` la compte encore jusqu'à minuit.
+        """
+        jour = a_la_date or timezone.localdate()
+        return self.filter(fin__isnull=True, debut__lte=jour)
+
 
 class AffectationRoleManager(TenantManager.from_queryset(AffectationRoleQuerySet)):
     pass

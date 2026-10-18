@@ -5,7 +5,8 @@ Ce module fournit de quoi le vérifier ; la vérification elle-même est faite p
 la tâche B8 (création de la délégation).
 
 Au S1, les pouvoirs d'un utilisateur sont :
-- ses habilitations en vigueur : couples (rôle actif, unité) de ses affectations,
+- ses habilitations en vigueur : couples (rôle actif, unité) de ses affectations
+  en cours (``AffectationRole.objects.en_cours()``, fin NULL),
   l'unité ``None`` signifiant « tout l'établissement » ;
 - l'union des codes de permission système de ces rôles.
 
@@ -46,7 +47,10 @@ class Pouvoirs:
 
         ``role_id`` : limite au rôle donné (délégation limitée à un rôle, § 2.2).
         """
-        affectations = AffectationRole.objects.actives(a_la_date).filter(
+        # Affectations EN COURS (fin NULL) : même définition que les permissions de
+        # l'API (B7, ``permissions.permissions_de``) ; une affectation terminée le jour
+        # même ne compte plus (ajout B8).
+        affectations = AffectationRole.objects.en_cours(a_la_date).filter(
             utilisateur_id=utilisateur_id, role__actif=True
         )
         if role_id is not None:

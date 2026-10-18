@@ -249,9 +249,18 @@ SPECTACULAR_SETTINGS = {
     "COMPONENT_SPLIT_REQUEST": True,
     "SERVE_PERMISSIONS": ["rest_framework.permissions.AllowAny"],
     "SERVE_AUTHENTICATION": [],
+    # Noms explicites des énumérations homonymes (champs « statut », B8).
+    "ENUM_NAME_OVERRIDES": {
+        "StatutAbsenceEnum": "alpha.delegations.models.StatutAbsence",
+        "StatutDelegationEnum": "alpha.delegations.models.StatutDelegation",
+    },
 }
-# Documentation interactive (/api/v1/docs/) : dev et recette uniquement (§ 5).
+# Schéma OpenAPI (/api/v1/schema/) et documentation interactive (/api/v1/docs/) :
+# montés seulement si ALPHA_DOC_API_ACTIVE (dev, test, recette ; jamais en production).
+# ALPHA_DOC_API_RESERVEE_CONNECTES : en recette, réservés aux utilisateurs connectés
+# (décision du client) ; en dev et en test, ouverts (génération des types du frontend).
 ALPHA_DOC_API_ACTIVE = False
+ALPHA_DOC_API_RESERVEE_CONNECTES = False
 
 # --- Celery (§ 3.7, § 6.5) -----------------------------------------------------------------
 CELERY_BROKER_URL = env("CELERY_BROKER_URL")
@@ -285,6 +294,15 @@ CELERY_BEAT_SCHEDULE: dict = {
     "audit-envoyer-ancres": {
         "task": "audit.envoyer_ancres",
         "schedule": crontab(hour=2, minute=30),
+    },
+    # B8 : entrée en vigueur et clôture des délégations à leurs dates (idempotentes).
+    "delegations-activer": {
+        "task": "delegations.activer_delegations",
+        "schedule": crontab(minute="*/5"),
+    },
+    "delegations-cloturer": {
+        "task": "delegations.cloturer_delegations",
+        "schedule": crontab(minute="*/5"),
     },
 }
 
