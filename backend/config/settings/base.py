@@ -40,9 +40,6 @@ INSTALLED_APPS = [
 ]
 
 # --- Middlewares (ordre du § 3.3) ---------------------------------------------------
-# À ajouter par la tâche B5, à sa place :
-#   alpha.comptes.middleware.SessionActiviteMiddleware  après AuthenticationMiddleware,
-#   avant StatutEtablissementMiddleware.
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
@@ -51,6 +48,8 @@ MIDDLEWARE = [
     "alpha.tenancy.middleware.TenantContextMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
+    # Révocation, inactivité, durée maximale des sessions d'appareil (B5, § 4.8).
+    "alpha.comptes.middleware.SessionActiviteMiddleware",
     # SUSPENDU → 403, LECTURE_SEULE → 423 sur écriture (B2).
     "alpha.tenancy.middleware.StatutEtablissementMiddleware",
     # En-tête X-Frame-Options (anti-clickjacking), en complément de Caddy.
@@ -165,8 +164,8 @@ AUTH_USER_MODEL = "comptes.Utilisateur"
 # --- Mots de passe (§ 4.9) ----------------------------------------------------------
 # Argon2id uniquement : aucun autre hacheur n'est accepté.
 PASSWORD_HASHERS = ["django.contrib.auth.hashers.Argon2PasswordHasher"]
-# Validateurs standards ; les règles propres à ALPHA (3 catégories sur 4,
-# historique, années de naissance) sont ajoutées avec le modèle Utilisateur (B3/B5).
+# Validateurs standards, puis règles propres à ALPHA (B5) : longueur réglée par
+# l'établissement, 3 catégories sur 4, années de naissance, historique (P3).
 AUTH_PASSWORD_VALIDATORS = [
     {
         "NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator",
@@ -178,11 +177,18 @@ AUTH_PASSWORD_VALIDATORS = [
     },
     {"NAME": "django.contrib.auth.password_validation.CommonPasswordValidator"},
     {"NAME": "django.contrib.auth.password_validation.NumericPasswordValidator"},
+    {"NAME": "alpha.comptes.mots_de_passe.LongueurEtablissementValidator"},
+    {"NAME": "alpha.comptes.mots_de_passe.CategoriesValidator"},
+    {"NAME": "alpha.comptes.mots_de_passe.AnneeNaissanceValidator"},
+    {"NAME": "alpha.comptes.mots_de_passe.HistoriqueValidator"},
 ]
 
 # --- Secrets applicatifs (§ 4.4, § 4.9) ------------------------------------------------
 # Clés MultiFernet : la première chiffre, toutes déchiffrent.
 ALPHA_CLES_CHIFFREMENT = env.list("ALPHA_CLES_CHIFFREMENT")
+# Version de la clé courante (authenticator_totp.cle_version) : à incrémenter à
+# chaque rotation, puis « manage.py rechiffrer_secrets » (B5).
+ALPHA_CLES_CHIFFREMENT_VERSION = env.int("ALPHA_CLES_CHIFFREMENT_VERSION", default=1)
 # Poivre HMAC-SHA256 des codes de secours et des clés de limitation de débit.
 ALPHA_HMAC_POIVRE = env("ALPHA_HMAC_POIVRE")
 
@@ -209,11 +215,11 @@ SERVER_EMAIL = DEFAULT_FROM_EMAIL
 # Adresse sécurité FYXOP (réglage de plateforme) : ancre quotidienne de toutes les
 # chaînes et alerte immédiate en cas de rupture. Vide : aucun envoi vers FYXOP.
 ALPHA_EMAIL_SECURITE_FYXOP = env("ALPHA_EMAIL_SECURITE_FYXOP", default="")
-# Points de raccordement (B3) : chemins pointés, None tant que Utilisateur n'existe pas.
+# Points de raccordement (branchés par B5) :
 #   uuid -> alpha.audit.services.Acteur | None   (libellé figé de l'acteur courant)
-ALPHA_AUDIT_RESOLVEUR_ACTEUR = None
+ALPHA_AUDIT_RESOLVEUR_ACTEUR = "alpha.comptes.audit.resoudre_acteur"
 #   etablissement_id -> list[str]                (titulaires de audit.lecture, alerte de rupture)
-ALPHA_AUDIT_DESTINATAIRES_AUDIT_LECTURE = None
+ALPHA_AUDIT_DESTINATAIRES_AUDIT_LECTURE = "alpha.comptes.audit.destinataires_audit_lecture"
 
 # --- Django REST framework (§ 5) ----------------------------------------------------------
 REST_FRAMEWORK = {
