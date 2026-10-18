@@ -1,8 +1,9 @@
 """Modèles et contraintes des comptes et de l'organisation (tâche B3).
 
-Connexion ``default`` (alpha_owner) : on vérifie ici les contraintes SQL et la
-première barrière (managers, ``save``) ; la RLS est vérifiée en alpha_app dans
-``test_comptes_rls.py``.
+Connexion ``default`` (alpha_app, montage T1) : on vérifie ici les contraintes SQL et
+la première barrière (managers, ``save``), sous le contexte de l'établissement concerné ;
+la RLS elle-même est vérifiée dans ``test_comptes_rls.py``. Une contrainte que la RLS
+masque (elle refuse avant) est vérifiée en plus par l'alias ``proprietaire``.
 """
 
 from __future__ import annotations
@@ -13,7 +14,7 @@ import uuid
 import pytest
 from django.conf import settings
 from django.contrib.auth import get_user_model
-from django.db import IntegrityError, connection, transaction
+from django.db import IntegrityError, ProgrammingError, connection, transaction
 
 from alpha.comptes.models import StatutUtilisateur, Utilisateur
 from alpha.core import contexte
@@ -35,6 +36,7 @@ from alpha.tenancy.contexte import contexte_tenant
 from alpha.tenancy.exceptions import TenantNonDefini, ViolationTenant
 from alpha.tenancy.models import Etablissement
 
+from .bd import ALIAS_PROPRIETAIRE, BASES_PROPRIETAIRE
 from .conftest import creer_etablissement
 from .outils_comptes import creer_jeton, creer_super_admin, creer_utilisateur
 
@@ -106,10 +108,24 @@ def test_un_seul_etablissement_par_utilisateur(etab_a, etab_b):
         with pytest.raises(ViolationTenant):
             u.save()
     # Un utilisateur d'établissement a toujours un établissement, un super-admin jamais.
-    with _echoue("utilisateur_super_admin_sans_etab"), transaction.atomic():
-        Utilisateur.objets_globaux.filter(pk=u.pk).update(etablissement=None)
-    with _echoue("utilisateur_super_admin_sans_etab"), transaction.atomic():
+    with _echoue("utilisateur_super_admin_sans_etab"), contexte_tenant(etab_a.id):
         Utilisateur.objets_globaux.filter(pk=u.pk).update(est_super_admin=True)
+    # Retirer l'établissement : la RLS refuse avant même la contrainte…
+    with (
+        pytest.raises(ProgrammingError, match="row-level security"),
+        contexte_tenant(etab_a.id),
+    ):
+        Utilisateur.objets_globaux.filter(pk=u.pk).update(etablissement=None)
+
+
+@pytest.mark.django_db(transaction=True, databases=BASES_PROPRIETAIRE)
+def test_contrainte_super_admin_sans_etablissement_hors_rls(etab_a):
+    # … et la contrainte SQL tient seule, même pour le propriétaire (BYPASSRLS).
+    u = creer_utilisateur(etab_a, "a@banque-a.test")
+    with _echoue("utilisateur_super_admin_sans_etab"), transaction.atomic(using=ALIAS_PROPRIETAIRE):
+        Utilisateur.objets_globaux.using(ALIAS_PROPRIETAIRE).filter(pk=u.pk).update(
+            etablissement=None
+        )
 
 
 def test_manager_utilisateur_echoue_ferme_sans_contexte(etab_a):
@@ -151,7 +167,7 @@ def test_contraintes_utilisateur(etab_a):
     with _echoue("utilisateur_statut_valide"), transaction.atomic():
         creer_utilisateur(etab_a, "s@banque-a.test", statut="INCONNU")
     u = creer_utilisateur(etab_a, "ok@banque-a.test", telephone_mobile="+221771234567")
-    with _echoue("utilisateur_responsable_different"), transaction.atomic():
+    with _echoue("utilisateur_responsable_different"), contexte_tenant(etab_a.id):
         Utilisateur.objets_globaux.filter(pk=u.pk).update(responsable=u)
 
 
@@ -159,7 +175,8 @@ def test_cree_par_etablissement(etab_a):
     sa = creer_super_admin()
     with contexte_tenant(None, scope=contexte.SCOPE_PLATFORM):
         Etablissement.objects.filter(pk=etab_a.pk).update(cree_par=sa)
-    etab_a.refresh_from_db()
+    with contexte_tenant(etab_a.id):
+        etab_a.refresh_from_db()
     assert etab_a.cree_par_id == sa.id
 
 
@@ -173,7 +190,7 @@ def test_jeton_empreinte_et_contexte(etab_a, etab_b):
     assert len(jeton.jeton_hash) == 64
     with contexte_tenant(etab_b.id):
         assert not type(jeton).objects.filter(pk=jeton.pk).exists()
-    with _echoue("jeton_hash_format"), transaction.atomic():
+    with _echoue("jeton_hash_format"), contexte_tenant(etab_a.id):
         type(jeton).objets_globaux.filter(pk=jeton.pk).update(jeton_hash="Z" * 64)
 
 

@@ -1,7 +1,7 @@
 """Utilitaires de test des comptes et de l'organisation (tâche B3).
 
-Les créations passent par la connexion ``default`` (alpha_owner) sous le
-contexte de l'établissement visé, comme le ferait le provisionnement.
+Les créations passent par la connexion ``default`` (alpha_app depuis T1, soumise à
+la RLS) sous le contexte de l'établissement visé, comme le ferait le provisionnement.
 """
 
 from __future__ import annotations

@@ -26,10 +26,11 @@ from alpha.organisation.models import AffectationRole, Role, UniteOrganisationne
 from alpha.organisation.roles_defaut import semer_roles_par_defaut
 from alpha.tenancy.contexte import contexte_tenant
 
-from .conftest import ALIAS_APP, BASES_APP
+from .bd import ALIAS_APP
 from .outils_comptes import creer_jeton, creer_super_admin, creer_utilisateur
 
-pytestmark = pytest.mark.django_db(transaction=True, databases=BASES_APP)
+# Tout passe par « default » (alpha_app) : pas besoin de test transactionnel (T1).
+pytestmark = pytest.mark.django_db
 
 TABLES_B3 = (
     "utilisateur",

@@ -2,8 +2,10 @@
 
 Critère de fin de B2 : « RLS active ; requête sans contexte = 0 ligne ».
 
-Ces tests passent par la connexion ``applicatif`` (alpha_app, NOBYPASSRLS) :
-ils vérifient la seconde barrière indépendamment du filtrage applicatif.
+Ces tests passent par la connexion ``default`` (alpha_app, NOBYPASSRLS, montage T1)
+et souvent par SQL brut : ils vérifient la seconde barrière indépendamment du filtrage
+applicatif. Les contrôles « ce qui est réellement en base » passent par l'alias
+``proprietaire`` (alpha_owner, BYPASSRLS), d'où des tests transactionnels.
 """
 
 from __future__ import annotations
@@ -14,16 +16,15 @@ from importlib import import_module
 import pytest
 from django.conf import settings
 from django.db import DatabaseError, connections, transaction
-from django.test import override_settings
 
 from alpha.core import contexte
 from alpha.tenancy.contexte import contexte_tenant
 from alpha.tenancy.models import Etablissement, ParametresEtablissement
 from tests.appli_test.models import NoteTest
 
-from .conftest import ALIAS_APP, BASES_APP
+from .bd import ALIAS_APP, ALIAS_PROPRIETAIRE, BASES_PROPRIETAIRE
 
-pytestmark = pytest.mark.django_db(transaction=True, databases=BASES_APP)
+pytestmark = pytest.mark.django_db(transaction=True, databases=BASES_PROPRIETAIRE)
 
 TABLES_TENANT = ("parametres_etablissement", "note_test")
 
@@ -46,7 +47,7 @@ def _refuse(requete: str, params=None, *, motif: str) -> None:
 
 @pytest.fixture
 def donnees(etab_a, etab_b):
-    """Deux établissements, leurs paramètres et deux notes chacun (validés par alpha_owner)."""
+    """Deux établissements, leurs paramètres et deux notes chacun (validés, sous alpha_app)."""
     for etab in (etab_a, etab_b):
         with contexte_tenant(etab.id):
             NoteTest.objects.create(texte=f"note 1 de {etab.code}")
@@ -81,7 +82,7 @@ def test_sans_contexte_zero_ligne_meme_avec_le_manager_global(donnees):
 
 def test_alpha_owner_voit_tout_bypassrls(donnees):
     # Témoin : le propriétaire (migrations, exploitation) traverse les établissements.
-    assert NoteTest.objets_globaux.count() == 4
+    assert NoteTest.objets_globaux.using(ALIAS_PROPRIETAIRE).count() == 4
 
 
 # --- Avec le contexte A : seulement les lignes de A ----------------------------------------
@@ -127,7 +128,9 @@ def test_insertion_avec_l_etablissement_b_sous_contexte_a_refusee(donnees):
             "INSERT INTO note_test (id, etablissement_id, texte) VALUES (%s, %s, 'ok')",
             [uuid.uuid4(), etab_a.id],
         )
-    assert NoteTest.objets_globaux.filter(etablissement=etab_b).count() == 2
+    assert (
+        NoteTest.objets_globaux.using(ALIAS_PROPRIETAIRE).filter(etablissement=etab_b).count() == 2
+    )
 
 
 def test_insertion_sans_contexte_refusee(donnees):
@@ -154,7 +157,9 @@ def test_deplacer_une_ligne_vers_b_refuse_et_lignes_de_b_intouchables(donnees):
             assert curseur.rowcount == 0
             curseur.execute("DELETE FROM note_test WHERE etablissement_id = %s", [etab_b.id])
             assert curseur.rowcount == 0
-    assert NoteTest.objets_globaux.filter(etablissement=etab_b).count() == 2
+    assert (
+        NoteTest.objets_globaux.using(ALIAS_PROPRIETAIRE).filter(etablissement=etab_b).count() == 2
+    )
 
 
 # --- Table etablissement (politiques spécifiques) -------------------------------------------------
@@ -183,7 +188,7 @@ def test_etablissement_ecriture_reservee_a_la_plateforme(donnees):
         _sql(insertion, [uuid.uuid4(), "nouveau"])
         _refuse("DELETE FROM etablissement WHERE code = 'nouveau'", motif="permission denied")
         _refuse("TRUNCATE etablissement CASCADE", motif="permission denied")
-    assert Etablissement.objects.filter(code="nouveau").exists()
+    assert Etablissement.objects.using(ALIAS_PROPRIETAIRE).filter(code="nouveau").exists()
 
 
 # --- Le rôle applicatif ne peut ni contourner la RLS ni créer d'objet -----------------------------
@@ -255,7 +260,6 @@ def test_django_migrations_en_lecture_seule():
     )
 
 
-@override_settings(DATABASE_ROUTERS=["tests.conftest.RouteurApplicatif"])
 def test_session_django_fonctionne_sous_alpha_app():
     """Création, relecture, modification et suppression d'une session par alpha_app."""
     SessionStore = import_module(settings.SESSION_ENGINE).SessionStore

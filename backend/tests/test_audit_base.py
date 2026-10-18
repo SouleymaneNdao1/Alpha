@@ -1,8 +1,9 @@
 """Journal d'audit au niveau SQL (B4, architecture § 6.3) : immutabilité, droits, RLS, concurrence.
 
-Connexions (voir conftest) : ``default`` = alpha_owner (propriétaire, BYPASSRLS),
-``applicatif`` = alpha_app (soumis à la RLS). Tests transactionnels : chaque
-connexion ne voit que ce que l'autre a validé.
+Connexions (voir ``tests/bd.py``) : ``default`` = alpha_app (soumis à la RLS),
+``proprietaire`` = alpha_owner (propriétaire, BYPASSRLS), utilisé ici pour vérifier ce
+qui est réellement en base et que même le propriétaire est arrêté par les triggers.
+Tests transactionnels : chaque connexion ne voit que ce que l'autre a validé.
 """
 
 from __future__ import annotations
@@ -27,9 +28,9 @@ from alpha.audit.verification import lancer_verification
 from alpha.core import contexte
 from alpha.tenancy.contexte import contexte_tenant
 
-from .conftest import ALIAS_APP, BASES_APP
+from .bd import ALIAS_APP, ALIAS_PROPRIETAIRE, BASES_PROPRIETAIRE
 
-pytestmark = pytest.mark.django_db(transaction=True, databases=BASES_APP)
+pytestmark = pytest.mark.django_db(transaction=True, databases=BASES_PROPRIETAIRE)
 
 _INSERTION_BRUTE = (
     "INSERT INTO evenement_audit (etablissement_id, horodatage, acteur_type, acteur_libelle, "
@@ -51,7 +52,7 @@ def _refuse(alias: str, requete: str, params=None, *, motif: str) -> None:
         _sql(alias, requete, params)
 
 
-def _ecrire(etablissement_id, n: int = 1, alias: str = "default", **kwargs) -> list:
+def _ecrire(etablissement_id, n: int = 1, alias: str = ALIAS_APP, **kwargs) -> list:
     """n événements dans la chaîne de l'établissement (ou de la plateforme si None)."""
     if etablissement_id is None:
         with contexte_tenant(None, scope=contexte.SCOPE_PLATFORM, using=alias):
@@ -105,7 +106,7 @@ def test_chaines_independantes_par_etablissement_et_plateforme(etab_a, etab_b):
     _ecrire(etab_b.id, 2)
     _ecrire(None, 2)
     lignes = _sql(
-        "default",
+        ALIAS_PROPRIETAIRE,
         "SELECT etablissement_id, max(seq), count(*) FROM evenement_audit GROUP BY 1",
     )
     assert {(e, m, n) for e, m, n in lignes} == {(etab_a.id, 3, 3), (etab_b.id, 2, 2), (None, 2, 2)}
@@ -113,7 +114,7 @@ def test_chaines_independantes_par_etablissement_et_plateforme(etab_a, etab_b):
 
 def test_id_genere_toujours(etab_a):
     _refuse(
-        "default",
+        ALIAS_PROPRIETAIRE,
         _INSERTION_BRUTE.replace("(etablissement_id,", "(id, etablissement_id,").replace(
             "VALUES (%s,", "VALUES (1, %s,"
         ),
@@ -137,7 +138,7 @@ def test_role_applicatif_ne_peut_ni_modifier_ni_supprimer(etab_a, requete):
     _ecrire(etab_a.id, 2)
     with contexte_tenant(etab_a.id, using=ALIAS_APP):
         _refuse(ALIAS_APP, requete, motif="permission denied")
-    assert _compter("default") == 2
+    assert _compter(ALIAS_PROPRIETAIRE) == 2
 
 
 @pytest.mark.parametrize(
@@ -152,15 +153,15 @@ def test_role_applicatif_ne_peut_ni_modifier_ni_supprimer(etab_a, requete):
 def test_proprietaire_refuse_par_trigger(etab_a, requete, operation):
     """Même alpha_owner (propriétaire, BYPASSRLS) ne peut ni modifier ni supprimer."""
     _ecrire(etab_a.id, 2)
-    _refuse("default", requete, motif=f"ajout seul : {operation} interdit")
-    assert _compter("default") == 2
+    _refuse(ALIAS_PROPRIETAIRE, requete, motif=f"ajout seul : {operation} interdit")
+    assert _compter(ALIAS_PROPRIETAIRE) == 2
 
 
 def test_droits_du_role_applicatif():
     droits = {
         p
         for (p,) in _sql(
-            "default",
+            ALIAS_PROPRIETAIRE,
             "SELECT privilege_type FROM information_schema.role_table_grants "
             "WHERE table_name = 'evenement_audit' AND grantee = %s",
             [settings.ALPHA_DB_APP_ROLE],
@@ -197,14 +198,16 @@ def test_rls_activee_forcee_et_politiques_presentes():
         ("controle_integrite_audit", {"isolation_controle_audit"}),
     ):
         active, forcee = _sql(
-            "default",
+            ALIAS_PROPRIETAIRE,
             "SELECT relrowsecurity, relforcerowsecurity FROM pg_class WHERE relname = %s",
             [table],
         )[0]
         politiques = {
             p
             for (p,) in _sql(
-                "default", "SELECT policyname FROM pg_policies WHERE tablename = %s", [table]
+                ALIAS_PROPRIETAIRE,
+                "SELECT policyname FROM pg_policies WHERE tablename = %s",
+                [table],
             )
         }
         assert (active, forcee) == (True, True)
@@ -212,7 +215,7 @@ def test_rls_activee_forcee_et_politiques_presentes():
 
 
 def test_rls_lecture_sans_contexte_zero_ligne(trois_chaines):
-    assert _compter("default") == 6  # propriétaire (BYPASSRLS) : tout
+    assert _compter(ALIAS_PROPRIETAIRE) == 6  # propriétaire (BYPASSRLS) : tout
     assert _compter(ALIAS_APP) == 0  # rôle applicatif sans contexte : rien
     assert _compter(ALIAS_APP, None, contexte.SCOPE_ANONYMOUS) == 0
     assert _compter(ALIAS_APP, None, contexte.SCOPE_WORKER) == 0
@@ -244,7 +247,7 @@ def test_rls_insertion_dans_un_autre_etablissement_refusee(etab_a, etab_b):
         _refuse(ALIAS_APP, _INSERTION_BRUTE, [str(etab_b.id)], motif="row-level security")
     # Sans contexte : seule la chaîne de la plateforme est accessible en écriture.
     _refuse(ALIAS_APP, _INSERTION_BRUTE, [str(etab_a.id)], motif="row-level security")
-    assert _compter("default") == 0
+    assert _compter(ALIAS_PROPRIETAIRE) == 0
 
 
 def test_rls_insertion_anonyme_dans_la_chaine_plateforme(etab_a):
@@ -254,7 +257,7 @@ def test_rls_insertion_anonyme_dans_la_chaine_plateforme(etab_a):
     assert evenement.etablissement_id is None
     assert evenement.seq is None  # pas de RETURNING : la ligne n'est pas lisible
     assert _compter(ALIAS_APP) == 0
-    assert _sql("default", "SELECT seq, action FROM evenement_audit") == [
+    assert _sql(ALIAS_PROPRIETAIRE, "SELECT seq, action FROM evenement_audit") == [
         (1, "auth.connexion.echec")
     ]
 
@@ -297,14 +300,14 @@ def test_100_insertions_concurrentes_seq_contigus_et_chaine_valide(etab_a, etab_
     seqs = [
         s
         for (s,) in _sql(
-            "default",
+            ALIAS_PROPRIETAIRE,
             "SELECT seq FROM evenement_audit WHERE etablissement_id = %s ORDER BY seq",
             [str(etab_a.id)],
         )
     ]
     assert seqs == list(range(1, 101))
     actions = _sql(
-        "default",
+        ALIAS_PROPRIETAIRE,
         "SELECT count(DISTINCT action) FROM evenement_audit WHERE etablissement_id = %s",
         [str(etab_a.id)],
     )
