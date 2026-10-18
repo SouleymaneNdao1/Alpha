@@ -225,6 +225,7 @@ une, ou si un fichier n'est pas en 600 ou contient des fins de ligne Windows.
 | `POSTGRES_PASSWORD`, `ALPHA_OWNER_PASSWORD`, `ALPHA_APP_PASSWORD` | `.env.<env>` | lus **une seule fois**, à la création du volume de la base |
 | `DJANGO_SECRET_KEY` | `.env.<env>` | la changer déconnecte tout le monde |
 | `ALPHA_CLES_CHIFFREMENT` | `.env.<env>` | **sans elle, les secrets TOTP d'une sauvegarde sont illisibles** ; rotation : ajouter la nouvelle clé EN TÊTE, garder l'ancienne |
+| `ALPHA_CLES_CHIFFREMENT_VERSION` | `.env.<env>` | version de la clé en tête (défaut 1) ; à chaque rotation : +1, puis `manage.py rechiffrer_secrets`, puis retirer l'ancienne clé |
 | `ALPHA_HMAC_POIVRE` | `.env.<env>` | la changer invalide les codes de secours |
 | `ALPHA_HSTS_SECONDES`, `ALPHA_HSTS_PRELOAD` | `.env.<env>` | HSTS côté Django ; `PRELOAD=false` pour le pilote (§ 12) |
 | `EMAIL_HOST`, `EMAIL_PORT`, `EMAIL_HOST_USER`, `EMAIL_HOST_PASSWORD`, `EMAIL_USE_TLS`, `EMAIL_USE_SSL`, `DEFAULT_FROM_EMAIL` | `.env.<env>` | recette : Mailpit (ne pas changer) ; production : SMTP réel |

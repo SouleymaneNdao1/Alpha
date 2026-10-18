@@ -19,6 +19,7 @@ from alpha.comptes.models import (
 from alpha.organisation.models import AffectationRole, Role
 from alpha.tenancy.contexte import contexte_tenant
 from alpha.tenancy.models import Etablissement
+from tests.fabriques import UtilisateurFactory
 from tests.outils_auth import (
     MDP,
     UA_FIREFOX_LINUX,
@@ -35,7 +36,6 @@ from tests.outils_auth import (
     se_connecter,
     transactionnel,
 )
-from tests.outils_comptes import creer_super_admin, creer_utilisateur
 
 # Fixtures client_csrf et vider_limites (autouse).
 pytest_plugins = ["tests.fixtures_auth"]
@@ -249,13 +249,17 @@ def test_mfa_a_reconfigurer_ou_sans_mfa_reenrolement_requis(client_csrf, etab_a)
     assert poster(client_csrf, URL_MFA, {"code": compte.totp()}).json()["code"] == (
         "PREAUTH_EXPIREE"
     )
-    sans_mfa = equiper(creer_utilisateur(etab_a, "b.ba@banque-a.sn"), totp=False, codes=False)
+    sans_mfa = equiper(
+        UtilisateurFactory(etablissement=etab_a, email="b.ba@banque-a.sn"), totp=False, codes=False
+    )
     r = poster(client_csrf, URL_CONNEXION, {"email": sans_mfa.email, "mot_de_passe": MDP})
     assert r.json()["etape"] == "REENROLEMENT_REQUIS"
 
 
 def test_super_admin_mfa_obligatoire_et_portee_plateforme(client_csrf, db):
-    sans_mfa = equiper(creer_super_admin("nu@fyxop.test"), totp=False, codes=False)
+    sans_mfa = equiper(
+        UtilisateurFactory(super_admin=True, email="nu@fyxop.test"), totp=False, codes=False
+    )
     r = poster(client_csrf, URL_CONNEXION, {"email": sans_mfa.email, "mot_de_passe": MDP})
     assert r.json()["etape"] == "REENROLEMENT_REQUIS"
 

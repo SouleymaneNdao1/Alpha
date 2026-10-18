@@ -143,3 +143,13 @@ def test_step_up_totp(client_csrf, etab_a):
 def test_step_up_exige_une_session(client_csrf, etab_a):
     r = poster(client_csrf, "/test/action-sensible", {"code": "123456"})
     assert r.status_code == 401
+
+
+def test_client_connecte_de_conftest_passe_le_middleware(client_connecte, utilisateur_a):
+    """La session forgée de ``client_connecte`` (tests hors authentification) est acceptée."""
+    from tests.fabriques import UtilisateurFactory
+
+    r = client_connecte(utilisateur_a).get(URL_SESSION)
+    assert r.status_code == 200 and r.json()["email"] == utilisateur_a.email
+    admin = UtilisateurFactory(super_admin=True)
+    assert client_connecte(admin).get(URL_SESSION).json()["est_super_admin"] is True

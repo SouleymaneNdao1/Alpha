@@ -25,9 +25,9 @@ from alpha.comptes.models import Utilisateur
 from alpha.core import contexte
 from alpha.tenancy.contexte import contexte_tenant
 from alpha.tenancy.models import ParametresEtablissement
-from tests.outils_comptes import creer_super_admin, creer_utilisateur
+from tests.fabriques import MOT_DE_PASSE_TEST, UtilisateurFactory
 
-MDP = "Bambou-Cascade-Lune-42"
+MDP = MOT_DE_PASSE_TEST
 UA_CHROME_WIN = (
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
     "(KHTML, like Gecko) Chrome/129.0.0.0 Safari/537.36"
@@ -87,11 +87,12 @@ def equiper(utilisateur: Utilisateur, *, totp: bool = True, codes: bool = True) 
 
 
 def creer_compte(etablissement, email: str = "a.diop@banque-a.sn", **champs) -> Compte:
-    return equiper(creer_utilisateur(etablissement, email, **champs))
+    """Utilisateur ACTIF (fabrique T1) équipé pour la connexion complète."""
+    return equiper(UtilisateurFactory(etablissement=etablissement, email=email, **champs))
 
 
 def creer_compte_super_admin(email: str = "admin@fyxop.test") -> Compte:
-    return equiper(creer_super_admin(email))
+    return equiper(UtilisateurFactory(super_admin=True, email=email))
 
 
 def regler(etablissement, **valeurs) -> None:

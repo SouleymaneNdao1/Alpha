@@ -12,7 +12,7 @@ import pytest
 from cryptography.fernet import Fernet
 from django.conf import settings
 from django.core.exceptions import ValidationError
-from django.db import DatabaseError, connections, transaction
+from django.db import DatabaseError, transaction
 from django.test import Client, override_settings
 
 from alpha.audit.models import EvenementAudit
@@ -21,7 +21,8 @@ from alpha.comptes.models import AuthenticatorTOTP, HistoriqueMotDePasse
 from alpha.comptes.mots_de_passe import definir_mot_de_passe
 from alpha.core import contexte
 from alpha.tenancy.contexte import contexte_tenant
-from tests.conftest import creer_etablissement
+from tests.bd import BASES_PROPRIETAIRE, role_courant, sql, sql_proprietaire
+from tests.fabriques import BanqueFactory, SFDFactory, UtilisateurFactory
 from tests.outils_auth import (
     MDP,
     URL_CONNEXION,
@@ -35,7 +36,6 @@ from tests.outils_auth import (
     se_connecter,
     transactionnel,
 )
-from tests.outils_comptes import creer_utilisateur
 
 # Fixtures client_csrf et vider_limites (autouse).
 pytest_plugins = ["tests.fixtures_auth"]
@@ -123,7 +123,7 @@ def test_aucun_secret_dans_les_journaux_ni_dans_l_audit(client_csrf, etab_a, cap
 
 
 def test_secret_totp_chiffre_au_repos_et_rotation_des_cles(etab_a):
-    utilisateur = creer_utilisateur(etab_a, "c.badiane@banque-a.sn")
+    utilisateur = UtilisateurFactory(etablissement=etab_a, email="c.badiane@banque-a.sn")
     with contexte_tenant(etab_a.id):
         authenticator, secret = mfa.creer_authenticator_en_attente(utilisateur)
         brut = bytes(AuthenticatorTOTP.objects.get(pk=authenticator.pk).secret_chiffre)
@@ -144,7 +144,7 @@ def test_secret_totp_chiffre_au_repos_et_rotation_des_cles(etab_a):
 def test_confirmation_et_un_seul_authenticator_actif(etab_a):
     import pyotp
 
-    utilisateur = creer_utilisateur(etab_a, "d.faye@banque-a.sn")
+    utilisateur = UtilisateurFactory(etablissement=etab_a, email="d.faye@banque-a.sn")
     with contexte_tenant(etab_a.id):
         premier, s1 = mfa.creer_authenticator_en_attente(utilisateur)
         assert not mfa.confirmer_authenticator(premier, "000000")
@@ -158,52 +158,42 @@ def test_confirmation_et_un_seul_authenticator_actif(etab_a):
 # --- RLS des nouvelles tables (§ 3.5, politique « tenant ou plateforme ») -----------------------
 
 
-def _alias_app() -> str:
-    return "applicatif" if "applicatif" in settings.DATABASES else "default"
-
-
-@pytest.mark.django_db(transaction=True, databases=["default", "audit", "applicatif"])
+@pytest.mark.django_db(transaction=True, databases=BASES_PROPRIETAIRE)
 def test_rls_tenant_ou_plateforme_des_tables_b5():
-    etab_a = creer_etablissement("rls-a")
-    etab_b = creer_etablissement("rls-b")
+    """Sous alpha_app (``default``) : chaque contexte ne voit que ses lignes (§ 3.5)."""
+    etab_a = BanqueFactory(code="rls-a")
+    etab_b = SFDFactory(code="rls-b")
     a = creer_compte(etab_a, "a@rls.sn")
     b = creer_compte(etab_b, "b@rls.sn")
     s = creer_compte_super_admin("s@rls.test")
     for compte in (a, b, s):
         with contexte_de(compte.utilisateur):
             definir_mot_de_passe(compte.utilisateur, "Autre-Phrase-Secrete-77")
-    alias = _alias_app()
-    connexion = connections[alias]
-    with connexion.cursor() as c:
-        c.execute("SELECT current_user")
-        assert c.fetchone()[0] == settings.ALPHA_DB_APP_ROLE
+    assert role_courant() == settings.ALPHA_DB_APP_ROLE
 
-    def compter(table: str) -> set:
-        with connexion.cursor() as c:
-            c.execute(f"SELECT DISTINCT utilisateur_id FROM {table}")  # noqa: S608
-            return {u for (u,) in c.fetchall()}
+    def visibles(table: str) -> set:
+        requete = f"SELECT DISTINCT utilisateur_id FROM {table}"  # noqa: S608
+        return {u for (u,) in sql("default", requete)}
 
-    for table in ("authenticator_totp", "code_secours", "historique_mot_de_passe"):
-        with transaction.atomic(using=alias):
-            assert compter(table) == set()  # sans contexte : rien
-        with contexte_tenant(etab_a.id, using=alias):
-            assert compter(table) == {a.utilisateur.id}
-        with contexte_tenant(
-            None, scope=contexte.SCOPE_PLATFORM, utilisateur_id=s.utilisateur.id, using=alias
-        ):
-            assert compter(table) == {s.utilisateur.id}
-        with contexte_tenant(
-            None, scope=contexte.SCOPE_PLATFORM, utilisateur_id=uuid.uuid4(), using=alias
-        ):
-            assert compter(table) == set()
+    tous = {a.utilisateur.id, b.utilisateur.id, s.utilisateur.id}
+    for table in TABLES_B5:
+        if table == "session_appareil":
+            continue  # aucune session ouverte dans ce test (couverte par les tests HTTP)
+        # Hors RLS (alpha_owner) : les lignes des trois comptes existent bien.
+        assert {u for (u,) in sql_proprietaire(f"SELECT utilisateur_id FROM {table}")} == tous  # noqa: S608
+        with transaction.atomic():
+            assert visibles(table) == set()  # sans contexte : rien
+        with contexte_tenant(etab_a.id):
+            assert visibles(table) == {a.utilisateur.id}
+        with contexte_tenant(None, scope=contexte.SCOPE_PLATFORM, utilisateur_id=s.utilisateur.id):
+            assert visibles(table) == {s.utilisateur.id}
+        with contexte_tenant(None, scope=contexte.SCOPE_PLATFORM, utilisateur_id=uuid.uuid4()):
+            assert visibles(table) == set()
 
     # Écriture croisée refusée (WITH CHECK).
-    with (
-        pytest.raises(DatabaseError),
-        contexte_tenant(etab_a.id, using=alias),
-        connexion.cursor() as c,
-    ):
-        c.execute(
+    with pytest.raises(DatabaseError), contexte_tenant(etab_a.id):
+        sql(
+            "default",
             "INSERT INTO historique_mot_de_passe (id, etablissement_id, utilisateur_id, "
             "password, cree_le) VALUES (%s, %s, %s, 'x', now())",
             [str(uuid.uuid4()), str(etab_b.id), str(b.utilisateur.id)],
@@ -212,12 +202,13 @@ def test_rls_tenant_ou_plateforme_des_tables_b5():
 
 @pytest.mark.django_db
 def test_politique_tenant_ou_plateforme_posee_sur_les_tables_b5():
-    with connections["default"].cursor() as c:
-        c.execute(
+    politiques = set(
+        sql(
+            "default",
             "SELECT tablename, policyname FROM pg_policies WHERE tablename = ANY(%s)",
             [list(TABLES_B5)],
         )
-        politiques = set(c.fetchall())
+    )
     assert politiques == {(t, "isolation_tenant_ou_plateforme") for t in TABLES_B5}
 
 
@@ -226,7 +217,9 @@ def test_politique_tenant_ou_plateforme_posee_sur_les_tables_b5():
 
 @pytest.mark.django_db
 def test_politique_et_historique_des_mots_de_passe(etab_a):
-    utilisateur = creer_utilisateur(etab_a, "e.ndiaye@banque-a.sn", prenom="Ena", nom="Ndiaye")
+    utilisateur = UtilisateurFactory(
+        etablissement=etab_a, email="e.ndiaye@banque-a.sn", prenom="Ena", nom="Ndiaye"
+    )
     with contexte_tenant(etab_a.id):
         for refuse in (
             "court-A1!",
