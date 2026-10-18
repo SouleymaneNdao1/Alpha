@@ -19,6 +19,10 @@ from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 urlpatterns = [
     path("api/v1/schema/", SpectacularAPIView.as_view(), name="schema"),
     path("api/v1/auth/", include("alpha.comptes.urls_auth")),
+    # Administration de l'établissement (§ 5.5, B7).
+    path("api/v1/admin/", include("alpha.comptes.urls_admin")),
+    path("api/v1/admin/", include("alpha.organisation.urls_admin")),
+    path("api/v1/admin/", include("alpha.tenancy.urls_admin")),
 ]
 
 if settings.ALPHA_DOC_API_ACTIVE:

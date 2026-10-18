@@ -59,6 +59,9 @@ class UniteOrganisationnelle(TenantModel):
     cree_le = models.DateTimeField("créée le", auto_now_add=True)
     modifie_le = models.DateTimeField("modifiée le", auto_now=True)
 
+    #: Champs journalisés (liste blanche du journal d'audit, § 6.1 ; ajout B7).
+    AUDIT_CHAMPS = ("parent", "type", "code", "libelle", "actif")
+
     class Meta:
         db_table = "unite_organisationnelle"
         verbose_name = "unité organisationnelle"
@@ -113,6 +116,17 @@ class Role(TenantModel):
     cree_le = models.DateTimeField("créé le", auto_now_add=True)
     modifie_le = models.DateTimeField("modifié le", auto_now=True)
 
+    #: Champs journalisés (liste blanche du journal d'audit, § 6.1 ; ajout B7).
+    AUDIT_CHAMPS = (
+        "code",
+        "libelle",
+        "description",
+        "permissions",
+        "est_systeme",
+        "actif",
+        "ordre",
+    )
+
     class Meta:
         db_table = "role"
         verbose_name = "rôle"
@@ -144,6 +158,17 @@ class AffectationRoleQuerySet(TenantQuerySet):
         """Affectations en vigueur à la date donnée (aujourd'hui, heure de Dakar, par défaut)."""
         jour = a_la_date or timezone.localdate()
         return self.filter(Q(fin__isnull=True) | Q(fin__gte=jour), debut__lte=jour)
+
+    def en_cours(self, a_la_date: datetime.date | None = None):
+        """Affectations commencées et non terminées (``fin`` NULL), au sens des habilitations.
+
+        Ajout B7 : c'est la définition retenue pour les permissions de l'API et pour
+        l'invariant « dernier administrateur ». Une affectation terminée par
+        l'administrateur (``fin`` = jour de clôture) cesse d'ouvrir des droits
+        immédiatement, alors que ``actives()`` la compte encore jusqu'à minuit.
+        """
+        jour = a_la_date or timezone.localdate()
+        return self.filter(fin__isnull=True, debut__lte=jour)
 
 
 class AffectationRoleManager(TenantManager.from_queryset(AffectationRoleQuerySet)):
@@ -184,6 +209,9 @@ class AffectationRole(TenantModel):
         related_name="+",
     )
     cree_le = models.DateTimeField("créée le", auto_now_add=True)
+
+    #: Champs journalisés (liste blanche du journal d'audit, § 6.1 ; ajout B7).
+    AUDIT_CHAMPS = ("utilisateur", "role", "unite", "principal", "debut", "fin")
 
     objects = AffectationRoleManager()  # + manager non filtré hérité de TenantModel
 

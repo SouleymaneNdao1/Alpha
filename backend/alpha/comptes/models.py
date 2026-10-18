@@ -166,6 +166,24 @@ class Utilisateur(AbstractBaseUser, ObjetsGlobauxMixin):
 
     objects = UtilisateurManager()  # + manager non filtré via ObjetsGlobauxMixin
 
+    #: Champs journalisés (liste blanche du journal d'audit, § 6.1 ; ajout B7).
+    #: Jamais de mot de passe ni de secret : ``password`` est volontairement absent.
+    AUDIT_CHAMPS = (
+        "email",
+        "prenom",
+        "nom",
+        "telephone_mobile",
+        "langue",
+        "statut",
+        "responsable",
+        "mfa_a_reconfigurer",
+        "signature_bloquee",
+        "echecs_connexion",
+        "verrouille_jusqua",
+        "verrouillages_24h",
+        "bloque_par_admin",
+    )
+
     USERNAME_FIELD = "email"
     EMAIL_FIELD = "email"
     REQUIRED_FIELDS = ["prenom", "nom"]

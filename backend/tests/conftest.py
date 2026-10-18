@@ -243,3 +243,9 @@ def mailpit(settings) -> ClientMailpit:
         pytest.skip(f"Mailpit injoignable ({settings.ALPHA_MAILPIT_API}).")
     settings.EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
     return client
+
+
+# --- Administration (B7) -----------------------------------------------------------------
+# Fixtures de l'API d'administration : banque (catalogue par défaut), administrateur,
+# client connecté en administrateur, second établissement (tests d'isolation).
+from .outils_admin import admin, autre_banque, banque, client_admin  # noqa: E402, F401
