@@ -1,0 +1,22 @@
+# =============================================================================
+# ALPHA — configuration WireGuard d'un poste administrateur FYXOP (P6, option B)
+#
+#   wg genkey | tee poste.key | wg pubkey > poste.pub   # envoyer poste.pub à l'exploitant
+#
+# Tunnel PARTIEL : seul le trafic vers 10.66.0.1 (le VPS) passe par le VPN.
+# Pour que le navigateur joigne la console PAR le tunnel, ajouter dans le
+# fichier hosts du poste (Windows : C:\Windows\System32\drivers\etc\hosts) :
+#     10.66.0.1  app.<domaine>  recette.<domaine>
+# Le certificat reste valide (même nom de domaine) et Caddy voit l'adresse
+# 10.66.0.x, autorisée par ALPHA_IP_CONSOLE_PROD=10.66.0.0/24. Hors VPN, retirer
+# ces lignes (sinon le site ne répond plus).
+# =============================================================================
+[Interface]
+PrivateKey = CLE_PRIVEE_DU_POSTE
+Address = 10.66.0.2/32
+
+[Peer]
+PublicKey = CLE_PUBLIQUE_DU_SERVEUR
+Endpoint = IP_PUBLIQUE_DU_VPS:51820
+AllowedIPs = 10.66.0.1/32
+PersistentKeepalive = 25

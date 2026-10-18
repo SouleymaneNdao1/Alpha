@@ -4,6 +4,10 @@
 .env
 .env.*
 !.env.example
+!.env.recette.example
+!.env.prod.example
+!.env.caddy.example
+!.env.veille.example
 *.pem
 *.key
 secrets/
@@ -37,7 +41,8 @@ frontend/playwright-report/
 frontend/blob-report/
 frontend/playwright/.cache/
 
-# Sauvegardes et dumps locaux
+# Sauvegardes et dumps locaux, état des déploiements (scripts/deploy.sh)
+.deploiements/
 *.dump
 *.sql.gz
 *.age

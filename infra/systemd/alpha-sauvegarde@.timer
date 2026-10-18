@@ -1,0 +1,15 @@
+# ALPHA — déclenche alpha-sauvegarde@%i.service chaque nuit.
+#   systemctl enable --now alpha-sauvegarde@prod.timer alpha-sauvegarde@recette.timer
+[Unit]
+Description=ALPHA : sauvegarde quotidienne (%i)
+
+[Timer]
+# 01:15 (heure du serveur, Africa/Dakar = UTC) : avant le contrôle d'audit de
+# 02:00. Décalage aléatoire pour ne pas lancer prod et recette ensemble.
+OnCalendar=*-*-* 01:15:00
+RandomizedDelaySec=30min
+# Rattrapage au démarrage si le VPS était éteint à l'heure prévue.
+Persistent=true
+
+[Install]
+WantedBy=timers.target

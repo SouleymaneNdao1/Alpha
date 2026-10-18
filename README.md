@@ -6,6 +6,7 @@ le tout dans Docker.
 
 Conception du sprint 1 : [`docs/architecture-sprint1.md`](docs/architecture-sprint1.md).
 Dépannage du poste de développement : [`docs/ops/dev.md`](docs/ops/dev.md).
+Recette et production (VPS) : [`docs/ops/deploiement.md`](docs/ops/deploiement.md) ; surveillance : [`docs/ops/monitoring.md`](docs/ops/monitoring.md).
 
 ---
 
@@ -127,7 +128,9 @@ Sans argument, le script affiche l'aide.
 |---|---|
 | `docker-compose.yml` | services communs : `db`, `redis`, `migrate`, `backend`, `worker`, `beat`, `frontend` |
 | `docker-compose.override.yml` | développement (chargé automatiquement) : `mailpit`, ports, code monté, `runserver`, `next dev`, service `tests` |
-| `docker-compose.recette.yml`, `docker-compose.prod.yml` | recette et production (tâche D3) |
+| `docker-compose.recette.yml`, `docker-compose.prod.yml` | recette et production (projets `alpha-recette`, `alpha-prod`), via `scripts/deploy.sh` |
+| `docker-compose.proxy.yml` | Caddy, HTTPS commun aux deux environnements (projet `alpha-proxy`) |
+| `docker-compose.veille.yml` | Uptime Kuma, surveillance externe (sur une autre machine que le VPS) |
 
 Rôles PostgreSQL (architecture § 3.1) :
 - `alpha_owner` : propriétaire de la base et des tables, `BYPASSRLS` ; utilisé **uniquement** par

@@ -1,0 +1,13 @@
+# ALPHA — vérification quotidienne des chaînes d'audit, après la sauvegarde
+# (01:15) et la tâche Celery de 02:00.
+#   systemctl enable --now alpha-audit@prod.timer alpha-audit@recette.timer
+[Unit]
+Description=ALPHA : vérification quotidienne des chaînes d'audit (%i)
+
+[Timer]
+OnCalendar=*-*-* 03:15:00
+RandomizedDelaySec=15min
+Persistent=true
+
+[Install]
+WantedBy=timers.target

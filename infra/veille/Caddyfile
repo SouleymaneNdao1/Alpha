@@ -1,0 +1,21 @@
+# ALPHA — HTTPS devant Uptime Kuma (machine de surveillance, HORS du VPS ALPHA).
+# docs/ops/monitoring.md § 2.
+{
+	email {$ALPHA_ACME_EMAIL}
+}
+
+{$ALPHA_DOMAINE_VEILLE} {
+	tls {
+		protocols tls1.2 tls1.3
+	}
+	header {
+		Strict-Transport-Security "max-age=31536000"
+		X-Content-Type-Options "nosniff"
+		X-Frame-Options "DENY"
+		Referrer-Policy "same-origin"
+		X-Robots-Tag "noindex, nofollow"
+		-Server
+	}
+	encode zstd gzip
+	reverse_proxy uptime-kuma:3001
+}

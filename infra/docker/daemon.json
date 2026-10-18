@@ -1,0 +1,10 @@
+{
+  "log-driver": "journald",
+  "log-opts": {
+    "tag": "{{.Name}}"
+  },
+  "live-restore": true,
+  "default-ulimits": {
+    "nofile": { "Name": "nofile", "Soft": 65536, "Hard": 65536 }
+  }
+}

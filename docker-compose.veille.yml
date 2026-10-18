@@ -1,0 +1,80 @@
+# =============================================================================
+# ALPHA — surveillance externe : Uptime Kuma + Caddy (tâche D3, docs/ops/monitoring.md)
+#
+# À installer sur une machine DIFFÉRENTE du VPS ALPHA (petit VPS à 1 vCPU / 1 Go
+# chez un autre hébergeur, ou serveur de FYXOP) : une surveillance hébergée sur
+# la machine qu'elle surveille se tait précisément quand cette machine tombe.
+# Consommation : ≈ 150 Mo de RAM pour l'ensemble.
+#
+#   cp .env.veille.example .env.veille && chmod 600 .env.veille   # puis compléter
+#   docker compose -p alpha-veille --env-file .env.veille -f docker-compose.veille.yml up -d
+#
+# Ce fichier ne dépend d'aucun autre fichier compose du dépôt.
+# =============================================================================
+
+name: alpha-veille
+
+services:
+  uptime-kuma:
+    image: louislam/uptime-kuma:1.23.16
+    restart: unless-stopped
+    environment:
+      TZ: Africa/Dakar
+    volumes:
+      - kuma:/app/data
+    networks: [veille]
+    healthcheck:
+      test: ["CMD", "extra/healthcheck"]
+      interval: 60s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    security_opt:
+      - no-new-privileges:true
+    deploy:
+      resources:
+        limits:
+          memory: 256m
+    logging:
+      driver: journald
+      options:
+        tag: "{{.Name}}"
+
+  caddy:
+    image: caddy:2.11-alpine
+    restart: unless-stopped
+    init: true
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      ALPHA_ACME_EMAIL: ${ALPHA_ACME_EMAIL:?ALPHA_ACME_EMAIL manquant dans .env.veille}
+      ALPHA_DOMAINE_VEILLE: ${ALPHA_DOMAINE_VEILLE:?ALPHA_DOMAINE_VEILLE manquant dans .env.veille}
+    volumes:
+      - ./infra/veille:/etc/caddy:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    networks: [veille]
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop: [ALL]
+    cap_add: [NET_BIND_SERVICE]
+    security_opt:
+      - no-new-privileges:true
+    deploy:
+      resources:
+        limits:
+          memory: 128m
+    logging:
+      driver: journald
+      options:
+        tag: "{{.Name}}"
+
+volumes:
+  kuma:
+  caddy_data:
+  caddy_config:
+
+networks:
+  veille:

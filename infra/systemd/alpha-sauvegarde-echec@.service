@@ -1,0 +1,9 @@
+# ALPHA — signale à la surveillance l'échec de alpha-sauvegarde@%i.service.
+[Unit]
+Description=ALPHA : signalement d'échec de la sauvegarde (%i)
+
+[Service]
+Type=oneshot
+WorkingDirectory=/opt/alpha
+ExecStart=/opt/alpha/scripts/sauvegarde.sh %i --signaler-echec
+SyslogIdentifier=alpha-sauvegarde-%i

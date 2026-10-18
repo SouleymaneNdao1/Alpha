@@ -1,0 +1,22 @@
+# ALPHA — sauvegarde quotidienne chiffrée hors site d'un environnement (%i = prod ou recette).
+# Installation : docs/ops/deploiement.md § 8.2 (dépôt cloné dans /opt/alpha).
+[Unit]
+Description=ALPHA : sauvegarde chiffrée hors site (%i)
+Wants=network-online.target docker.service
+After=network-online.target docker.service
+# Échec non signalé par le script lui-même (arrêt forcé, délai dépassé…).
+OnFailure=alpha-sauvegarde-echec@%i.service
+
+[Service]
+Type=oneshot
+WorkingDirectory=/opt/alpha
+ExecStart=/opt/alpha/scripts/sauvegarde.sh %i --motif quotidienne
+TimeoutStartSec=2h
+# Priorité basse : l'application reste servie pendant la sauvegarde.
+Nice=10
+IOSchedulingClass=best-effort
+IOSchedulingPriority=7
+SyslogIdentifier=alpha-sauvegarde-%i
+PrivateTmp=yes
+ProtectHome=read-only
+NoNewPrivileges=yes
