@@ -193,8 +193,10 @@ def test_parametres_validation_divers(client_admin, step_up_accepte):
     step_up_accepte.assert_not_called()
 
 
+@pytest.mark.django_db(transaction=True, databases=["default", "audit"])
 def test_parametres_step_up_refuse_par_defaut(client_admin, banque):
-    """Tant que B5 n'est pas livré, le step-up échoue fermé : aucun réglage n'est modifié."""
+    """Step-up réel (B5) : code faux (l'administrateur n'a même pas d'Authenticator) →
+    401, aucun réglage modifié. Transactionnel : le refus est journalisé hors transaction."""
     reponse = client_admin.patch(
         f"{API}/parametres-securite", {"code": "123456", "tentatives_max": 4}, format="json"
     )

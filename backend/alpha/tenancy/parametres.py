@@ -7,8 +7,9 @@ les planchers de la politique de mot de passe validée (12 caractères, 5 ancien
 passe interdits) et de la conservation du journal (10 ans) ne peuvent pas être abaissés.
 
 ``PATCH`` exige ``admin.securite`` + un code TOTP de confirmation (« StepUp », § 4.9),
-vérifié par ``alpha.comptes.raccordements.verifier_code_step_up`` (B5 ; refus tant que
-B5 n'est pas livré). Audit : ``parametres.securite.modifies`` (champs modifiés seulement).
+vérifié par ``alpha.comptes.raccordements.verifier_code_step_up`` (B5 : pas TOTP consommé,
+refus journalisé ; la vue RETOURNE le 401). Audit : ``parametres.securite.modifies``
+(champs modifiés seulement).
 """
 
 from __future__ import annotations
@@ -23,7 +24,7 @@ from alpha.audit.masquage import extraire_champs
 from alpha.audit.models import Categorie
 from alpha.audit.services import journaliser
 from alpha.comptes import raccordements
-from alpha.core.erreurs import ErreurApi
+from alpha.core.erreurs import reponse_erreur
 from alpha.core.schema_erreurs import erreurs
 from alpha.organisation.codes_permission import CodePermission
 from alpha.organisation.permissions import Perm
@@ -150,7 +151,9 @@ class ParametresSecuriteVue(APIView):
         donnees = dict(entree.validated_data)
         code = donnees.pop("code")
         if not raccordements.verifier_code_step_up(request.user.pk, code):
-            raise ErreurApi(CODE_INVALIDE, "Code de confirmation invalide.", statut=401)
+            # RETOURNÉE, pas levée (§ 3.3) : le refus journalisé et le compteur de débit
+            # ne dépendent pas de la transaction de la vue.
+            return reponse_erreur(CODE_INVALIDE, "Code de confirmation invalide.", statut=401)
         parametres = _parametres_ou_404(verrou=True)
         modifies = [c for c, v in donnees.items() if getattr(parametres, c) != v]
         if modifies:

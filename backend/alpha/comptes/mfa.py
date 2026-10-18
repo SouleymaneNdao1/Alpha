@@ -233,3 +233,53 @@ def verifier_signature_autorisee(utilisateur: Utilisateur) -> None:
             "téléphone. Contactez votre administrateur.",
             statut=status.HTTP_403_FORBIDDEN,
         )
+
+
+# --- Step-up TOTP (§ 4.9) : implémentation unique --------------------------------------------
+
+STEP_UP_OK = "OK"
+STEP_UP_CODE_INVALIDE = "CODE_INVALIDE"
+STEP_UP_TROP_DE_REQUETES = "TROP_DE_REQUETES"
+
+
+def verifier_step_up(utilisateur: Utilisateur, code: str) -> tuple[str, int | None]:
+    """Vérifie le code TOTP de confirmation d'une action sensible.
+
+    Renvoie ``(STEP_UP_OK, None)``, ``(STEP_UP_CODE_INVALIDE, None)`` ou
+    ``(STEP_UP_TROP_DE_REQUETES, attente_s)``. Utilisée par la permission
+    ``alpha.core.permissions.StepUpTOTP`` et par
+    ``alpha.comptes.raccordements.verifier_code_step_up`` (une seule implémentation) :
+
+    - limite de 5 essais par minute et par utilisateur ;
+    - fenêtre ±1 pas et anti-rejeu : le pas accepté est CONSOMMÉ (``dernier_pas``),
+      un code déjà utilisé (connexion, autre step-up) est refusé ;
+    - Authenticator suspendu (téléphone perdu) : refus ;
+    - chaque refus est journalisé (``auth.step_up.echec``) HORS transaction : il
+      survit même si l'appelant lève ensuite une exception. Les refus ne comptent pas
+      dans le verrouillage du compte (sinon un attaquant connecté pourrait verrouiller
+      la victime), mais la limite de débit borne la force brute.
+    """
+    from alpha.audit.models import Categorie
+    from alpha.audit.services import journaliser
+
+    from . import limitation
+
+    limite, fenetre = limitation.STEP_UP_PAR_UTILISATEUR
+    attente = limitation.consommer("stepup", str(utilisateur.pk), limite=limite, fenetre_s=fenetre)
+    if attente is not None:
+        resultat = (STEP_UP_TROP_DE_REQUETES, attente)
+    elif verifier_totp(utilisateur, str(code or "")):
+        return STEP_UP_OK, None
+    else:
+        resultat = (STEP_UP_CODE_INVALIDE, None)
+    journaliser(
+        "auth.step_up.echec",
+        Categorie.SECURITE,
+        objet=("comptes.utilisateur", utilisateur.pk),
+        objet_libelle=utilisateur.nom_complet,
+        apres={"motif": resultat[0]},
+        detail="Code de confirmation refusé",
+        acteur=utilisateur,
+        hors_transaction=True,
+    )
+    return resultat

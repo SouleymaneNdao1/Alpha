@@ -9,10 +9,10 @@ de chaque fonction (même signature) :
 Fonction                        Tâche  Comportement provisoire
 ==============================  =====  ===========================================
 ``envoyer_invitation``          B6     aucun e-mail (journal applicatif seulement)
-``revoquer_sessions``           B5     0 session révoquée (pas encore de table)
-``sessions_actives``            B5     liste vide
-``statuts_authenticator``       B5     « NON_CONFIGUREE » pour tous
-``verifier_code_step_up``       B5     REFUS (échec fermé) : aucun code accepté
+``revoquer_sessions``           B5     raccordé (``alpha.comptes.sessions``)
+``sessions_actives``            B5     raccordé (``session_appareil``)
+``statuts_authenticator``       B5     raccordé (``authenticator_totp``)
+``verifier_code_step_up``       B5     raccordé (``alpha.comptes.mfa.verifier_step_up``)
 ``signalement_en_cours``        B6     ``None``
 ==============================  =====  ===========================================
 
@@ -59,35 +59,67 @@ def envoyer_invitation(
 def revoquer_sessions(utilisateur_id: uuid.UUID, *, motif: str = "REVOCATION_ADMIN") -> int:
     """Révoque toutes les sessions ouvertes de l'utilisateur ; renvoie leur nombre (§ 4.8).
 
-    TODO B5 : ``session_appareil.revoque_le = now``, ``motif_fin = motif``, suppression
-    des sessions Django correspondantes et invalidation du cache Redis.
-    En attendant : un utilisateur SUSPENDU est de toute façon rejeté à la requête
-    suivante (``Utilisateur.is_active`` est faux, ``ModelBackend.get_user`` renvoie
-    un anonyme).
+    ``session_appareil.revoque_le = now``, ``motif_fin = motif`` et cache Redis invalidé :
+    la session Django est refusée (401 ``SESSION_EXPIREE``) et vidée à sa requête suivante.
     """
-    return 0
+    from . import sessions
+    from .models import Utilisateur
+
+    utilisateur = Utilisateur.objects.filter(pk=utilisateur_id).first()
+    if utilisateur is None:
+        return 0
+    return sessions.revoquer_sessions(utilisateur, motif)
 
 
 def sessions_actives(utilisateur_id: uuid.UUID) -> list[dict[str, Any]]:
-    """Sessions non révoquées de l'utilisateur : ``[{id, appareil, ip, methode_mfa, cree_le,
-    derniere_activite}]`` (fiche administrateur, § 5.5). TODO B5 (``session_appareil``)."""
-    return []
+    """Sessions non révoquées et non expirées de l'utilisateur : ``[{id, appareil, ip,
+    methode_mfa, cree_le, derniere_activite}]`` (fiche administrateur, § 5.5)."""
+    from django.utils import timezone
+
+    from .models import SessionAppareil
+
+    return list(
+        SessionAppareil.objects.filter(
+            utilisateur_id=utilisateur_id, revoque_le__isnull=True, expire_le__gt=timezone.now()
+        )
+        .order_by("-derniere_activite")
+        .values("id", "appareil", "ip", "methode_mfa", "cree_le", "derniere_activite")
+    )
 
 
 def statuts_authenticator(utilisateur_ids: list[uuid.UUID]) -> dict[uuid.UUID, str]:
     """Statut de l'Authenticator de chaque utilisateur (``ACTIVE``, ``SUSPENDUE``) ;
-    un utilisateur absent du résultat est « NON_CONFIGUREE ». TODO B5 (``authenticator_totp``)."""
-    return {}
+    un utilisateur absent du résultat est « NON_CONFIGUREE »."""
+    from .models import AuthenticatorTOTP, StatutAuthenticator
+
+    correspondance = {
+        StatutAuthenticator.ACTIF: AUTHENTICATOR_ACTIVE,
+        StatutAuthenticator.SUSPENDU: AUTHENTICATOR_SUSPENDUE,
+    }
+    return {
+        utilisateur_id: correspondance[statut]
+        for utilisateur_id, statut in AuthenticatorTOTP.objects.filter(
+            utilisateur_id__in=list(utilisateur_ids), statut__in=list(correspondance)
+        ).values_list("utilisateur_id", "statut")
+    }
 
 
 def verifier_code_step_up(utilisateur_id: uuid.UUID, code: str) -> bool:
     """Vérifie le code TOTP de confirmation (« StepUp », § 4.9) de l'utilisateur.
 
-    TODO B5 : brancher ``alpha.core.permissions.StepUpTOTP`` (fenêtre ±1, anti-rejeu).
-    ÉCHEC FERMÉ tant que B5 n'est pas livré : aucun code n'est accepté, donc
-    ``PATCH /admin/parametres-securite`` répond 401 ``CODE_INVALIDE``.
+    Même implémentation que ``alpha.core.permissions.StepUpTOTP`` : fenêtre ±1, pas
+    CONSOMMÉ (anti-rejeu), limite de 5 essais/min, refus journalisés hors transaction.
+    Faux aussi au-delà de la limite de débit. L'appelant RETOURNE sa réponse d'erreur
+    (§ 3.3) : ainsi rien de ce qui précède n'est annulé.
     """
-    return False
+    from . import mfa
+    from .models import Utilisateur
+
+    utilisateur = Utilisateur.objects.filter(pk=utilisateur_id).first()
+    if utilisateur is None or not code:
+        return False
+    resultat, _ = mfa.verifier_step_up(utilisateur, str(code))
+    return resultat == mfa.STEP_UP_OK
 
 
 def signalement_en_cours(utilisateur_id: uuid.UUID) -> dict[str, Any] | None:

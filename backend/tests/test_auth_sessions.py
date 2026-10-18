@@ -153,3 +153,28 @@ def test_client_connecte_de_conftest_passe_le_middleware(client_connecte, utilis
     assert r.status_code == 200 and r.json()["email"] == utilisateur_a.email
     admin = UtilisateurFactory(super_admin=True)
     assert client_connecte(admin).get(URL_SESSION).json()["est_super_admin"] is True
+
+
+def test_permissions_exigent_session_mfa_et_appareil_actif(client_connecte, utilisateur_a):
+    """``Session`` / ``Perm`` (organisation) : sans ``mfa_le`` ou sans session d'appareil
+    active, la route d'établissement est refusée, même si Django voit un utilisateur."""
+    from rest_framework.test import APIClient
+
+    from alpha.core.permissions import Session
+    from alpha.organisation.permissions import EstUtilisateurEtablissement
+
+    assert EstUtilisateurEtablissement is Session  # une seule implémentation
+    url = "/api/v1/admin/utilisateurs"
+    sans_mfa = APIClient()
+    sans_mfa.force_login(utilisateur_a, backend="django.contrib.auth.backends.ModelBackend")
+    session = sans_mfa.session
+    session["scope"], session["tenant_id"] = "tenant", str(utilisateur_a.etablissement_id)
+    session.save()
+    # Ni mfa_le ni session d'appareil : refusé (le middleware répond 401 SESSION_EXPIREE).
+    assert sans_mfa.get(url).status_code == 401
+
+    client = client_connecte(utilisateur_a)
+    session = client.session
+    del session["mfa_le"]
+    session.save()
+    assert client.get(url).status_code in (401, 403)

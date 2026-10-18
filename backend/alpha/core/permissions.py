@@ -37,26 +37,57 @@ class RefuserTout(BasePermission):
 Anonyme = AllowAny
 
 
+def _session_mfa_active(request) -> bool:
+    """Session ouverte par la connexion complète (§ 4.2, étape 11) et encore active.
+
+    Exige la clé ``mfa_le`` (posée seulement après le MFA) et une ``session_appareil``
+    non révoquée, liée à cet utilisateur. ``SessionActiviteMiddleware`` fait déjà ce
+    contrôle (et l'inactivité / la durée maximale) ; il est répété ici en défense en
+    profondeur, pour qu'aucune session forgée (``force_authenticate``, session sans
+    MFA) n'ouvre une route.
+    """
+    from alpha.comptes import sessions
+
+    utilisateur = getattr(request, "user", None)
+    if not getattr(utilisateur, "is_authenticated", False):
+        return False
+    session = getattr(request, "session", None)
+    if session is None or not session.get("mfa_le") or not session.session_key:
+        return False
+    etat = sessions.etat_session(session.session_key)
+    return etat is not None and not etat.revoquee and etat.utilisateur_id == utilisateur.pk
+
+
 def _authentifie(request) -> bool:
-    return bool(getattr(request.user, "is_authenticated", False))
+    return _session_mfa_active(request)
 
 
 class EstAuthentifie(BasePermission):
+    """Session MFA active, établissement ou plateforme."""
+
     def has_permission(self, request, view) -> bool:
         return _authentifie(request)
 
 
 class Session(BasePermission):
-    """Utilisateur d'établissement authentifié ; un super-admin est refusé (403, § 3.8)."""
+    """« Session » du § 5 : utilisateur d'établissement ACTIF, session MFA active, sous le
+    contexte de SON établissement. Un super-admin FYXOP est refusé (403, § 3.8)."""
 
-    message = "Cette fonction est réservée aux utilisateurs d'un établissement."
+    message = "Cette route est réservée aux utilisateurs d'un établissement."
 
     def has_permission(self, request, view) -> bool:
+        from alpha.comptes.models import StatutUtilisateur
+
+        if not _authentifie(request):
+            return False
+        utilisateur = request.user
+        if getattr(utilisateur, "est_super_admin", False):
+            return False
         return (
-            _authentifie(request)
-            and not request.user.est_super_admin
-            and contexte.scope_courant() == contexte.SCOPE_TENANT
+            contexte.scope_courant() == contexte.SCOPE_TENANT
             and contexte.tenant_courant() is not None
+            and contexte.tenant_courant() == utilisateur.etablissement_id
+            and utilisateur.statut == StatutUtilisateur.ACTIF
         )
 
 
@@ -77,14 +108,14 @@ class StepUpTOTP(BasePermission):
     - champ absent → 400 ``VALIDATION`` ;
     - trop d'essais (5/min par utilisateur) → 429 ;
     - code faux, rejoué, ou Authenticator suspendu → 401 ``CODE_INVALIDE``.
-    Le pas TOTP est consommé (anti-rejeu) : un code utilisé pour se connecter ne
-    peut pas resservir. À combiner avec ``Session`` ou ``SuperAdmin``.
+    Implémentation : ``alpha.comptes.mfa.verifier_step_up`` (pas consommé, refus
+    journalisés hors transaction). À combiner avec ``Session`` ou ``SuperAdmin``.
     """
 
     champ = "code"
 
     def has_permission(self, request, view) -> bool:
-        from alpha.comptes import limitation, mfa
+        from alpha.comptes import mfa
         from alpha.core.erreurs import VALIDATION, ErreurApi
 
         if not _authentifie(request):
@@ -96,18 +127,15 @@ class StepUpTOTP(BasePermission):
                 "Certaines données sont invalides.",
                 details={self.champ: ["Le code de l'application d'authentification est requis."]},
             )
-        limite, fenetre = limitation.STEP_UP_PAR_UTILISATEUR
-        attente = limitation.consommer(
-            "stepup", str(request.user.pk), limite=limite, fenetre_s=fenetre
-        )
-        if attente is not None:
+        resultat, attente = mfa.verifier_step_up(request.user, str(code))
+        if resultat == mfa.STEP_UP_TROP_DE_REQUETES:
             raise ErreurApi(
                 "TROP_DE_REQUETES",
                 "Trop de tentatives. Patientez avant de réessayer.",
                 statut=status.HTTP_429_TOO_MANY_REQUESTS,
                 details={"reessayer_dans_s": attente},
             )
-        if not mfa.verifier_totp(request.user, str(code)):
+        if resultat != mfa.STEP_UP_OK:
             raise ErreurApi(
                 "CODE_INVALIDE",
                 "Code de vérification invalide ou expiré.",
