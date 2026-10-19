@@ -23,6 +23,9 @@ from alpha.core.sante import sante
 urlpatterns = [
     path("api/v1/sante/", sante, name="sante"),
     path("api/v1/auth/", include("alpha.comptes.urls_auth")),
+    # Mon compte : profil, sécurité, sessions (B9) ; préférences et notifications (B9).
+    path("api/v1/", include("alpha.comptes.urls_moi")),
+    path("api/v1/", include("alpha.notifications.urls")),
     # À traiter, absences et délégations (§ 5.3, § 5.4, B8).
     path("api/v1/", include("alpha.taches.urls")),
     path("api/v1/", include("alpha.delegations.urls")),

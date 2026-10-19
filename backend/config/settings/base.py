@@ -267,6 +267,9 @@ SPECTACULAR_SETTINGS = {
         "StatutEtablissementEnum": "alpha.tenancy.models.StatutEtablissement",
         "StatutTacheEnum": "alpha.taches.models.StatutTache",
         "StatutControleEnum": "alpha.audit.models.StatutControle",
+        # B9 : Mon compte.
+        "StatutSignalementEnum": "alpha.comptes.models.StatutSignalement",
+        "EtatAuthenticatorEnum": ["ACTIVE", "NON_CONFIGUREE", "SUSPENDUE"],
     },
 }
 # Schéma OpenAPI (/api/v1/schema/) et documentation interactive (/api/v1/docs/) :
