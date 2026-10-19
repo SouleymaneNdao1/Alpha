@@ -125,8 +125,7 @@ def inviter(
     - e-mail unique sur TOUTE la plateforme (P1) : contrôle par ``alpha_resoudre_connexion``
       (seul passage autorisé entre établissements), sinon 409 ``EMAIL_EXISTE`` ;
     - l'e-mail d'invitation part après le commit (``raccordements.envoyer_invitation``, B6).
-
-    TODO B9 : créer les ``preferences_notification`` par défaut (modèle non encore livré).
+    - préférences de notification par défaut créées (B9).
     """
     role = role_du_catalogue(role_id)
     _verifier_unite(unite)
@@ -149,6 +148,10 @@ def inviter(
     affectation = AffectationRole.objects.create(
         utilisateur=utilisateur, role=role, unite=unite, principal=True, cree_par=par
     )
+    # Préférences de notification par défaut (§ 4.3, étape 2 ; raccordement B9).
+    from alpha.notifications.services import creer_preferences_defaut
+
+    creer_preferences_defaut(utilisateur)
     jeton = _emettre_invitation(utilisateur, par)
     journaliser(
         "utilisateur.invite",
