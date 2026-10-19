@@ -101,8 +101,8 @@ UniteOrganisationnelleFactory(etablissement=banque)
 Fixtures prêtes à l'emploi (`conftest.py`) : `etab_a` (banque, code `banque-a`), `etab_b`
 (SFD, code `sfd-b`), `utilisateur_a`, `utilisateur_b` (ACTIFS, mot de passe
 `MOT_DE_PASSE_TEST`), `contexte_a`, `contexte_b`, `client_api` (anonyme) et
-`client_connecte(utilisateur)` (session forgée, **provisoire** jusqu'à B5 : voir
-`ouvrir_session`). `creer_etablissement(code, **champs)` (conftest) et
+`client_connecte(utilisateur)` (session forgée avec sa `session_appareil`, pour les tests
+qui ne portent pas sur l'authentification ; la vraie connexion est dans `tests/outils_auth.py`). `creer_etablissement(code, **champs)` (conftest) et
 `tests/outils_comptes.py` (B3) restent disponibles ; pour un nouveau test, préférer les fabriques.
 
 ## 4. E-mails : mémoire ou Mailpit

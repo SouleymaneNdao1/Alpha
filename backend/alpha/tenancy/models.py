@@ -242,6 +242,23 @@ class ParametresEtablissement(TenantModel):
 
     modifie_le = models.DateTimeField("modifié le", auto_now=True)
 
+    #: Champs journalisés (liste blanche du journal d'audit, § 6.1 ; ajout B7) :
+    #: les réglages modifiables par ``PATCH /admin/parametres-securite``.
+    AUDIT_CHAMPS = (
+        "inactivite_session_min",
+        "duree_max_session_h",
+        "mdp_longueur_min",
+        "mdp_historique",
+        "mdp_expiration_jours",
+        "tentatives_max",
+        "verrouillage_min",
+        "verrouillages_max_24h",
+        "validite_invitation_h",
+        "validite_reinit_mdp_min",
+        "retention_audit_annees",
+        "email_controle_interne",
+    )
+
     class Meta:
         db_table = "parametres_etablissement"
         verbose_name = "paramètres de l'établissement"

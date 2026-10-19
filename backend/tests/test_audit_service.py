@@ -123,7 +123,11 @@ def test_acteur_explicite_ou_objet_utilisateur():
     assert resoudre_acteur(Acteur("IA", None, "x" * 300)).libelle == "x" * 150
     with pytest.raises(ValueError):
         resoudre_acteur(Acteur("PIRATE"))
-    with contexte.contexte(utilisateur=UTILISATEUR, scope=contexte.SCOPE_PLATFORM):
+    # Sans résolveur (B5 branche alpha.comptes.audit, qui lit la base) : type déduit de la portée.
+    with (
+        override_settings(ALPHA_AUDIT_RESOLVEUR_ACTEUR=None),
+        contexte.contexte(utilisateur=UTILISATEUR, scope=contexte.SCOPE_PLATFORM),
+    ):
         assert resoudre_acteur().type == "SUPER_ADMIN"
 
 

@@ -6,7 +6,7 @@ recette, non routés en production (``alpha.core.documentation_api``).
 Sonde de santé publique : /api/v1/sante/ (``alpha.core.sante``).
 
 Les routes métier sont ajoutées par les tâches suivantes :
-    /api/v1/auth/...        alpha.comptes (B5, B6)
+    /api/v1/auth/...        alpha.comptes (B5 : csrf, session, connexion, mfa, deconnexion ; B6)
     /api/v1/moi/...         alpha.comptes, alpha.notifications (B9)
     /api/v1/taches/...      alpha.taches, alpha.delegations (B8)
     /api/v1/admin/...       alpha.comptes, alpha.organisation (B7)
@@ -22,9 +22,14 @@ from alpha.core.sante import sante
 
 urlpatterns = [
     path("api/v1/sante/", sante, name="sante"),
+    path("api/v1/auth/", include("alpha.comptes.urls_auth")),
     # À traiter, absences et délégations (§ 5.3, § 5.4, B8).
     path("api/v1/", include("alpha.taches.urls")),
     path("api/v1/", include("alpha.delegations.urls")),
+    # Administration de l'établissement (§ 5.5, B7).
+    path("api/v1/admin/", include("alpha.comptes.urls_admin")),
+    path("api/v1/admin/", include("alpha.organisation.urls_admin")),
+    path("api/v1/admin/", include("alpha.tenancy.urls_admin")),
 ]
 
 urlpatterns += routes_documentation(

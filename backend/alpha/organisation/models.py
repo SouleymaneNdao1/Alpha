@@ -59,6 +59,9 @@ class UniteOrganisationnelle(TenantModel):
     cree_le = models.DateTimeField("créée le", auto_now_add=True)
     modifie_le = models.DateTimeField("modifiée le", auto_now=True)
 
+    #: Champs journalisés (liste blanche du journal d'audit, § 6.1 ; ajout B7).
+    AUDIT_CHAMPS = ("parent", "type", "code", "libelle", "actif")
+
     class Meta:
         db_table = "unite_organisationnelle"
         verbose_name = "unité organisationnelle"
@@ -112,6 +115,17 @@ class Role(TenantModel):
     ordre = models.SmallIntegerField("ordre d'affichage", default=0)
     cree_le = models.DateTimeField("créé le", auto_now_add=True)
     modifie_le = models.DateTimeField("modifié le", auto_now=True)
+
+    #: Champs journalisés (liste blanche du journal d'audit, § 6.1 ; ajout B7).
+    AUDIT_CHAMPS = (
+        "code",
+        "libelle",
+        "description",
+        "permissions",
+        "est_systeme",
+        "actif",
+        "ordre",
+    )
 
     class Meta:
         db_table = "role"
@@ -195,6 +209,9 @@ class AffectationRole(TenantModel):
         related_name="+",
     )
     cree_le = models.DateTimeField("créée le", auto_now_add=True)
+
+    #: Champs journalisés (liste blanche du journal d'audit, § 6.1 ; ajout B7).
+    AUDIT_CHAMPS = ("utilisateur", "role", "unite", "principal", "debut", "fin")
 
     objects = AffectationRoleManager()  # + manager non filtré hérité de TenantModel
 
