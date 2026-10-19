@@ -260,6 +260,11 @@ SPECTACULAR_SETTINGS = {
     "ENUM_NAME_OVERRIDES": {
         "StatutAbsenceEnum": "alpha.delegations.models.StatutAbsence",
         "StatutDelegationEnum": "alpha.delegations.models.StatutDelegation",
+        "StatutUtilisateurEnum": "alpha.comptes.models.StatutUtilisateur",
+        "StatutAuthenticatorEnum": "alpha.comptes.models.StatutAuthenticator",
+        "StatutEtablissementEnum": "alpha.tenancy.models.StatutEtablissement",
+        "StatutTacheEnum": "alpha.taches.models.StatutTache",
+        "StatutControleEnum": "alpha.audit.models.StatutControle",
     },
 }
 # Schéma OpenAPI (/api/v1/schema/) et documentation interactive (/api/v1/docs/) :
