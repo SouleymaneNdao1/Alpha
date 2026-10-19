@@ -1,0 +1,8 @@
+{% autoescape off %}Bonjour {{ prenom }},
+
+Le mot de passe de votre compte ALPHA a été modifié le {{ heure }}. Toutes vos sessions ouvertes ont été fermées.
+
+Si vous n'êtes pas à l'origine de ce changement, prévenez immédiatement votre administrateur et signalez-le :
+{{ lien_telephone_perdu }}
+
+ALPHA{% endautoescape %}

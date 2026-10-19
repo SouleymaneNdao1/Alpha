@@ -1,0 +1,12 @@
+{% autoescape off %}Bonjour {{ prenom }},
+
+Nous avons enregistré le {{ heure }} le signalement de perte de votre téléphone.
+
+Par sécurité :
+  - votre application d'authentification est suspendue ;
+  - la signature des décisions est bloquée sur votre compte ;
+  - toutes vos sessions ont été fermées.
+
+Vous pouvez encore vous connecter avec un code de secours pour consulter et travailler. Un administrateur de votre établissement va vérifier votre identité (en personne, par rappel au numéro connu ou par appel vidéo), puis vous enverra un lien pour configurer votre nouveau téléphone.
+
+ALPHA{% endautoescape %}

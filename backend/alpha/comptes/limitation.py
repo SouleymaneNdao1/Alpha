@@ -27,6 +27,12 @@ CONNEXION_PAR_IP = (10, 60)  # 10 / min par IP
 CONNEXION_PAR_EMAIL = (20, 3600)  # 20 / h par e-mail
 MFA_PAR_SESSION = (5, 60)  # 5 / min par session
 STEP_UP_PAR_UTILISATEUR = (5, 60)  # 5 / min par utilisateur (choix B5)
+# Limites du § 4.5 et du § 4.7 (B6).
+OUBLI_PAR_EMAIL = (3, 3600)  # 3 / h par e-mail
+OUBLI_PAR_IP = (10, 3600)  # 10 / h par IP
+TELEPHONE_PERDU_PAR_IP = (3, 3600)  # 3 / h par IP
+# Essais de code pendant l'activation ou le réenrôlement : au 5e échec, le lien est annulé.
+ESSAIS_ENROLEMENT = 5
 
 
 def empreinte(valeur: str) -> str:
@@ -48,6 +54,17 @@ def consommer(espace: str, identifiant: str, *, limite: int, fenetre_s: int) -> 
         return None
     restant = cache.ttl(cle) if hasattr(cache, "ttl") else None
     return int(restant) if restant and restant > 0 else fenetre_s
+
+
+def compter(espace: str, identifiant: str, *, fenetre_s: int) -> int:
+    """Incrémente un compteur (fenêtre fixe) et renvoie sa nouvelle valeur."""
+    cle = f"{PREFIXE}:{espace}:{empreinte(identifiant)}"
+    cache.add(cle, 0, timeout=fenetre_s)
+    try:
+        return int(cache.incr(cle))
+    except ValueError:  # clé expirée entre add() et incr()
+        cache.set(cle, 1, timeout=fenetre_s)
+        return 1
 
 
 def reponse_trop_de_requetes(attente_s: int) -> Response:

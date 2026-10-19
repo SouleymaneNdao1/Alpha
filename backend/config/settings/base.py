@@ -262,6 +262,8 @@ SPECTACULAR_SETTINGS = {
         "StatutDelegationEnum": "alpha.delegations.models.StatutDelegation",
         "StatutUtilisateurEnum": "alpha.comptes.models.StatutUtilisateur",
         "StatutAuthenticatorEnum": "alpha.comptes.models.StatutAuthenticator",
+        "EtapeJetonEnum": "alpha.comptes.models.EtapeJeton",
+        "EtapeConnexionEnum": ["MFA_REQUIS", "REENROLEMENT_REQUIS"],
         "StatutEtablissementEnum": "alpha.tenancy.models.StatutEtablissement",
         "StatutTacheEnum": "alpha.taches.models.StatutTache",
         "StatutControleEnum": "alpha.audit.models.StatutControle",

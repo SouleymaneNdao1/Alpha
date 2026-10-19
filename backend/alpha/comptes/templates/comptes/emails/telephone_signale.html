@@ -1,0 +1,12 @@
+{% extends "comptes/emails/base.html" %}
+{% block contenu %}
+<p>Bonjour {{ prenom }},</p>
+<p>Nous avons enregistré le {{ heure }} le signalement de perte de votre téléphone.</p>
+<p>Par sécurité :</p>
+<ul>
+<li>votre application d'authentification est suspendue ;</li>
+<li>la signature des décisions est bloquée sur votre compte ;</li>
+<li>toutes vos sessions ont été fermées.</li>
+</ul>
+<p>Vous pouvez encore vous connecter avec un <strong>code de secours</strong> pour consulter et travailler. Un administrateur de votre établissement va vérifier votre identité, puis vous enverra un lien pour configurer votre nouveau téléphone.</p>
+{% endblock %}

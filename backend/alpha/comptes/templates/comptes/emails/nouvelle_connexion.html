@@ -1,0 +1,12 @@
+{% extends "comptes/emails/base.html" %}
+{% block contenu %}
+<p>Bonjour {{ prenom }},</p>
+<p>Une connexion à votre compte ALPHA a eu lieu depuis un appareil ou un lieu inhabituel :</p>
+<ul>
+<li>appareil : {{ appareil }}</li>
+<li>adresse IP : {{ ip }}</li>
+<li>heure : {{ heure }}</li>
+</ul>
+<p>Si c'était bien vous, aucune action n'est nécessaire.</p>
+<p style="margin:24px 0;"><a href="{{ lien_telephone_perdu }}" style="background:#b42318;color:#ffffff;text-decoration:none;padding:12px 20px;border-radius:6px;display:inline-block;">Ce n'était pas moi</a></p>
+{% endblock %}

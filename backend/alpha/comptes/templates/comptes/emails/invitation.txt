@@ -1,0 +1,12 @@
+{% autoescape off %}Bonjour {{ prenom }},
+
+L'administrateur de {{ etablissement }} vous a invité à rejoindre ALPHA{% if role %} comme {{ role }}{% endif %}.
+
+Pour activer votre compte, ouvrez ce lien et suivez les étapes (mot de passe, application d'authentification, codes de secours) :
+{{ lien }}
+
+Ce lien est personnel et utilisable une seule fois. Il expire le {{ expire_le }}.
+
+Si vous n'attendiez pas cette invitation, ignorez ce message.
+
+ALPHA{% endautoescape %}

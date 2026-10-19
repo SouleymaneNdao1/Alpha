@@ -1,0 +1,5 @@
+{% autoescape off %}Bonjour {{ prenom }},
+
+Votre signalement de téléphone perdu a été clos le {{ heure }} (téléphone retrouvé). Votre application d'authentification est de nouveau active et la signature des décisions est débloquée.
+
+ALPHA{% endautoescape %}

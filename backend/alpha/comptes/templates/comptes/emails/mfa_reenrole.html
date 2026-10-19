@@ -1,0 +1,7 @@
+{% extends "comptes/emails/base.html" %}
+{% block contenu %}
+<p>Bonjour {{ prenom }},</p>
+<p>Votre nouvelle application d'authentification a été configurée le {{ heure }}. La signature des décisions est de nouveau possible.</p>
+<p>Conservez vos nouveaux codes de secours en lieu sûr.</p>
+<p style="font-size:13px;color:#52606d;">Si vous n'êtes pas à l'origine de cette opération, signalez-le immédiatement : <a href="{{ lien_telephone_perdu }}">{{ lien_telephone_perdu }}</a></p>
+{% endblock %}

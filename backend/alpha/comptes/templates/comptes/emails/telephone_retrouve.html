@@ -1,0 +1,6 @@
+{% extends "comptes/emails/base.html" %}
+{% block contenu %}
+<p>Bonjour {{ prenom }},</p>
+<p>Votre signalement de téléphone perdu a été clos le {{ heure }} (téléphone retrouvé). Votre application d'authentification est de nouveau active et la signature des décisions est débloquée.</p>
+<p style="font-size:13px;color:#52606d;">Si vous n'êtes pas à l'origine de cette opération, signalez-le immédiatement : <a href="{{ lien_telephone_perdu }}">{{ lien_telephone_perdu }}</a></p>
+{% endblock %}

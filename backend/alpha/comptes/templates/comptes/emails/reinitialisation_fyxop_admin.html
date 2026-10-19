@@ -1,0 +1,7 @@
+{% extends "comptes/emails/base.html" %}
+{% block contenu %}
+<p>Bonjour {{ prenom }},</p>
+<p>Pour information : le {{ heure }}, l'équipe FYXOP a réinitialisé l'application d'authentification de <strong>{{ nom_utilisateur }}</strong>, administrateur de votre établissement.</p>
+<p>Cette opération a été faite à la demande écrite et signée de la direction de votre établissement (référence : <strong>{{ reference }}</strong>), après vérification d'identité par appel vidéo. Elle est inscrite dans le journal d'audit.</p>
+<p style="font-size:13px;color:#52606d;">Si vous n'avez pas connaissance de cette demande, contactez immédiatement votre direction et FYXOP.</p>
+{% endblock %}
