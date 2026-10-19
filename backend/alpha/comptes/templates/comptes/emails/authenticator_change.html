@@ -1,0 +1,6 @@
+{% extends "comptes/emails/base.html" %}
+{% block contenu %}
+<p>Bonjour {{ prenom }},</p>
+<p>L'application d'authentification de votre compte ALPHA a été remplacée le {{ heure }} depuis « Mon compte » ({{ appareil }}). L'ancienne application ne fonctionne plus ; vos codes de secours restent valables.</p>
+<p style="font-size:13px;color:#52606d;">Si vous n'êtes pas à l'origine de cette opération, signalez-le immédiatement : <a href="{{ lien_telephone_perdu }}">{{ lien_telephone_perdu }}</a></p>
+{% endblock %}

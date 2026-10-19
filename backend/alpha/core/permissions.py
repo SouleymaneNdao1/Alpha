@@ -83,12 +83,40 @@ class Session(BasePermission):
         utilisateur = request.user
         if getattr(utilisateur, "est_super_admin", False):
             return False
-        return (
+        if not (
             contexte.scope_courant() == contexte.SCOPE_TENANT
             and contexte.tenant_courant() is not None
             and contexte.tenant_courant() == utilisateur.etablissement_id
             and utilisateur.statut == StatutUtilisateur.ACTIF
-        )
+        ):
+            return False
+        # Décision P3 (ajout B9) : mot de passe expiré → changement forcé. Seules les vues
+        # marquées ``autorise_mot_de_passe_expire`` (Mon compte) restent ouvertes.
+        if not getattr(view, "autorise_mot_de_passe_expire", False) and _mot_de_passe_expire(
+            request
+        ):
+            from alpha.core.erreurs import ErreurApi
+
+            raise ErreurApi(
+                MOT_DE_PASSE_EXPIRE,
+                "Votre mot de passe a expiré. Choisissez-en un nouveau dans « Mon compte ».",
+                statut=status.HTTP_403_FORBIDDEN,
+            )
+        return True
+
+
+MOT_DE_PASSE_EXPIRE = "MOT_DE_PASSE_EXPIRE"
+
+
+def _mot_de_passe_expire(request) -> bool:
+    """Expiration périodique (P3), calculée une fois par requête."""
+    from alpha.comptes.connexion import mot_de_passe_expire, regles_pour
+
+    requete = getattr(request, "_request", request)
+    if not hasattr(requete, "_alpha_mdp_expire"):
+        utilisateur = request.user
+        requete._alpha_mdp_expire = mot_de_passe_expire(utilisateur, regles_pour(utilisateur))
+    return requete._alpha_mdp_expire
 
 
 class SuperAdmin(BasePermission):

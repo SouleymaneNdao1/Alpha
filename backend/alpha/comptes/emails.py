@@ -42,6 +42,7 @@ SUJETS: dict[str, str] = {
     "compte_verrouille": "Votre compte ALPHA est verrouillé",
     "code_secours_utilise": "Un code de secours a été utilisé",
     "nouvelle_connexion": "Nouvelle connexion à votre compte ALPHA",
+    "authenticator_change": "Votre application d'authentification ALPHA a été remplacée",
 }
 
 
