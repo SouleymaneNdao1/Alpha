@@ -74,7 +74,7 @@ x-sonde-backend: &sonde-backend
           code = e.code
       except Exception:
           sys.exit(1)
-      sys.exit(0 if code < 500 else 1)
+      sys.exit(0 if code == 200 else 1)
   interval: 30s
   timeout: 6s
   retries: 5

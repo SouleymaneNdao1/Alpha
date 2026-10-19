@@ -626,9 +626,9 @@ nouvelle clé en tête), et forcer la reconfiguration MFA si le doute porte sur 
 | Ressources | ≈ 2 Go, 2 processus gunicorn, 1 worker Celery | ≈ 4,5 Go, 3 processus, 2 workers |
 | Journaux | journald, communs | journald, communs |
 
-Remarque : au sprint 1, Django sert `/api/v1/schema/` sans exiger de session ; en recette, c'est
-le mot de passe des outils posé par Caddy qui le protège. Exiger en plus une session ALPHA
-(`SERVE_PERMISSIONS`) relève du backend.
+Remarque : en recette, Django exige en plus une session ALPHA pour `/api/v1/schema/` et
+`/api/v1/docs/` (401 sinon ; réglage `ALPHA_DOC_API_RESERVEE_CONNECTES`, décision du client), en
+plus du mot de passe des outils posé par Caddy. En production, Django ne les route pas (404).
 
 **En-têtes posés par Caddy** (`infra/caddy/Caddyfile`), sur toutes les réponses :
 `Strict-Transport-Security: max-age=31536000; includeSubDomains` (sans `preload` : l'inscription

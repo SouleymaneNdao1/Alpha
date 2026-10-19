@@ -67,11 +67,9 @@ x-durci: &durci
   security_opt:
     - no-new-privileges:true
 
-# Sonde du backend : /api/v1/sante/ (à fournir par le backend, voir
-# docs/ops/monitoring.md). Toute réponse HTTP < 500 compte comme « vivant » :
-# tant que la route n'existe pas, le 404 de Django prouve déjà que gunicorn et
-# Django répondent ; ensuite, la route renverra 503 si la base ou Redis manquent.
-# (/api/v1/schema/ n'est plus utilisable : il sera coupé en production.)
+# Sonde du backend : /api/v1/sante/ (livrée par B8, voir docs/ops/monitoring.md).
+# 200 {"statut":"ok"} si la base et Redis répondent, 503 sinon : seul 200 compte
+# comme « sain ». (/api/v1/schema/ n'est pas routé en production.)
 x-sonde-backend: &sonde-backend
   test:
     - CMD
@@ -85,7 +83,7 @@ x-sonde-backend: &sonde-backend
           code = e.code
       except Exception:
           sys.exit(1)
-      sys.exit(0 if code < 500 else 1)
+      sys.exit(0 if code == 200 else 1)
   interval: 15s
   timeout: 6s
   retries: 5

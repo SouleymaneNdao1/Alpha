@@ -32,4 +32,6 @@ if not SECURE_HSTS_PRELOAD:
     # du titulaire du domaine (irréversible à court terme) ; activable par ALPHA_HSTS_PRELOAD.
     SILENCED_SYSTEM_CHECKS.append("security.W021")
 
+# Production : ni schéma OpenAPI ni documentation ne sont routés (404).
 ALPHA_DOC_API_ACTIVE = False
+ALPHA_DOC_API_RESERVEE_CONNECTES = True

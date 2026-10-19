@@ -41,6 +41,8 @@ MESSAGES = {
 # session) ; la connexion traite elle-même le cas SUSPENDU (§ 4.2, étape 4).
 PREFIXE_AUTH = "/api/v1/auth/"
 METHODES_SURES = frozenset({"GET", "HEAD", "OPTIONS", "TRACE"})
+# Seule route servie sans contexte ni transaction (sonde de santé, ajout B8).
+CHEMIN_SANS_CONTEXTE = "/api/v1/sante/"
 
 
 def _uuid_session(valeur: object) -> uuid.UUID | None:
@@ -77,6 +79,10 @@ class TenantContextMiddleware:
         self.get_response = get_response
 
     def __call__(self, request: HttpRequest) -> HttpResponse:
+        if request.path == CHEMIN_SANS_CONTEXTE:
+            # Sonde de santé (alpha.core.sante) : aucune donnée lue, aucune transaction ;
+            # elle doit répondre 503 (et non 500) quand la base est indisponible.
+            return self.get_response(request)
         tenant, scope, utilisateur = lire_contexte_session(request)
         with transaction.atomic(), appliquer_contexte(tenant, scope, utilisateur):
             response = self.get_response(request)
