@@ -1,12 +1,10 @@
 "use client";
 
-import Link from "next/link";
 import type { Moi } from "@/lib/api/hooks/auth";
+import { Cloche } from "./Cloche";
 
 export interface BandeauProps {
   moi: Moi;
-  /** Notifications non lues ; `undefined` tant que l'endpoint ne répond pas. */
-  nonLues?: number;
   onMenu: () => void;
   menuOuvert: boolean;
 }
@@ -15,7 +13,7 @@ const classeBtn =
   "cible-tactile relative inline-flex h-10 min-w-10 items-center justify-center rounded-champ border border-bordure bg-surface px-2 text-texte-2 no-underline hover:bg-survol hover:text-encre";
 
 /** Bandeau supérieur : menu (mobile), recherche (inactive au S1), établissement, cloche, aide. */
-export function Bandeau({ moi, nonLues, onMenu, menuOuvert }: BandeauProps) {
+export function Bandeau({ moi, onMenu, menuOuvert }: BandeauProps) {
   return (
     <header className="flex flex-wrap items-center gap-2.5 border-b border-bordure pb-3">
       <button
@@ -64,20 +62,7 @@ export function Bandeau({ moi, nonLues, onMenu, menuOuvert }: BandeauProps) {
         </span>
       )}
 
-      <Link href="/a-traiter" aria-label={nonLues ? `Notifications : ${nonLues} non lue${nonLues > 1 ? "s" : ""}` : "Notifications"} className={classeBtn}>
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-          <path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 0 1-3.4 0" />
-        </svg>
-        {!!nonLues && (
-          <span
-            data-testid="compteur-cloche"
-            className="absolute -right-1.5 -top-1.5 flex h-[18px] min-w-[18px] items-center justify-center rounded-pilule bg-danger-texte px-1 font-mono text-[11px] font-semibold text-white"
-            aria-hidden="true"
-          >
-            {nonLues > 99 ? "99+" : nonLues}
-          </span>
-        )}
-      </Link>
+      {!moi.est_super_admin && <Cloche />}
 
       <span
         role="link"

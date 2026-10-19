@@ -30,6 +30,31 @@ export function possedeUnePermissionDe(moi: Pick<Moi, "permissions">, prefixe: s
   return moi.permissions.some((p) => p.startsWith(prefixe));
 }
 
+export interface PageAdministration {
+  id: "utilisateurs" | "roles" | "habilitations" | "delegations" | "organisation" | "securite";
+  libelle: string;
+  href: string;
+}
+
+/**
+ * Pages de `/administration/*` accessibles à l'utilisateur (onglets de l'écran 12). Les lectures
+ * du catalogue des rôles et des unités sont ouvertes à `admin.utilisateurs` (invitation) ;
+ * l'écriture exige `admin.roles` / `admin.organisation`. Les signalements « téléphone perdu »
+ * relèvent de `admin.utilisateurs`, les paramètres de sécurité de `admin.securite`.
+ */
+export function pagesAdministration(moi: Pick<Moi, "permissions">): PageAdministration[] {
+  const a = (...codes: string[]) => codes.some((c) => possede(moi, c));
+  const pages: Array<PageAdministration & { visible: boolean }> = [
+    { id: "utilisateurs", libelle: "Utilisateurs", href: "/administration/utilisateurs", visible: a("admin.utilisateurs") },
+    { id: "roles", libelle: "Catalogue des rôles", href: "/administration/roles", visible: a("admin.roles", "admin.utilisateurs") },
+    { id: "habilitations", libelle: "Rôles et habilitations", href: "/administration/habilitations", visible: a("admin.roles") },
+    { id: "delegations", libelle: "Délégations", href: "/administration/delegations", visible: a("admin.utilisateurs", "admin.absences") },
+    { id: "organisation", libelle: "Unités et périmètres", href: "/administration/organisation", visible: a("admin.organisation", "admin.utilisateurs") },
+    { id: "securite", libelle: "Sécurité", href: "/administration/securite", visible: a("admin.securite", "admin.utilisateurs") },
+  ];
+  return pages.filter((p) => p.visible).map(({ visible: _v, ...p }) => p);
+}
+
 export function construireMenu(moi: Moi): GroupeMenu[] {
   const groupes: GroupeMenu[] = [];
 
@@ -46,7 +71,7 @@ export function construireMenu(moi: Moi): GroupeMenu[] {
         {
           id: "administration",
           libelle: "Administration",
-          href: "/administration/utilisateurs",
+          href: pagesAdministration(moi)[0]?.href ?? "/administration/utilisateurs",
           icone: "administration",
           prefixes: ["/administration"],
         },
