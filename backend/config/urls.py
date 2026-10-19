@@ -35,6 +35,8 @@ urlpatterns = [
     path("api/v1/admin/", include("alpha.tenancy.urls_admin")),
     # Journal d'audit (§ 5.6, B11).
     path("api/v1/audit/", include("alpha.audit.urls")),
+    # Console FYXOP (§ 5.7, B10) : super-administrateur uniquement.
+    path("api/v1/plateforme/", include("alpha.plateforme.urls")),
 ]
 
 urlpatterns += routes_documentation(

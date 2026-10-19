@@ -43,6 +43,8 @@ SUJETS: dict[str, str] = {
     "code_secours_utilise": "Un code de secours a été utilisé",
     "nouvelle_connexion": "Nouvelle connexion à votre compte ALPHA",
     "authenticator_change": "Votre application d'authentification ALPHA a été remplacée",
+    # Ajout B10 : premier accès d'un super-administrateur (``manage.py creer_super_admin``).
+    "configuration_super_admin": "Configurez l'accès à la console FYXOP",
 }
 
 
