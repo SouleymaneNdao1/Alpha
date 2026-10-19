@@ -6,6 +6,11 @@
  */
 export const ACCUEIL = "/a-traiter";
 export const ACCUEIL_CONSOLE = "/console";
+/**
+ * Décision de coordination : tant que la console FYXOP (F9) n'existe pas, un
+ * super-admin est dirigé vers `/a-traiter`. Passer à `true` avec F9.
+ */
+const CONSOLE_DISPONIBLE = false;
 
 const ROUTES_AUTH = ["/connexion", "/activation", "/reenrolement", "/mot-de-passe-oublie", "/reinitialisation"];
 
@@ -22,5 +27,5 @@ export function destinationSure(suivant: string | null | undefined): string | nu
 }
 
 export function destinationApresConnexion(suivant: string | null | undefined, estSuperAdmin: boolean): string {
-  return destinationSure(suivant) ?? (estSuperAdmin ? ACCUEIL_CONSOLE : ACCUEIL);
+  return destinationSure(suivant) ?? (estSuperAdmin && CONSOLE_DISPONIBLE ? ACCUEIL_CONSOLE : ACCUEIL);
 }
