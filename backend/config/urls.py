@@ -4,7 +4,7 @@ Base : /api/v1. Schéma OpenAPI : /api/v1/schema/ ; documentation interactive
 (Swagger) : /api/v1/docs/, en dev et en recette uniquement (ALPHA_DOC_API_ACTIVE).
 
 Les routes métier sont ajoutées par les tâches suivantes :
-    /api/v1/auth/...        alpha.comptes (B5, B6)
+    /api/v1/auth/...        alpha.comptes (B5 : csrf, session, connexion, mfa, deconnexion ; B6)
     /api/v1/moi/...         alpha.comptes, alpha.notifications (B9)
     /api/v1/taches/...      alpha.taches, alpha.delegations (B8)
     /api/v1/admin/...       alpha.comptes, alpha.organisation (B7)
@@ -18,6 +18,7 @@ from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 
 urlpatterns = [
     path("api/v1/schema/", SpectacularAPIView.as_view(), name="schema"),
+    path("api/v1/auth/", include("alpha.comptes.urls_auth")),
     # Administration de l'établissement (§ 5.5, B7).
     path("api/v1/admin/", include("alpha.comptes.urls_admin")),
     path("api/v1/admin/", include("alpha.organisation.urls_admin")),

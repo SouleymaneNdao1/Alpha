@@ -20,6 +20,7 @@ from django.conf import settings
 from django.db import connections
 from django.db.backends.postgresql.operations import DatabaseOperations
 from django.test import TransactionTestCase
+from django.utils import timezone
 from rest_framework.test import APIClient
 
 from alpha.comptes.models import Utilisateur
@@ -173,20 +174,37 @@ def utilisateur_b(etab_b) -> Utilisateur:
 def ouvrir_session(client: APIClient, utilisateur: Utilisateur) -> APIClient:
     """Ouvre une session pour ``utilisateur`` SANS passer par la vue de connexion.
 
-    Provisoire (T1) : force_login puis contexte tenant posé dans la session, comme le
-    fera la connexion (§ 4.2) : ``tenant_id`` + ``scope`` lus par TenantContextMiddleware.
-    À la livraison de B5, remplacer par la vraie connexion (POST /api/v1/auth/connexion
-    puis MFA avec ``tests.totp.code_courant``) ou compléter la session forgée avec les
-    clés exigées par SessionActiviteMiddleware et SessionAppareil.
+    Pour les tests qui ne portent pas sur l'authentification (les tests B5 passent par
+    la vraie connexion : ``tests/outils_auth.se_connecter``). Session forgée comme la
+    pose ``alpha.comptes.connexion.ouvrir_session`` : ``force_login``, puis ``tenant_id``,
+    ``scope`` et ``mfa_le`` dans la session, et ligne ``session_appareil`` exigée par
+    ``SessionActiviteMiddleware`` (B5 ; sinon 401 ``SESSION_EXPIREE``).
     """
+    from alpha.comptes import sessions as sessions_appareil
+    from alpha.comptes.connexion import regles_pour
+    from alpha.comptes.models import MethodeMfa
+
     client.force_login(utilisateur, backend="django.contrib.auth.backends.ModelBackend")
     session = client.session
     if utilisateur.est_super_admin:
         session["scope"] = contexte.SCOPE_PLATFORM
         session.pop("tenant_id", None)
+        cm = contexte_tenant(None, scope=contexte.SCOPE_PLATFORM, utilisateur_id=utilisateur.id)
     else:
         session["scope"] = contexte.SCOPE_TENANT
         session["tenant_id"] = str(utilisateur.etablissement_id)
+        cm = contexte_tenant(utilisateur.etablissement_id, utilisateur_id=utilisateur.id)
+    session["mfa_le"] = timezone.now().isoformat()
+    with cm:
+        appareil = sessions_appareil.creer_session_appareil(
+            utilisateur,
+            session.session_key,
+            methode_mfa=MethodeMfa.TOTP,
+            duree_max=regles_pour(utilisateur).duree_max,
+            user_agent="client de test",
+            ip="127.0.0.1",
+        )
+    session["session_appareil_id"] = str(appareil.id)
     session.save()
     return client
 

@@ -11,8 +11,11 @@ La connexion, qui ne connaît pas encore l'établissement, passe par
 ``alpha_resoudre_connexion`` (``alpha.comptes.resolution``), puis relit
 l'utilisateur par ce manager sous ``contexte_tenant``.
 
-Les autres tables du § 2.2 (Authenticator, codes de secours, sessions,
-historique des mots de passe, téléphone perdu) relèvent des tâches B5 et B6.
+Tâche B5 : ``AuthenticatorTOTP``, ``CodeSecours``, ``SessionAppareil`` et
+``HistoriqueMotDePasse`` (tables (*) du § 3.5, politique « tenant ou
+plateforme »). Le signalement « téléphone perdu » relève de B6 ; le blocage de
+la signature qu'il entraîne est porté dès B5 par ``Utilisateur.signature_bloquee``
+et vérifié par ``alpha.comptes.mfa.verifier_signature_autorisee``.
 """
 
 from __future__ import annotations
@@ -243,6 +246,11 @@ class Utilisateur(AbstractBaseUser, ObjetsGlobauxMixin):
     def is_active(self) -> bool:  # lu par ModelBackend (session invalidée si faux)
         return self.statut == StatutUtilisateur.ACTIF
 
+    @property
+    def peut_signer(self) -> bool:
+        """Faux après un signalement « téléphone perdu » (lu par la signature S2, CDC § 4.6)."""
+        return self.is_active and not self.signature_bloquee
+
     def save(self, *args, **kwargs):
         self._verifier_tenant()
         super().save(*args, **kwargs)
@@ -341,3 +349,227 @@ class JetonUsageUnique(TenantOuPlateformeModel):
 
     def __str__(self) -> str:
         return f"{self.objet} · {self.utilisateur_id}"
+
+
+# --- MFA : Authenticator TOTP et codes de secours (§ 2.2, § 4.2, § 4.4 ; tâche B5) ----------
+
+
+class StatutAuthenticator(models.TextChoices):
+    EN_ATTENTE = "EN_ATTENTE", "En attente de confirmation"
+    ACTIF = "ACTIF", "Actif"
+    SUSPENDU = "SUSPENDU", "Suspendu (téléphone perdu)"
+    REVOQUE = "REVOQUE", "Révoqué"
+
+
+class AuthenticatorTOTP(TenantOuPlateformeModel):
+    """Application d'authentification (TOTP, RFC 6238) d'un utilisateur.
+
+    Le secret base32 (160 bits) n'est stocké que chiffré (``alpha.comptes.chiffrement``,
+    MultiFernet sur ``ALPHA_CLES_CHIFFREMENT``) ; il n'est jamais journalisé.
+    ``dernier_pas`` : dernier compteur TOTP accepté ; tout code d'un pas inférieur
+    ou égal est refusé (anti-rejeu). Un Authenticator ``SUSPENDU`` (téléphone
+    perdu) n'est plus accepté ; seuls les codes de secours restent utilisables.
+    """
+
+    AUDIT_CHAMPS = ("libelle", "statut", "cle_version", "confirme_le", "revoque_le")
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    utilisateur = models.ForeignKey(
+        Utilisateur,
+        verbose_name="utilisateur",
+        on_delete=models.CASCADE,
+        related_name="authenticators",
+    )
+    secret_chiffre = models.BinaryField("secret chiffré (jeton MultiFernet)")
+    cle_version = models.SmallIntegerField("version de la clé de chiffrement")
+    libelle = models.CharField("libellé", max_length=80, blank=True, default="")
+    statut = models.CharField(
+        "statut",
+        max_length=10,
+        choices=StatutAuthenticator.choices,
+        default=StatutAuthenticator.EN_ATTENTE,
+    )
+    dernier_pas = models.BigIntegerField("dernier pas TOTP accepté", null=True, blank=True)
+    cree_le = models.DateTimeField("créé le", auto_now_add=True)
+    confirme_le = models.DateTimeField("confirmé le", null=True, blank=True)
+    revoque_le = models.DateTimeField("révoqué le", null=True, blank=True)
+
+    class Meta:
+        db_table = "authenticator_totp"
+        verbose_name = "Authenticator TOTP"
+        verbose_name_plural = "Authenticators TOTP"
+        constraints = [
+            models.CheckConstraint(
+                condition=Q(statut__in=StatutAuthenticator.values),
+                name="authenticator_statut_valide",
+            ),
+            models.UniqueConstraint(
+                fields=["utilisateur"],
+                condition=Q(statut__in=["ACTIF", "SUSPENDU"]),
+                name="authenticator_un_seul_actif",
+            ),
+        ]
+        indexes = [
+            models.Index(fields=["utilisateur", "statut"], name="authenticator_util_statut_idx"),
+        ]
+
+    def __str__(self) -> str:
+        return f"Authenticator {self.statut} · {self.utilisateur_id}"
+
+
+class CodeSecours(TenantOuPlateformeModel):
+    """Code de secours à usage unique (§ 4.4) ; seul son HMAC-SHA256 poivré est stocké."""
+
+    AUDIT_CHAMPS = ("lot", "utilise_le", "invalide_le")
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    utilisateur = models.ForeignKey(
+        Utilisateur,
+        verbose_name="utilisateur",
+        on_delete=models.CASCADE,
+        related_name="codes_secours",
+    )
+    lot = models.UUIDField("lot de génération")
+    code_hmac = Empreinte64("HMAC-SHA256 du code normalisé")
+    utilise_le = models.DateTimeField("utilisé le", null=True, blank=True)
+    invalide_le = models.DateTimeField("invalidé le", null=True, blank=True)
+
+    class Meta:
+        db_table = "code_secours"
+        verbose_name = "code de secours"
+        verbose_name_plural = "codes de secours"
+        constraints = [
+            models.UniqueConstraint(
+                fields=["utilisateur", "code_hmac"], name="code_secours_hmac_uniq"
+            ),
+            models.CheckConstraint(
+                condition=Q(code_hmac__regex=r"^[0-9a-f]{64}$"), name="code_secours_hmac_format"
+            ),
+        ]
+        indexes = [
+            models.Index(
+                fields=["utilisateur"],
+                condition=Q(utilise_le__isnull=True, invalide_le__isnull=True),
+                name="code_secours_disponibles_idx",
+            ),
+        ]
+
+    def __str__(self) -> str:
+        return f"Code de secours · {self.utilisateur_id}"
+
+
+# --- Sessions par appareil (§ 2.2, § 4.8 ; tâche B5) ---------------------------------------
+
+
+class MethodeMfa(models.TextChoices):
+    TOTP = "TOTP", "Application d'authentification"
+    CODE_SECOURS = "CODE_SECOURS", "Code de secours"
+
+
+class MotifFinSession(models.TextChoices):
+    DECONNEXION = "DECONNEXION", "Déconnexion"
+    INACTIVITE = "INACTIVITE", "Inactivité"
+    EXPIRATION = "EXPIRATION", "Durée maximale atteinte"
+    REVOCATION_UTILISATEUR = "REVOCATION_UTILISATEUR", "Révoquée par l'utilisateur"
+    REVOCATION_ADMIN = "REVOCATION_ADMIN", "Révoquée par un administrateur"
+    TELEPHONE_PERDU = "TELEPHONE_PERDU", "Téléphone perdu"
+    MDP_CHANGE = "MDP_CHANGE", "Mot de passe modifié"
+
+
+class SessionAppareil(TenantOuPlateformeModel):
+    """Session ouverte sur un appareil, après mot de passe ET MFA (§ 4.2 étape 11, § 4.8).
+
+    ``cle_session_hash`` : SHA-256 de la clé de session Django (la clé elle-même
+    n'est jamais stockée ici). Une session absente ou révoquée est refusée par
+    ``SessionActiviteMiddleware`` (401 ``SESSION_EXPIREE``).
+    """
+
+    AUDIT_CHAMPS = (
+        "appareil",
+        "ip",
+        "methode_mfa",
+        "cree_le",
+        "derniere_activite",
+        "expire_le",
+        "revoque_le",
+        "motif_fin",
+    )
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    utilisateur = models.ForeignKey(
+        Utilisateur,
+        verbose_name="utilisateur",
+        on_delete=models.CASCADE,
+        related_name="sessions_appareil",
+    )
+    cle_session_hash = Empreinte64("SHA-256 de la clé de session", unique=True)
+    appareil = models.CharField("appareil", max_length=120, blank=True, default="")
+    user_agent = models.TextField("user agent", blank=True, default="")
+    ip = models.GenericIPAddressField("adresse IP", null=True, blank=True)
+    methode_mfa = models.CharField("méthode MFA", max_length=12, choices=MethodeMfa.choices)
+    cree_le = models.DateTimeField("créée le")
+    derniere_activite = models.DateTimeField("dernière activité")
+    expire_le = models.DateTimeField("expire le")
+    revoque_le = models.DateTimeField("révoquée le", null=True, blank=True)
+    motif_fin = models.CharField(
+        "motif de fin", max_length=25, choices=MotifFinSession.choices, blank=True, default=""
+    )
+
+    class Meta:
+        db_table = "session_appareil"
+        verbose_name = "session d'appareil"
+        verbose_name_plural = "sessions d'appareil"
+        constraints = [
+            models.CheckConstraint(
+                condition=Q(methode_mfa__in=MethodeMfa.values), name="session_methode_mfa_valide"
+            ),
+            models.CheckConstraint(
+                condition=Q(motif_fin="") | Q(motif_fin__in=MotifFinSession.values),
+                name="session_motif_fin_valide",
+            ),
+            models.CheckConstraint(
+                condition=Q(cle_session_hash__regex=r"^[0-9a-f]{64}$"),
+                name="session_cle_hash_format",
+            ),
+        ]
+        indexes = [
+            models.Index(fields=["utilisateur", "revoque_le"], name="session_util_revoque_idx"),
+            models.Index(
+                fields=["etablissement", "derniere_activite"], name="session_etab_activite_idx"
+            ),
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.appareil or 'appareil inconnu'} · {self.utilisateur_id}"
+
+    @property
+    def active(self) -> bool:
+        return self.revoque_le is None
+
+
+# --- Historique des mots de passe (§ 2.2, § 4.9 ; tâche B5) -------------------------------
+
+
+class HistoriqueMotDePasse(TenantOuPlateformeModel):
+    """Anciens hachages Argon2 : un mot de passe ne peut pas reprendre l'un des N derniers."""
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    utilisateur = models.ForeignKey(
+        Utilisateur,
+        verbose_name="utilisateur",
+        on_delete=models.CASCADE,
+        related_name="historique_mots_de_passe",
+    )
+    password = models.CharField("hachage du mot de passe", max_length=128)
+    cree_le = models.DateTimeField("créé le", auto_now_add=True)
+
+    class Meta:
+        db_table = "historique_mot_de_passe"
+        verbose_name = "ancien mot de passe"
+        verbose_name_plural = "historique des mots de passe"
+        indexes = [
+            models.Index(fields=["utilisateur", "-cree_le"], name="historique_mdp_util_idx"),
+        ]
+
+    def __str__(self) -> str:
+        return f"Ancien mot de passe · {self.utilisateur_id}"

@@ -87,7 +87,10 @@ def test_fiche_utilisateur(client_admin, admin):
     assert corps["email"] == admin.email
     assert corps["affectations"][0]["role"]["libelle"] == "Administrateur ALPHA"
     assert corps["affectations"][0]["unite"] is None
-    assert corps["sessions_actives"] == [] and corps["signalement"] is None
+    # B5 : la session ouverte par client_admin (session d'appareil réelle) est listée.
+    (session,) = corps["sessions_actives"]
+    assert session["methode_mfa"] == "TOTP" and session["ip"] == "127.0.0.1"
+    assert corps["signalement"] is None
 
 
 def test_super_admin_exclu_de_la_liste(client_admin):

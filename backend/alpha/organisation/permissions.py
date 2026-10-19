@@ -8,11 +8,9 @@
   Un super-administrateur FYXOP (portée « platform ») est refusé (403, § 3.8).
 - ``Perm(*codes)`` (« Perm(x) » du § 5) : Session + au moins un des codes.
 
-Raccordement B5 : la session « tenant » n'est posée qu'après le MFA (§ 4.2, étape 11) ;
-l'état pré-authentifié n'ouvre aucune session Django. Quand B5 livrera
-``SessionActiviteMiddleware`` et la clé ``mfa_le``, ces classes pourront être
-déplacées dans ``alpha.core.permissions`` (avec ``StepUpTOTP``) sans changer leur
-comportement ; les vues d'administration les importent d'ici.
+Raccordement B5 : ``EstUtilisateurEtablissement`` EST ``alpha.core.permissions.Session``
+(une seule implémentation) : session MFA validée (clé ``mfa_le``) et ``session_appareil``
+active, en plus des contrôles ci-dessus. Les vues d'administration l'importent d'ici.
 """
 
 from __future__ import annotations
@@ -21,8 +19,7 @@ import uuid
 
 from rest_framework.permissions import BasePermission
 
-from alpha.comptes.models import StatutUtilisateur
-from alpha.core import contexte
+from alpha.core.permissions import Session
 
 from .models import AffectationRole
 
@@ -51,23 +48,8 @@ def permissions_requete(request) -> frozenset[str]:
     return cache
 
 
-class EstUtilisateurEtablissement(BasePermission):
-    """« Session » : utilisateur d'établissement connecté, sous le contexte de son établissement."""
-
-    message = "Cette route est réservée aux utilisateurs d'un établissement."
-
-    def has_permission(self, request, view) -> bool:
-        utilisateur = request.user
-        if not getattr(utilisateur, "is_authenticated", False):
-            return False
-        if getattr(utilisateur, "est_super_admin", False):
-            return False  # § 3.8 : aucune route tenant pour le super-admin FYXOP
-        return (
-            contexte.scope_courant() == contexte.SCOPE_TENANT
-            and contexte.tenant_courant() is not None
-            and contexte.tenant_courant() == utilisateur.etablissement_id
-            and utilisateur.statut == StatutUtilisateur.ACTIF
-        )
+#: « Session » du § 5 (alias : implémentation unique dans ``alpha.core.permissions``).
+EstUtilisateurEtablissement = Session
 
 
 def Perm(*codes: str) -> type[BasePermission]:  # notation « Perm(x) » du contrat d'API (§ 5)
