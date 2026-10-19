@@ -1,0 +1,10 @@
+{% autoescape off %}Bonjour {{ prenom }},
+
+Une connexion à votre compte ALPHA a eu lieu depuis un appareil ou un lieu inhabituel :
+  - appareil : {{ appareil }}
+  - adresse IP : {{ ip }}
+  - heure : {{ heure }}
+
+Si c'était bien vous, aucune action n'est nécessaire. Sinon : « Ce n'était pas moi » {{ lien_telephone_perdu }}
+
+ALPHA{% endautoescape %}

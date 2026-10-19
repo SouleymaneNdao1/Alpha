@@ -1,8 +1,9 @@
-"""Routes ``/api/v1/admin/`` des comptes (§ 5.5, tâche B7)."""
+"""Routes ``/api/v1/admin/`` des comptes (§ 5.5, tâches B7 et B6 pour les signalements)."""
 
 from django.urls import path
 
 from . import vues_admin as v
+from . import vues_signalements as sig
 
 urlpatterns = [
     path("utilisateurs", v.UtilisateursVue.as_view(), name="admin-utilisateurs"),
@@ -47,5 +48,17 @@ urlpatterns = [
         "affectations/<uuid:affectation_id>/terminer",
         v.TerminerAffectationVue.as_view(),
         name="admin-affectation-terminer",
+    ),
+    # Téléphone perdu (§ 4.5, B6)
+    path("signalements-telephone", sig.SignalementsVue.as_view(), name="admin-signalements"),
+    path(
+        "signalements-telephone/<uuid:signalement_id>/reinitialiser",
+        sig.ReinitialiserSignalementVue.as_view(),
+        name="admin-signalement-reinitialiser",
+    ),
+    path(
+        "signalements-telephone/<uuid:signalement_id>/annuler",
+        sig.AnnulerSignalementVue.as_view(),
+        name="admin-signalement-annuler",
     ),
 ]

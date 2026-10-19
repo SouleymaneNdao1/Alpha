@@ -28,7 +28,7 @@ from django.db.models import F, Q
 
 from alpha.core import contexte
 from alpha.tenancy.exceptions import TenantNonDefini, ViolationTenant
-from alpha.tenancy.models import ObjetsGlobauxMixin, TenantOuPlateformeModel
+from alpha.tenancy.models import ObjetsGlobauxMixin, TenantModel, TenantOuPlateformeModel
 
 # --- Types de colonnes ---------------------------------------------------------------------
 
@@ -573,3 +573,116 @@ class HistoriqueMotDePasse(TenantOuPlateformeModel):
 
     def __str__(self) -> str:
         return f"Ancien mot de passe · {self.utilisateur_id}"
+
+
+# --- Téléphone perdu (§ 2.2, § 4.5 ; tâche B6) -------------------------------------------------
+
+
+class CanalSignalement(models.TextChoices):
+    PAGE_PUBLIQUE = "PAGE_PUBLIQUE", "Page publique"
+    MON_COMPTE = "MON_COMPTE", "Mon compte"
+    ADMIN = "ADMIN", "Administration"
+
+
+class StatutSignalement(models.TextChoices):
+    OUVERT = "OUVERT", "Ouvert"
+    REINITIALISE = "REINITIALISE", "Réinitialisé"
+    ANNULE = "ANNULE", "Annulé (téléphone retrouvé)"
+
+
+class ModeVerification(models.TextChoices):
+    PRESENTIEL_PIECE = "PRESENTIEL_PIECE", "En présentiel, avec pièce d'identité"
+    RAPPEL_TELEPHONIQUE = "RAPPEL_TELEPHONIQUE", "Rappel au numéro connu"
+    VISIO = "VISIO", "Appel vidéo"
+    AUTRE = "AUTRE", "Autre"
+
+
+class SignalementTelephonePerdu(TenantModel):
+    """Signalement « téléphone perdu » (CDC § 4.6) : bloque la signature jusqu'au traitement.
+
+    Traité par un administrateur AUTRE que l'intéressé (contrainte CHECK), après
+    vérification d'identité hors ligne ; à défaut d'autre administrateur, par le
+    super-administrateur FYXOP sur demande écrite signée (décision P4), dont la
+    référence est saisie dans ``reference_demande``.
+    """
+
+    AUDIT_CHAMPS = (
+        "canal",
+        "statut",
+        "signale_le",
+        "traite_par",
+        "mode_verification",
+        "reference_demande",
+        "traite_le",
+    )
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    utilisateur = models.ForeignKey(
+        Utilisateur,
+        verbose_name="utilisateur",
+        on_delete=models.RESTRICT,
+        related_name="signalements_telephone",
+    )
+    canal = models.CharField("canal", max_length=15, choices=CanalSignalement.choices)
+    statut = models.CharField(
+        "statut",
+        max_length=15,
+        choices=StatutSignalement.choices,
+        default=StatutSignalement.OUVERT,
+    )
+    signale_le = models.DateTimeField("signalé le")
+    traite_par = models.ForeignKey(
+        Utilisateur,
+        verbose_name="traité par",
+        on_delete=models.RESTRICT,
+        null=True,
+        blank=True,
+        related_name="+",
+    )
+    mode_verification = models.CharField(
+        "mode de vérification d'identité",
+        max_length=20,
+        choices=ModeVerification.choices,
+        blank=True,
+        default="",
+    )
+    reference_demande = models.CharField(
+        "référence de la demande écrite (P4)", max_length=120, blank=True, default=""
+    )
+    commentaire = models.TextField("commentaire", blank=True, default="")
+    traite_le = models.DateTimeField("traité le", null=True, blank=True)
+
+    class Meta:
+        db_table = "signalement_telephone_perdu"
+        verbose_name = "signalement de téléphone perdu"
+        verbose_name_plural = "signalements de téléphone perdu"
+        constraints = [
+            models.CheckConstraint(
+                condition=Q(statut__in=StatutSignalement.values),
+                name="signalement_statut_valide",
+            ),
+            models.CheckConstraint(
+                condition=Q(canal__in=CanalSignalement.values),
+                name="signalement_canal_valide",
+            ),
+            models.CheckConstraint(
+                condition=Q(mode_verification="")
+                | Q(mode_verification__in=ModeVerification.values),
+                name="signalement_mode_valide",
+            ),
+            models.CheckConstraint(
+                condition=Q(traite_par__isnull=True) | ~Q(traite_par=F("utilisateur")),
+                name="signalement_pas_d_auto_traitement",
+            ),
+            models.UniqueConstraint(
+                fields=["utilisateur"],
+                condition=Q(statut="OUVERT"),
+                name="signalement_un_seul_ouvert",
+            ),
+        ]
+        indexes = [
+            models.Index(fields=["etablissement", "statut"], name="signalement_etab_statut_idx"),
+        ]
+
+    def __str__(self) -> str:
+        return f"Téléphone perdu {self.statut} · {self.utilisateur_id}"

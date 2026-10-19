@@ -1,0 +1,12 @@
+{% autoescape off %}Bonjour {{ prenom }},
+
+Une demande de réinitialisation du mot de passe de votre compte ALPHA a été faite le {{ heure }}.
+
+Pour choisir un nouveau mot de passe, ouvrez ce lien (valable {{ validite_min }} minutes, utilisable une seule fois) :
+{{ lien }}
+
+Vous devrez confirmer avec votre application d'authentification ou un code de secours.
+
+Si vous n'êtes pas à l'origine de cette demande, ignorez ce message : votre mot de passe reste inchangé.
+
+ALPHA{% endautoescape %}

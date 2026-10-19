@@ -1,0 +1,7 @@
+{% autoescape off %}Bonjour {{ prenom }},
+
+Un code de secours a été utilisé pour vous connecter à ALPHA le {{ heure }}. Il vous reste {{ restants }} code(s) de secours.
+
+Si vous n'êtes pas à l'origine de cette connexion, signalez-le immédiatement depuis {{ lien_telephone_perdu }}.
+
+ALPHA{% endautoescape %}

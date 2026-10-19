@@ -1,0 +1,9 @@
+{% autoescape off %}Bonjour {{ prenom }},
+
+Pour information : le {{ heure }}, l'équipe FYXOP a réinitialisé l'application d'authentification de {{ nom_utilisateur }}, administrateur de votre établissement.
+
+Cette opération a été faite à la demande écrite et signée de la direction de votre établissement (référence : {{ reference }}), après vérification d'identité par appel vidéo. Elle est inscrite dans le journal d'audit.
+
+Si vous n'avez pas connaissance de cette demande, contactez immédiatement votre direction et FYXOP.
+
+ALPHA{% endautoescape %}

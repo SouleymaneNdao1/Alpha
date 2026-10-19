@@ -8,12 +8,12 @@ de chaque fonction (même signature) :
 ==============================  =====  ===========================================
 Fonction                        Tâche  Comportement provisoire
 ==============================  =====  ===========================================
-``envoyer_invitation``          B6     aucun e-mail (journal applicatif seulement)
+``envoyer_invitation``          B6     raccordé (tâche Celery ``comptes.envoyer_invitation``)
 ``revoquer_sessions``           B5     raccordé (``alpha.comptes.sessions``)
 ``sessions_actives``            B5     raccordé (``session_appareil``)
 ``statuts_authenticator``       B5     raccordé (``authenticator_totp``)
 ``verifier_code_step_up``       B5     raccordé (``alpha.comptes.mfa.verifier_step_up``)
-``signalement_en_cours``        B6     ``None``
+``signalement_en_cours``        B6     raccordé (``signalement_telephone_perdu``)
 ==============================  =====  ===========================================
 
 Toutes ces fonctions sont appelées sous le contexte tenant de l'établissement,
@@ -24,11 +24,8 @@ donc hors de tout contexte : elle reçoit des identifiants, pas d'objet ORM (§ 
 from __future__ import annotations
 
 import datetime
-import logging
 import uuid
 from typing import Any
-
-journal = logging.getLogger("alpha.comptes")
 
 # Statuts d'Authenticator exposés par l'API (UtilisateurListe, § 5.1).
 AUTHENTICATOR_ACTIVE = "ACTIVE"
@@ -44,16 +41,15 @@ def envoyer_invitation(
 ) -> None:
     """Envoie l'e-mail d'invitation avec le lien ``/activation?jeton=<jeton_clair>`` (§ 4.3).
 
-    TODO B6 : planifier la tâche Celery d'envoi (gabarit FR « Activez votre compte
-    ALPHA »), sous ``tache_tenant``. Appelée par ``transaction.on_commit`` : aucune
-    invitation n'est envoyée pour une transaction annulée. Le jeton en clair n'existe
-    que dans l'e-mail : ne jamais le journaliser ni le stocker.
+    Appelée par ``transaction.on_commit`` : aucune invitation n'est envoyée pour une
+    transaction annulée. Planifie la tâche Celery ``comptes.envoyer_invitation``
+    (gabarit « Activez votre compte ALPHA »), exécutée sous le contexte de
+    l'établissement. Le jeton en clair n'existe que dans l'e-mail : il n'est ni
+    journalisé ni stocké.
     """
-    journal.info(
-        "Invitation de l'utilisateur %s (établissement %s) : envoi d'e-mail non raccordé (B6).",
-        utilisateur_id,
-        etablissement_id,
-    )
+    from .tasks import envoyer_invitation as tache
+
+    tache.delay(str(etablissement_id), str(utilisateur_id), jeton_clair, expire_le.isoformat())
 
 
 def revoquer_sessions(utilisateur_id: uuid.UUID, *, motif: str = "REVOCATION_ADMIN") -> int:
@@ -123,6 +119,13 @@ def verifier_code_step_up(utilisateur_id: uuid.UUID, code: str) -> bool:
 
 
 def signalement_en_cours(utilisateur_id: uuid.UUID) -> dict[str, Any] | None:
-    """Signalement « téléphone perdu » OUVERT : ``{id, statut, signale_le, canal}`` ou ``None``.
-    TODO B6 (``signalement_telephone_perdu``)."""
-    return None
+    """Signalement « téléphone perdu » OUVERT : ``{id, statut, signale_le, canal}`` ou ``None``."""
+    from .models import SignalementTelephonePerdu, StatutSignalement
+
+    return (
+        SignalementTelephonePerdu.objects.filter(
+            utilisateur_id=utilisateur_id, statut=StatutSignalement.OUVERT
+        )
+        .values("id", "statut", "signale_le", "canal")
+        .first()
+    )

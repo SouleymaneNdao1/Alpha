@@ -1,0 +1,7 @@
+{% extends "comptes/emails/base.html" %}
+{% block contenu %}
+<p>Bonjour {{ prenom }},</p>
+<p>Le mot de passe de votre compte ALPHA a été modifié le {{ heure }}. Toutes vos sessions ouvertes ont été fermées.</p>
+<p>Si vous n'êtes pas à l'origine de ce changement, prévenez immédiatement votre administrateur.</p>
+<p style="font-size:13px;color:#52606d;">Si vous n'êtes pas à l'origine de cette opération, signalez-le immédiatement : <a href="{{ lien_telephone_perdu }}">{{ lien_telephone_perdu }}</a></p>
+{% endblock %}

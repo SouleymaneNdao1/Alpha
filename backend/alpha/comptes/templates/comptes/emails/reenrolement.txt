@@ -1,0 +1,10 @@
+{% autoescape off %}Bonjour {{ prenom }},
+
+Votre identité a été vérifiée{% if par %} par {{ par }}{% endif %}. Vous pouvez maintenant configurer l'application d'authentification de votre nouveau téléphone.
+
+Ouvrez ce lien (valable {{ validite_h }} heures, utilisable une seule fois). Vous devrez saisir votre mot de passe actuel :
+{{ lien }}
+
+Vos anciens codes de secours ne sont plus valables : de nouveaux codes vous seront remis à la fin.
+
+ALPHA{% endautoescape %}

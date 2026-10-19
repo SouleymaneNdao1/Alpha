@@ -1,0 +1,7 @@
+{% autoescape off %}Bonjour {{ prenom }},
+
+Votre compte ALPHA a été verrouillé le {{ heure }} après plusieurs tentatives de connexion échouées. {% if bloque_par_admin %}Après plusieurs verrouillages successifs, seul un administrateur de votre établissement peut le débloquer.{% else %}Il sera de nouveau accessible le {{ jusqua }}.{% endif %}
+
+Si vous n'êtes pas à l'origine de ces tentatives, prévenez votre administrateur.
+
+ALPHA{% endautoescape %}

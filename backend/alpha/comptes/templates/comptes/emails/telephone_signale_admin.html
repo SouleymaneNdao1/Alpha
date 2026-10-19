@@ -1,0 +1,8 @@
+{% extends "comptes/emails/base.html" %}
+{% block contenu %}
+<p>Bonjour {{ prenom }},</p>
+<p><strong>{{ nom_utilisateur }}</strong> a signalé la perte de son téléphone le {{ heure }}. Sa signature est bloquée et ses sessions ont été fermées.</p>
+<p>Une tâche « Téléphone perdu » vous attend dans « À traiter ». Avant de réinitialiser son application d'authentification, vérifiez son identité hors ligne (en personne avec une pièce d'identité, par rappel au numéro connu ou par appel vidéo).</p>
+<p style="margin:24px 0;"><a href="{{ lien }}" style="background:#0b3d91;color:#ffffff;text-decoration:none;padding:12px 20px;border-radius:6px;display:inline-block;">Traiter le signalement</a></p>
+<p style="font-size:13px;color:#52606d;">Si le bouton ne fonctionne pas, copiez ce lien dans votre navigateur :<br><span style="word-break:break-all;">{{ lien }}</span></p>
+{% endblock %}

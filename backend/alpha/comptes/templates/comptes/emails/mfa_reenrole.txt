@@ -1,0 +1,10 @@
+{% autoescape off %}Bonjour {{ prenom }},
+
+Votre nouvelle application d'authentification a été configurée le {{ heure }}. La signature des décisions est de nouveau possible.
+
+Conservez vos nouveaux codes de secours en lieu sûr.
+
+Si vous n'êtes pas à l'origine de cette opération, prévenez immédiatement votre administrateur :
+{{ lien_telephone_perdu }}
+
+ALPHA{% endautoescape %}

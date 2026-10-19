@@ -1,0 +1,9 @@
+{% extends "comptes/emails/base.html" %}
+{% block contenu %}
+<p>Bonjour {{ prenom }},</p>
+<p>Une demande de réinitialisation du mot de passe de votre compte ALPHA a été faite le {{ heure }}.</p>
+<p style="margin:24px 0;"><a href="{{ lien }}" style="background:#0b3d91;color:#ffffff;text-decoration:none;padding:12px 20px;border-radius:6px;display:inline-block;">Choisir un nouveau mot de passe</a></p>
+<p style="font-size:13px;color:#52606d;">Si le bouton ne fonctionne pas, copiez ce lien dans votre navigateur :<br><span style="word-break:break-all;">{{ lien }}</span></p>
+<p>Ce lien est valable {{ validite_min }} minutes et utilisable une seule fois. Vous devrez confirmer avec votre application d'authentification ou un code de secours.</p>
+<p style="font-size:13px;color:#52606d;">Si vous n'êtes pas à l'origine de cette demande, ignorez ce message : votre mot de passe reste inchangé.</p>
+{% endblock %}
