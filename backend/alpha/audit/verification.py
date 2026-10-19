@@ -185,17 +185,23 @@ def verifier_chaine(
     *,
     depuis_seq: int | None = None,
     using: str = DEFAULT_DB_ALIAS,
+    controle: ControleIntegriteAudit | None = None,
 ) -> ControleIntegriteAudit:
-    """Vérifie la chaîne SOUS LE CONTEXTE DÉJÀ OUVERT (voir ``lancer_verification``)."""
+    """Vérifie la chaîne SOUS LE CONTEXTE DÉJÀ OUVERT (voir ``lancer_verification``).
+
+    ``controle`` : ligne ``EN_COURS`` déjà créée (lancement manuel par l'API, B11, qui
+    renvoie son identifiant avant l'exécution) ; sinon une ligne est créée ici.
+    """
     if etablissement_id != contexte.tenant_courant():
         raise ValueError("Le contexte courant ne correspond pas à la chaîne à vérifier.")
-    controle = ControleIntegriteAudit(
-        etablissement_id=etablissement_id,
-        lance_le=timezone.now(),
-        declencheur=declencheur,
-        statut=StatutControle.EN_COURS,
-    )
-    controle.save(using=using)
+    if controle is None:
+        controle = ControleIntegriteAudit(
+            etablissement_id=etablissement_id,
+            lance_le=timezone.now(),
+            declencheur=declencheur,
+            statut=StatutControle.EN_COURS,
+        )
+        controle.save(using=using)
     try:
         with transaction.atomic(using=using):
             nb, dernier_seq, dernier_hash, rupture = _parcourir(etablissement_id, depuis_seq, using)

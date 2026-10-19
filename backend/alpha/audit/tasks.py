@@ -25,7 +25,7 @@ from alpha.tenancy.contexte import contexte_tenant
 from alpha.tenancy.models import Etablissement
 
 from . import ancrage, verification
-from .models import Declencheur
+from .models import ControleIntegriteAudit, Declencheur, StatutControle
 
 
 def _etablissements() -> list[str]:
@@ -41,6 +41,19 @@ def verifier_chaine(etablissement_id: str) -> str:
     """Vérifie la chaîne d'un établissement (sous son contexte) ; renvoie le statut."""
     controle = verification.verifier_chaine(uuid.UUID(str(etablissement_id)), Declencheur.PLANIFIE)
     return controle.statut
+
+
+@tache_tenant(name="audit.executer_controle")
+def executer_controle(etablissement_id: str, controle_id: str) -> str:
+    """Exécute un contrôle MANUEL déjà créé par l'API (``POST /audit/controles``, B11)."""
+    controle = ControleIntegriteAudit.objects.filter(
+        pk=uuid.UUID(str(controle_id)), statut=StatutControle.EN_COURS
+    ).first()
+    if controle is None:  # déjà exécuté, ou hors de l'établissement (la RLS le masque)
+        return "IGNORE"
+    return verification.verifier_chaine(
+        uuid.UUID(str(etablissement_id)), Declencheur.MANUEL, controle=controle
+    ).statut
 
 
 @shared_task(name="audit.verifier_chaine_plateforme")
