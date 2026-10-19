@@ -1,0 +1,12 @@
+{% autoescape off %}Bonjour {{ prenom }},
+
+Un compte de super-administrateur FYXOP vient d'être créé pour vous sur la console ALPHA.
+
+Avant votre premier accès, configurez l'application d'authentification de votre téléphone. Ouvrez ce lien (valable {{ validite_h }} heures, utilisable une seule fois). Vous devrez saisir le mot de passe défini à la création du compte :
+{{ lien }}
+
+Des codes de secours vous seront remis à la fin : conservez-les en lieu sûr.
+
+Si vous n'êtes pas à l'origine de cette création, prévenez immédiatement la sécurité FYXOP.
+
+ALPHA{% endautoescape %}
