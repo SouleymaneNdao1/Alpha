@@ -14,6 +14,7 @@ from typing import Any
 
 from rest_framework import serializers
 
+from alpha.audit.libelles import libelle_action
 from alpha.audit.models import EvenementAudit
 from alpha.organisation.models import AffectationRole, UniteOrganisationnelle
 
@@ -236,7 +237,7 @@ class EvenementAuditSerializer(serializers.Serializer):
     hash_court = serializers.CharField()
 
 
-#: Libellés des actions d'administration des comptes (le journal complet relève de B11).
+#: Actions d'administration des comptes de l'historique (libellés : alpha.audit.libelles).
 LIBELLES_ACTIONS = {
     "utilisateur.invite": "Invitation",
     "utilisateur.modifie": "Modification du compte",
@@ -258,7 +259,7 @@ def presenter_evenement(evenement: EvenementAudit) -> dict[str, Any]:
         "acteur_libelle": evenement.acteur_libelle,
         "categorie": evenement.categorie,
         "action": evenement.action,
-        "action_libelle": LIBELLES_ACTIONS.get(evenement.action, evenement.action),
+        "action_libelle": libelle_action(evenement.action),
         "objet_type": evenement.objet_type,
         "objet_id": evenement.objet_id,
         "objet_libelle": evenement.objet_libelle,

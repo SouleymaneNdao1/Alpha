@@ -30,6 +30,8 @@ urlpatterns = [
     path("api/v1/admin/", include("alpha.comptes.urls_admin")),
     path("api/v1/admin/", include("alpha.organisation.urls_admin")),
     path("api/v1/admin/", include("alpha.tenancy.urls_admin")),
+    # Journal d'audit (§ 5.6, B11).
+    path("api/v1/audit/", include("alpha.audit.urls")),
 ]
 
 urlpatterns += routes_documentation(
