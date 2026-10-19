@@ -329,7 +329,7 @@ def test_delegataire_du_valideur_decide_pour_son_compte(org, horloge, client_con
         assert tache.pour_compte_de_id == org.mamadou.pk
 
 
-# --- Annulation et liste ----------------------------------------------------------------------------
+# --- Annulation et liste --------------------------------------------------------------------------
 
 
 def test_annulation_avant_et_pendant(org, horloge, client_connecte):
@@ -340,9 +340,12 @@ def test_annulation_avant_et_pendant(org, horloge, client_connecte):
     assert reponse.json()["delegation"]["statut"] == "ANNULEE"
     assert client_connecte(org.mamadou).get("/api/v1/taches/").json()["count"] == 0
     # Un tiers ne peut pas l'annuler (404).
-    assert client_connecte(org.cheikh).post(
-        f"/api/v1/moi/absences/{soumise['id']}/annuler/"
-    ).status_code == 404
+    assert (
+        client_connecte(org.cheikh)
+        .post(f"/api/v1/moi/absences/{soumise['id']}/annuler/")
+        .status_code
+        == 404
+    )
 
     validee = _demande(client_awa, org.cheikh).json()
     client_connecte(org.mamadou).post(f"/api/v1/absences/{validee['id']}/valider/")
@@ -398,7 +401,7 @@ def test_isolation_entre_etablissements(org, etab_b, client_connecte):
     assert client_b.get("/api/v1/moi/delegataires-possibles/").json() == []
 
 
-# --- Tâches planifiées --------------------------------------------------------------------------------
+# --- Tâches planifiées ----------------------------------------------------------------------------
 
 
 def test_taches_planifiees_idempotentes(org, horloge, client_connecte):

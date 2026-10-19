@@ -102,7 +102,9 @@ class Tache(TenantModel):
     type_echeance = models.CharField(
         "type d'échéance", max_length=12, choices=TypeEcheance.choices, default=TypeEcheance.AVANT
     )
-    echeance = models.DateTimeField("échéance", null=True, blank=True, help_text="Vide : plus tard.")
+    echeance = models.DateTimeField(
+        "échéance", null=True, blank=True, help_text="Vide : plus tard."
+    )
     assigne_utilisateur = _fk_utilisateur("assignée à l'utilisateur", "taches_assignees")
     assigne_role = models.ForeignKey(
         "organisation.Role",
@@ -119,7 +121,7 @@ class Tache(TenantModel):
         null=True,
         blank=True,
         related_name="taches",
-        help_text="Avec un rôle : limite aux titulaires du rôle sur cette unité ou une unité parente.",
+        help_text="Avec un rôle : titulaires du rôle sur cette unité ou une unité parente.",
     )
     demandeur = _fk_utilisateur("demandeur")
     lien = models.CharField("lien (route du frontend)", max_length=300, blank=True, default="")
@@ -195,7 +197,9 @@ class Tache(TenantModel):
             ),
         ]
         indexes = [
-            models.Index(fields=["etablissement", "statut", "echeance"], name="tache_etab_statut_idx"),
+            models.Index(
+                fields=["etablissement", "statut", "echeance"], name="tache_etab_statut_idx"
+            ),
             models.Index(
                 fields=["assigne_utilisateur"],
                 condition=Q(statut=StatutTache.OUVERTE),

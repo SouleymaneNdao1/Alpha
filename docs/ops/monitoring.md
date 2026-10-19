@@ -52,20 +52,19 @@ production convient), destinataires : l'exploitant et l'adresse sécurité FYXOP
 | Nom | Type | Réglage | Intervalle |
 |---|---|---|---|
 | Prod — page d'accueil | HTTP(s) | `https://app.<domaine>/`, codes acceptés 200-299, **notification d'expiration du certificat** (14 j) | 60 s, 3 essais avant alerte |
-| Prod — API | HTTP(s) | `https://app.<domaine>/api/v1/sante/`, codes acceptés **200-499** (voir remarque) | 60 s, 3 essais |
+| Prod — API | HTTP(s) | `https://app.<domaine>/api/v1/sante/`, codes acceptés **200-299** (voir remarque) | 60 s, 3 essais |
 | Recette — page d'accueil | HTTP(s) | `https://recette.<domaine>/`, certificat (14 j) | 300 s |
-| Recette — API | HTTP(s) | `https://recette.<domaine>/api/v1/sante/`, 200-499 | 300 s |
+| Recette — API | HTTP(s) | `https://recette.<domaine>/api/v1/sante/`, 200-299 | 300 s |
 | VPS — veille | Push | URL → `ALPHA_VEILLE_PING_URL` | 300 s (alerte après ≈ 10 min sans signal) |
 | Prod — sauvegarde | Push | → `ALPHA_SAUVEGARDE_PING_URL_PROD` | 90 000 s (25 h) |
 | Recette — sauvegarde | Push | → `ALPHA_SAUVEGARDE_PING_URL_RECETTE` | 90 000 s |
 | Prod — chaîne d'audit | Push | → `ALPHA_AUDIT_PING_URL_PROD` | 90 000 s |
 | Recette — chaîne d'audit | Push | → `ALPHA_AUDIT_PING_URL_RECETTE` | 90 000 s |
 
-Remarque sur `/api/v1/sante/` : quand le backend ne répond plus, Caddy renvoie **503** ; une
-réponse < 500 prouve donc que gunicorn et Django répondent. La route `/api/v1/sante/` n'existe
-pas encore (404 accepté) ; dès qu'un agent backend la livre (200 si la base et Redis répondent,
-503 sinon), passer les codes acceptés à 200-299. Les sondes de santé Docker du backend suivent la
-même règle.
+Remarque sur `/api/v1/sante/` (livrée par B8) : 200 `{"statut":"ok"}` si la base et Redis
+répondent, 503 `{"statut":"indisponible"}` sinon, sans autre détail ; rien n'est écrit dans le
+journal d'audit. Quand le backend ne répond plus, Caddy renvoie aussi 503. Seuls les codes 200-299
+comptent donc comme « sain » ; les sondes de santé Docker du backend exigent 200.
 
 Les URL « push » contiennent un jeton : les coller dans `/etc/alpha/ops.env` (600) sur le VPS,
 jamais dans le dépôt. Facultatif : une page de statut publique (sans détails) pour les

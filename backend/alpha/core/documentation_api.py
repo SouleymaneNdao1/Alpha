@@ -1,10 +1,9 @@
 """Routes du schéma OpenAPI et de la documentation interactive, selon l'environnement.
 
-| Environnement | ``ALPHA_DOC_API_ACTIVE`` | ``…_RESERVEE_CONNECTES`` | Effet                         |
-|---------------|--------------------------|--------------------------|-------------------------------|
-| dev, test     | vrai                     | faux                     | ouverts (types du frontend)   |
-| recette       | vrai                     | vrai                     | utilisateur connecté exigé (401 sinon) |
-| production    | faux                     | —                        | non routés (404)              |
+- dev et test : ``ALPHA_DOC_API_ACTIVE`` vrai, ``ALPHA_DOC_API_RESERVEE_CONNECTES`` faux :
+  ouverts (génération des types du frontend) ;
+- recette : actifs et réservés aux utilisateurs connectés (401 sinon) ;
+- production : ``ALPHA_DOC_API_ACTIVE`` faux : non routés (404).
 """
 
 from __future__ import annotations

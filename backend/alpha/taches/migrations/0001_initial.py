@@ -190,7 +190,7 @@ class Migration(migrations.Migration):
                     "assigne_unite",
                     models.ForeignKey(
                         blank=True,
-                        help_text="Avec un rôle : limite aux titulaires du rôle sur cette unité ou une unité parente.",
+                        help_text="Avec un rôle : titulaires du rôle sur cette unité ou une unité parente.",
                         null=True,
                         on_delete=django.db.models.deletion.RESTRICT,
                         related_name="taches",

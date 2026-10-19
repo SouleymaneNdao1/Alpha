@@ -165,9 +165,7 @@ def _condition(
     return condition
 
 
-def visibles_pour(
-    utilisateur, maintenant: datetime.datetime | None = None
-) -> QuerySet[Tache]:
+def visibles_pour(utilisateur, maintenant: datetime.datetime | None = None) -> QuerySet[Tache]:
     """Tâches ouvertes visibles par ``utilisateur`` (instance ou identifiant), annotées.
 
     Annotation : ``par_delegation_de_id`` (uuid du délégant, ou NULL).
@@ -236,7 +234,9 @@ def fuseau_courant() -> datetime.tzinfo:
     nom = None
     tenant = contexte.tenant_courant()
     if tenant is not None:
-        nom = Etablissement.objects.filter(id=tenant).values_list("fuseau_horaire", flat=True).first()
+        nom = (
+            Etablissement.objects.filter(id=tenant).values_list("fuseau_horaire", flat=True).first()
+        )
     try:
         return zoneinfo.ZoneInfo(nom or settings.TIME_ZONE)
     except (zoneinfo.ZoneInfoNotFoundError, ValueError):
@@ -258,7 +258,7 @@ def bornes_urgence(
 
 
 def annoter_urgence(qs: QuerySet[Tache], bornes: Bornes) -> QuerySet[Tache]:
-    """Ajoute ``groupe_ordre`` (0 à 3, voir ``ORDRE_GROUPES``) et trie (groupe, échéance, création)."""
+    """Ajoute ``groupe_ordre`` (0 à 3, ``ORDRE_GROUPES``) ; tri : groupe, échéance, création."""
     return qs.annotate(
         groupe_ordre=Case(
             When(echeance__isnull=True, then=Value(3)),

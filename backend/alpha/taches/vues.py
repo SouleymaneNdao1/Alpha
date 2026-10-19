@@ -34,7 +34,8 @@ def _contexte_vue(request):
     bornes = bornes_urgence(maintenant)
     qs = annoter_urgence(visibles_pour(request.user, maintenant), bornes)
     delegants = {
-        d.delegant_id: d.delegant_nom for d in delegations_effectives_vers(request.user.pk, maintenant)
+        d.delegant_id: d.delegant_nom
+        for d in delegations_effectives_vers(request.user.pk, maintenant)
     }
     return qs, {"bornes": bornes, "delegants": delegants, "request": request}
 

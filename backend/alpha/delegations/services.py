@@ -149,7 +149,6 @@ def pouvoirs_de_plusieurs(utilisateurs: list[uuid.UUID]) -> dict[uuid.UUID, Pouv
     }
 
 
-
 def verifier_delegation(
     delegant: Utilisateur,
     delegataire_id: Any,
@@ -390,7 +389,9 @@ def valider_absence(absence: Absence, par: Utilisateur) -> Absence:
     pour_compte_de = _exiger_decision(absence, par)
     maintenant = timezone.now()
     if absence.fin <= maintenant:
-        raise _conflit(ABSENCE_EXPIREE, "Cette absence est terminée : elle ne peut plus être validée.")
+        raise _conflit(
+            ABSENCE_EXPIREE, "Cette absence est terminée : elle ne peut plus être validée."
+        )
     delegation = delegation_de(absence)
     if delegation is not None and delegation.statut == StatutDelegation.EN_ATTENTE:
         # Les pouvoirs ont pu changer depuis la soumission (P5).
@@ -495,7 +496,7 @@ def annuler_absence(absence: Absence, par: Utilisateur) -> Absence:
     return absence
 
 
-# --- Entrée en vigueur et clôture (tâches planifiées, § 6.5) ---------------------------------------
+# --- Entrée en vigueur et clôture (tâches planifiées, § 6.5) --------------------------------------
 
 
 def activer(delegation: Delegation, maintenant: datetime.datetime, *, acteur: Any = None) -> bool:

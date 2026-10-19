@@ -68,7 +68,11 @@ def test_cycle_de_vie_ouvrir_terminer(etab_a):
 
         # Une fois fermée, la même source peut rouvrir une nouvelle tâche.
         nouvelle = services.ouvrir(
-            source, module=Module.INTERNE, action=Action.DECIDER, titre="t", assigne_role=org.analyste
+            source,
+            module=Module.INTERNE,
+            action=Action.DECIDER,
+            titre="t",
+            assigne_role=org.analyste,
         )
         assert nouvelle.pk != tache.pk
         annulees = services.annuler(source)
@@ -124,7 +128,7 @@ def test_visibilite_par_role_et_sous_arbre(etab_a):
         assert all(t.par_delegation_de_id is None for t in visibles_pour(org.cheikh))
 
 
-# --- Regroupement par urgence (Africa/Dakar, autour de minuit) -------------------------------------
+# --- Regroupement par urgence (Africa/Dakar, autour de minuit) ------------------------------------
 
 
 def test_regroupement_par_urgence_autour_de_minuit_a_dakar(etab_a):

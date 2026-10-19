@@ -92,7 +92,9 @@ class CreationAbsenceSerializer(serializers.Serializer):
     debut = serializers.DateTimeField()
     fin = serializers.DateTimeField()
     motif = serializers.ChoiceField(choices=MotifAbsence.choices)
-    commentaire = serializers.CharField(required=False, allow_blank=True, default="", max_length=2000)
+    commentaire = serializers.CharField(
+        required=False, allow_blank=True, default="", max_length=2000
+    )
     delegataire_id = serializers.UUIDField()
     role_id = serializers.UUIDField(
         required=False, allow_null=True, default=None, help_text="Vide : tous vos rôles."

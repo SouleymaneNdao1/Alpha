@@ -193,7 +193,7 @@ controle_public() {
 	code="$(curl -sS -o /dev/null -w '%{http_code}' -m 15 --resolve "$domaine:443:127.0.0.1" \
 		"https://$domaine/api/v1/sante/" 2>/dev/null || true)"
 	case "$code" in
-		2?? | 404) ok "https://$domaine répond (sonde de santé : HTTP $code)." ;;
+		2??) ok "https://$domaine répond (sonde de santé : HTTP $code)." ;;
 		*) avert "https://$domaine ne répond pas correctement (HTTP ${code:-aucune réponse}) : vérifiez Caddy (scripts/deploy.sh journaux proxy)." ;;
 	esac
 }

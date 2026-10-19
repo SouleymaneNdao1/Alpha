@@ -197,9 +197,7 @@ def terminer(
     par délégation ; ``None`` pour forcer « en propre ».
     """
     source_type, source_id = cle_source(source)
-    tache = (
-        _ouvertes(source_type, source_id).filter(action=action).select_for_update().first()
-    )
+    tache = _ouvertes(source_type, source_id).filter(action=action).select_for_update().first()
     if tache is None:
         return None
     par_id = _pk(par)
