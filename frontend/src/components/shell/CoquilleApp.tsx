@@ -6,7 +6,6 @@ import { Button, Card } from "@/components/ui";
 import { Dialogue } from "@/components/ui/Dialogue";
 import { estApiError } from "@/lib/api/erreurs";
 import { useSession } from "@/lib/api/hooks/auth";
-import { useNotificationsNonLues } from "@/lib/api/hooks/notifications";
 import { useCompteursTaches } from "@/lib/api/hooks/taches";
 import { AvertissementInactivite } from "./AvertissementInactivite";
 import { Bandeau } from "./Bandeau";
@@ -36,7 +35,6 @@ export function CoquilleApp({ children }: { children: ReactNode }) {
 
   const moi = session.data;
   const compteurs = useCompteursTaches({ active: !!moi && !moi.est_super_admin });
-  const notifications = useNotificationsNonLues({ active: !!moi && !moi.est_super_admin });
 
   if (!moi) {
     return (
@@ -74,7 +72,7 @@ export function CoquilleApp({ children }: { children: ReactNode }) {
           {menu()}
         </aside>
         <div className="flex min-w-0 flex-1 flex-col gap-5 px-4 pb-10 pt-4 md:px-8">
-          <Bandeau moi={moi} nonLues={notifications.data} onMenu={() => setTiroir(true)} menuOuvert={tiroir} />
+          <Bandeau moi={moi} onMenu={() => setTiroir(true)} menuOuvert={tiroir} />
           <main id="contenu" tabIndex={-1} className="flex min-w-0 flex-col gap-5 outline-none">
             {children}
           </main>

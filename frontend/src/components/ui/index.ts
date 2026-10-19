@@ -3,7 +3,9 @@ export { Button, LienBouton, classesBouton, type ButtonProps, type VarianteBouto
 export { Card, type CardProps } from "./Card";
 export { Drawer, type DrawerProps } from "./Drawer";
 export { Input, Select, type InputProps, type SelectProps } from "./Input";
+export { Interrupteur, type InterrupteurProps } from "./Interrupteur";
 export { Modal, type ModalProps } from "./Modal";
+export { ModaleCode, type ModaleCodeProps } from "./ModaleCode";
 export { OtpInput, type OtpInputProps } from "./OtpInput";
 export { Stepper, type StepperProps } from "./Stepper";
 export { Table, Td, Th, type TableProps } from "./Table";
