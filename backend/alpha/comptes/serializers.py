@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from rest_framework import serializers
 
+from alpha.core.schema_erreurs import ErreurSerializer
 from alpha.organisation.codes_permission import PERMISSIONS_ADMIN, PERMISSIONS_AUDIT
 
 from .connexion import mot_de_passe_expire, regles_pour
@@ -12,10 +13,7 @@ from .models import Utilisateur
 # --- Erreurs (documentation OpenAPI) ---------------------------------------------------------
 
 
-class ErreurSerializer(serializers.Serializer):
-    code = serializers.CharField(help_text="Constante stable, ex. IDENTIFIANTS_INVALIDES.")
-    message = serializers.CharField(help_text="Message en français, affichable tel quel.")
-    details = serializers.DictField(help_text="Détails propres au code (souvent vide).")
+# Format d'erreur : composant « Erreur » commun (alpha.core.schema_erreurs, B7).
 
 
 class DetailsCodeInvalideSerializer(serializers.Serializer):
@@ -61,14 +59,14 @@ class RolePrincipalSerializer(serializers.Serializer):
     unite = serializers.CharField(allow_null=True)
 
 
-class ReferenceSerializer(serializers.Serializer):
+class ReferenceMoiSerializer(serializers.Serializer):
     id = serializers.UUIDField()
     libelle = serializers.CharField()
 
 
 class AffectationMoiSerializer(serializers.Serializer):
-    role = ReferenceSerializer()
-    unite = ReferenceSerializer(allow_null=True)
+    role = ReferenceMoiSerializer()
+    unite = ReferenceMoiSerializer(allow_null=True)
     principal = serializers.BooleanField()
 
 

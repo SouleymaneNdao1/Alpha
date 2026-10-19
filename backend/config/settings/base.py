@@ -224,7 +224,8 @@ ALPHA_AUDIT_DESTINATAIRES_AUDIT_LECTURE = "alpha.comptes.audit.destinataires_aud
 # --- Django REST framework (§ 5) ----------------------------------------------------------
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": [
-        "rest_framework.authentication.SessionAuthentication",
+        # Session + CSRF exigé sur toute méthode non sûre, même anonyme (B5, § 4.1).
+        "alpha.comptes.authentification.SessionCsrfObligatoire",
     ],
     # Fermé par défaut : chaque vue déclare ses permissions (alpha.core.permissions).
     "DEFAULT_PERMISSION_CLASSES": ["alpha.core.permissions.RefuserTout"],

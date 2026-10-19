@@ -71,3 +71,26 @@ def test_patch_limite_de_debit(connecte):
     assert _tentatives(banque) == 5
     motifs = [e.apres["motif"] for e in evenements(banque.id, "auth.step_up.echec")]
     assert motifs == ["CODE_INVALIDE"] * 5 + ["TROP_DE_REQUETES"]
+
+
+def test_revocation_admin_et_statut_authenticator_reels(connecte, client_connecte):
+    """Raccordements réels : revoquer_sessions, sessions_actives, statuts_authenticator."""
+    from tests.outils_auth import creer_compte
+
+    client, banque, _, _ = connecte
+    awa = creer_compte(banque, "awa.diop@banque.test")
+    client_awa = client_connecte(awa.utilisateur)
+    assert client_awa.get("/api/v1/auth/session").status_code == 200
+    liste = client.get("/api/v1/admin/utilisateurs").json()["results"]
+    assert {u["email"]: u["authenticator"] for u in liste}["awa.diop@banque.test"] == "ACTIVE"
+    fiche = client.get(f"/api/v1/admin/utilisateurs/{awa.utilisateur.id}").json()
+    assert len(fiche["sessions_actives"]) == 1
+    r = client.post(
+        f"/api/v1/admin/utilisateurs/{awa.utilisateur.id}/sessions/revoquer",
+        content_type="application/json",
+        HTTP_X_CSRFTOKEN=jeton_csrf(client),
+    )
+    assert r.status_code == 200 and r.json() == {"revoquees": 1}
+    assert client_awa.get("/api/v1/auth/session").json()["code"] == "SESSION_EXPIREE"
+    fiche = client.get(f"/api/v1/admin/utilisateurs/{awa.utilisateur.id}").json()
+    assert fiche["sessions_actives"] == []
