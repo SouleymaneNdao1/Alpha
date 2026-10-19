@@ -221,6 +221,14 @@ ALPHA_AUDIT_RESOLVEUR_ACTEUR = "alpha.comptes.audit.resoudre_acteur"
 #   etablissement_id -> list[str]                (titulaires de audit.lecture, alerte de rupture)
 ALPHA_AUDIT_DESTINATAIRES_AUDIT_LECTURE = "alpha.comptes.audit.destinataires_audit_lecture"
 
+# --- Console FYXOP (§ 3.8, décision P6, B10) ---------------------------------------------------
+# Suspension manuelle d'un établissement (statut ACTIF / LECTURE_SEULE / SUSPENDU) depuis la
+# console. P6 la laisse « à confirmer avec FYXOP » : DÉSACTIVÉE par défaut ; l'API répond
+# alors 403 SUSPENSION_MANUELLE_DESACTIVEE à toute demande de changement de statut.
+ALPHA_PLATEFORME_SUSPENSION_MANUELLE = env.bool(
+    "ALPHA_PLATEFORME_SUSPENSION_MANUELLE", default=False
+)
+
 # --- Django REST framework (§ 5) ----------------------------------------------------------
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": [
@@ -270,6 +278,9 @@ SPECTACULAR_SETTINGS = {
         # B9 : Mon compte.
         "StatutSignalementEnum": "alpha.comptes.models.StatutSignalement",
         "EtatAuthenticatorEnum": ["ACTIVE", "NON_CONFIGUREE", "SUSPENDUE"],
+        # B10 : console FYXOP (champ « type » de l'établissement).
+        "TypeEtablissementEnum": "alpha.tenancy.models.TypeEtablissement",
+        "TypeUniteEnum": "alpha.organisation.models.TypeUnite",
     },
 }
 # Schéma OpenAPI (/api/v1/schema/) et documentation interactive (/api/v1/docs/) :

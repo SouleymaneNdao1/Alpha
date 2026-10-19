@@ -58,6 +58,9 @@ LIBELLES_ACTIONS: dict[str, str] = {
     "plateforme.etablissement.modifie": "Modification de l'établissement",
     "plateforme.etablissement.statut": "Changement de statut de l'établissement",
     "plateforme.administrateur.invite": "Invitation d'un administrateur",
+    "plateforme.telephone.reinitialise": "Réinitialisation de l'Authenticator par FYXOP",
+    "plateforme.super_admin.cree": "Création d'un super-administrateur",
+    "plateforme.super_admin.lien_renvoye": "Nouveau lien de configuration (super-administrateur)",
 }
 
 #: Actions comptées dans « Actions d'administration » (indicateurs, § 5.6) : comptes,
