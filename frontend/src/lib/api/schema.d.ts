@@ -3,10 +3,1940 @@
  * Do not make direct changes to the file.
  */
 
-export type paths = Record<string, never>;
+export interface paths {
+    "/api/v1/absences/{absence_id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Une absence (demandeur, valideur, admin.absences ou délégataire du valideur) */
+        get: operations["absences_detail"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/absences/{absence_id}/refuser/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Refuser une absence (motif obligatoire) */
+        post: operations["absences_refuser"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/absences/{absence_id}/valider/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Valider une absence : la délégation devient active */
+        post: operations["absences_valider"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/affectations/{affectation_id}/terminer": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Retirer un rôle (terminer une affectation) */
+        post: operations["admin_affectation_terminer"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/parametres-securite": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Paramètres de sécurité de l'établissement */
+        get: operations["admin_parametres_securite_lire"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Modifier les paramètres de sécurité (code TOTP requis)
+         * @description Bornes : inactivite_session_min 5–60 ; duree_max_session_h 1–24 ; mdp_longueur_min 12–64 ; mdp_historique 5–24 ; mdp_expiration_jours 30–365 ; tentatives_max 3–10 ; verrouillage_min 5–1440 ; verrouillages_max_24h 1–10 ; validite_invitation_h 1–168 ; validite_reinit_mdp_min 10–120 ; retention_audit_annees 10–50 (mdp_expiration_jours : null = pas d'expiration).
+         */
+        patch: operations["admin_parametres_securite_modifier"];
+        trace?: never;
+    };
+    "/api/v1/admin/permissions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Codes de permission système (matrice des habilitations) */
+        get: operations["admin_permissions_liste"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/roles": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Catalogue des rôles */
+        get: operations["admin_roles_liste"];
+        put?: never;
+        /**
+         * Ajouter un rôle au catalogue
+         * @description `code` facultatif : dérivé du libellé (« Analyste crédit » → « analyste-credit »).
+         */
+        post: operations["admin_roles_creer"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/roles/{role_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Modifier un rôle (libellé, description, habilitations, ordre) */
+        patch: operations["admin_role_modifier"];
+        trace?: never;
+    };
+    "/api/v1/admin/roles/{role_id}/activer": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Réactiver un rôle */
+        post: operations["admin_role_activer"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/roles/{role_id}/desactiver": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Désactiver un rôle */
+        post: operations["admin_role_desactiver"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/signalements-telephone": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Signalements « téléphone perdu » */
+        get: operations["admin_signalements_telephone_liste"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/signalements-telephone/{signalement_id}/annuler": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Annuler un signalement (téléphone retrouvé)
+         * @description Réactive l'application d'authentification suspendue et débloque la signature. Step-up : `code` TOTP de l'administrateur.
+         */
+        post: operations["admin_signalement_telephone_annuler"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/signalements-telephone/{signalement_id}/reinitialiser": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Réinitialiser l'application d'authentification après vérification d'identité
+         * @description Par un administrateur AUTRE que l'intéressé, après vérification hors ligne (`mode_verification`). Effets : Authenticator révoqué, codes de secours invalidés, sessions révoquées, tâche terminée, lien de réenrôlement (24 h) envoyé par e-mail. La signature reste bloquée jusqu'au réenrôlement. Step-up : `code` TOTP de l'administrateur.
+         */
+        post: operations["admin_signalement_telephone_reinitialiser"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/unites": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Arbre des unités organisationnelles */
+        get: operations["admin_unites_arbre"];
+        put?: never;
+        /** Créer une unité */
+        post: operations["admin_unites_creer"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/unites/{unite_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Modifier une unité */
+        patch: operations["admin_unite_modifier"];
+        trace?: never;
+    };
+    "/api/v1/admin/utilisateurs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Liste des utilisateurs de l'établissement */
+        get: operations["admin_utilisateurs_liste"];
+        put?: never;
+        /**
+         * Inviter un utilisateur
+         * @description Crée le compte en statut INVITE, son affectation principale et un lien d'activation valable `validite_invitation_h` heures (e-mail envoyé après validation).
+         */
+        post: operations["admin_utilisateurs_inviter"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/utilisateurs/{utilisateur_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Fiche d'un utilisateur */
+        get: operations["admin_utilisateur_detail"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Modifier un utilisateur */
+        patch: operations["admin_utilisateur_modifier"];
+        trace?: never;
+    };
+    "/api/v1/admin/utilisateurs/{utilisateur_id}/affectations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Attribuer un rôle à un utilisateur
+         * @description `principal: true` : l'affectation principale précédente devient secondaire.
+         */
+        post: operations["admin_utilisateur_affecter"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/utilisateurs/{utilisateur_id}/deverrouiller": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Déverrouiller un utilisateur
+         * @description Remet à zéro les échecs de connexion, le verrouillage temporaire et le blocage administrateur (3 verrouillages en 24 h).
+         */
+        post: operations["admin_utilisateur_deverrouiller"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/utilisateurs/{utilisateur_id}/reactiver": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Réactiver un utilisateur suspendu */
+        post: operations["admin_utilisateur_reactiver"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/utilisateurs/{utilisateur_id}/renvoyer-invitation": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Renvoyer l'invitation
+         * @description Annule le lien précédent et envoie un nouveau lien d'activation.
+         */
+        post: operations["admin_utilisateur_renvoyer_invitation"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/utilisateurs/{utilisateur_id}/sessions/revoquer": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Révoquer toutes les sessions d'un utilisateur */
+        post: operations["admin_utilisateur_revoquer_sessions"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/utilisateurs/{utilisateur_id}/suspendre": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Suspendre un utilisateur
+         * @description Le compte ne peut plus se connecter ; ses sessions sont révoquées.
+         */
+        post: operations["admin_utilisateur_suspendre"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/utilisateurs/historique": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Dernières actions d'administration sur les comptes */
+        get: operations["admin_utilisateurs_historique"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/audit/controles": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Contrôles d'intégrité du journal (plus récent d'abord) */
+        get: operations["audit_controles_liste"];
+        put?: never;
+        /**
+         * Lancer un contrôle d'intégrité (asynchrone)
+         * @description Crée un contrôle `EN_COURS` (déclencheur MANUEL) et le confie à Celery. Suivre son résultat par `GET /audit/controles` ou `GET /audit/indicateurs`. Un seul contrôle à la fois : 409 `CONTROLE_EN_COURS` sinon.
+         */
+        post: operations["audit_controles_lancer"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/audit/evenements": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Journal d'audit (plus récent d'abord, pagination par curseur)
+         * @description Événements de l'établissement, horodatage décroissant. `next` est l'URL de la page suivante (curseur opaque), `null` à la fin.
+         */
+        get: operations["audit_evenements_liste"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/audit/export.xlsx": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Export Excel du journal (même filtres que la liste)
+         * @description Fichier .xlsx : feuille « Journal » (rang croissant) et feuille « Export ». Au plus 100000 lignes, sinon 400 `EXPORT_TROP_VOLUMINEUX` (restreindre les filtres). L'export est lui-même journalisé (`audit.export`).
+         */
+        get: operations["audit_export_xlsx"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/audit/indicateurs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Indicateurs du journal (tuiles et carte d'intégrité)
+         * @description `evenements_aujourdhui` : depuis minuit (heure de Dakar). `connexions_echouees_24h` : `auth.connexion.echec`. `actions_administration_24h` : actions `utilisateur.`, `affectation.`, `role.`, `unite.`, `parametres.`, `telephone.`. `dernier_controle` : dernier contrôle terminé (INTACTE, ROMPUE ou ERREUR).
+         */
+        get: operations["audit_indicateurs"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/activation/{jeton}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Activation : informations du lien d'invitation
+         * @description « Bienvenue, Cheikh. L'administrateur de … vous a invité comme … ». `etape` permet de reprendre le parcours.
+         */
+        get: operations["auth_activation_infos"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/activation/{jeton}/authenticator": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Activation, étape 2 : générer le QR code de l'application d'authentification
+         * @description Nouveau secret à chaque appel (l'ancien, non confirmé, est révoqué). Le secret n'est jamais journalisé.
+         */
+        post: operations["auth_activation_authenticator"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/activation/{jeton}/authenticator/confirmer": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Activation, étape 3 : confirmer avec un premier code
+         * @description Renvoie 10 codes de secours, affichés UNE SEULE FOIS. Au 5e code faux, le lien est annulé (410, motif TROP_D_ESSAIS) : une nouvelle invitation est nécessaire.
+         */
+        post: operations["auth_activation_authenticator_confirmer"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/activation/{jeton}/mot-de-passe": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Activation, étape 1 : définir le mot de passe
+         * @description Politique : 12 caractères minimum (ou plus selon l'établissement), 3 catégories sur 4, ni nom ni année, différent des 5 derniers. Le compte reste INVITE tant que l'application d'authentification n'est pas confirmée.
+         */
+        post: operations["auth_activation_mot_de_passe"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/activation/{jeton}/terminer": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Activation, fin : compte ACTIF et session ouverte
+         * @description Exige `codes_conserves: true`. Le compte devient ACTIF, le lien est consommé et la session est ouverte (cookie alpha_sid et jeton CSRF renouvelés).
+         */
+        post: operations["auth_activation_terminer"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/connexion": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Connexion, étape 1 : e-mail et mot de passe
+         * @description Vérifie le mot de passe et ouvre une pré-authentification de 5 min (aucune session). Limites : 10/min par IP, 20/h par e-mail. Même réponse 401 pour un e-mail inconnu, un mot de passe faux, un compte inactif ou verrouillé ; 403 ETABLISSEMENT_SUSPENDU seulement si le mot de passe est correct.
+         */
+        post: operations["auth_connexion"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/csrf": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Pose le cookie CSRF (alpha_csrf)
+         * @description À appeler avant tout POST : pose le cookie alpha_csrf, dont la valeur doit être renvoyée dans l'en-tête X-CSRFToken.
+         */
+        get: operations["auth_csrf"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/deconnexion": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Déconnexion (révoque la session de cet appareil)
+         * @description Révoque la session de cet appareil et vide la session.
+         */
+        post: operations["auth_deconnexion"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/mfa": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Connexion, étape 2 : code TOTP ou code de secours
+         * @description Corps : {code} (6 chiffres) OU {code_secours}. Limite : 5/min par session. Succès : session ouverte (cookie alpha_sid renouvelé, jeton CSRF renouvelé : relire le cookie alpha_csrf).
+         */
+        post: operations["auth_mfa"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/mot-de-passe/oubli": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Mot de passe oublié : demander un lien
+         * @description Réponse 202 identique que l'adresse corresponde ou non à un compte. Si le compte est ACTIF : lien valable `validite_reinit_mdp_min` minutes (les liens précédents sont annulés). Limites : 3/h par e-mail, 10/h par IP.
+         */
+        post: operations["auth_mot_de_passe_oubli"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/mot-de-passe/reinitialisation/{jeton}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Réinitialisation : informations du lien
+         * @description Base des vues de ``/auth`` : session + CSRF obligatoire sur les méthodes non sûres.
+         */
+        get: operations["auth_mot_de_passe_reinitialisation_infos"];
+        put?: never;
+        /**
+         * Réinitialisation : nouveau mot de passe, avec preuve MFA
+         * @description Preuve MFA obligatoire (`code` TOTP OU `code_secours`) : l'accès à la seule boîte e-mail ne suffit pas. Succès : toutes les sessions sont révoquées, le verrouillage temporaire est levé, e-mail de confirmation. Un code faux compte comme un échec de connexion.
+         */
+        post: operations["auth_mot_de_passe_reinitialisation"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/reenrolement/{jeton}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Réenrôlement : informations du lien
+         * @description Base des étapes d'un parcours d'enrôlement par lien e-mail.
+         *
+         *     Sous-classes : ``objet`` du jeton et ``parcours`` (``ACTIVATION`` / ``REENROLEMENT``).
+         */
+        get: operations["auth_reenrolement_infos"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/reenrolement/{jeton}/authenticator": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Réenrôlement, étape 2 : QR code du nouveau téléphone
+         * @description Génère un secret EN_ATTENTE (l'ancien en attente est révoqué) ; QR SVG côté serveur.
+         */
+        post: operations["auth_reenrolement_authenticator"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/reenrolement/{jeton}/authenticator/confirmer": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Réenrôlement, étape 3 : confirmer avec un premier code
+         * @description Renvoie 10 NOUVEAUX codes de secours (les anciens ont été invalidés), affichés une seule fois. Au 5e code faux, le lien est annulé.
+         */
+        post: operations["auth_reenrolement_authenticator_confirmer"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/reenrolement/{jeton}/mot-de-passe": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Réenrôlement, étape 1 : vérifier le mot de passe actuel
+         * @description Un échec compte comme un échec de connexion (verrouillage après N échecs).
+         */
+        post: operations["auth_reenrolement_mot_de_passe"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/reenrolement/{jeton}/terminer": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Réenrôlement, fin : signature débloquée et session ouverte
+         * @description Base des étapes d'un parcours d'enrôlement par lien e-mail.
+         *
+         *     Sous-classes : ``objet`` du jeton et ``parcours`` (``ACTIVATION`` / ``REENROLEMENT``).
+         */
+        post: operations["auth_reenrolement_terminer"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/session": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Session courante (« Rester connecté » : prolonge l'inactivité)
+         * @description Renvoie Moi si une session (mot de passe + MFA) est ouverte. Compte comme une activité (bouton « Rester connecté »), sauf avec l'en-tête X-Alpha-Fond: 1. 401 NON_AUTHENTIFIE sans session, 401 SESSION_EXPIREE si la session vient d'expirer.
+         */
+        get: operations["auth_session"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/telephone-perdu": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Signaler la perte de son téléphone (page publique)
+         * @description Réponse 202 identique dans tous les cas (aucune information sur l'existence du compte). Mot de passe correct : signature bloquée, application d'authentification suspendue, sessions révoquées, tâche pour les administrateurs, e-mails. Mot de passe faux : un échec de connexion est compté, rien d'autre. Limite : 3/h par IP.
+         */
+        post: operations["auth_telephone_perdu"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/moi/absences/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Mes absences (avec leur délégation) */
+        get: operations["moi_absences_liste"];
+        put?: never;
+        /** Déclarer une absence et désigner un délégataire */
+        post: operations["moi_absences_creer"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/moi/absences/{absence_id}/annuler/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Annuler mon absence (ou l'écourter si elle a commencé) */
+        post: operations["moi_absences_annuler"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/moi/delegataires-possibles/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Délégataires possibles (actifs, même établissement, hors soi) */
+        get: operations["moi_delegataires_possibles"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/moi/delegations-recues/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Délégations reçues (en attente, actives et terminées récemment) */
+        get: operations["moi_delegations_recues"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/taches/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Tâches à traiter (triées par urgence) */
+        get: operations["taches_liste"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/taches/{tache_id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Une tâche visible */
+        get: operations["taches_detail"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/taches/compteurs/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Compteurs par groupe d'urgence et par module
+         * @description Compteurs du menu (« À traiter ») et des tuiles, appelés en fond toutes les 60 s.
+         */
+        get: operations["taches_compteurs"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+}
 export type webhooks = Record<string, never>;
 export interface components {
-    schemas: never;
+    schemas: {
+        /** @description Absence + sa délégation. Contexte : ``delegations`` ({absence_id: Delegation}). */
+        Absence: {
+            /** Format: uuid */
+            id: string;
+            readonly demandeur: components["schemas"]["Personne"];
+            /** Format: date-time */
+            debut: string;
+            /** Format: date-time */
+            fin: string;
+            motif: components["schemas"]["MotifEnum"];
+            readonly motif_libelle: string;
+            commentaire: string;
+            statut: components["schemas"]["StatutAbsenceEnum"];
+            readonly valideur: components["schemas"]["Personne"] | null;
+            /** Format: date-time */
+            decide_le: string | null;
+            motif_refus: string;
+            /** Format: date-time */
+            cree_le: string;
+            readonly delegation: components["schemas"]["Delegation"] | null;
+        };
+        /** @description ``GET /absences/{id}`` : ce que l'utilisateur courant peut faire. */
+        AbsenceDetail: {
+            /** Format: uuid */
+            id: string;
+            readonly demandeur: components["schemas"]["Personne"];
+            /** Format: date-time */
+            debut: string;
+            /** Format: date-time */
+            fin: string;
+            motif: components["schemas"]["MotifEnum"];
+            readonly motif_libelle: string;
+            commentaire: string;
+            statut: components["schemas"]["StatutAbsenceEnum"];
+            readonly valideur: components["schemas"]["Personne"] | null;
+            /** Format: date-time */
+            decide_le: string | null;
+            motif_refus: string;
+            /** Format: date-time */
+            cree_le: string;
+            readonly delegation: components["schemas"]["Delegation"] | null;
+            readonly peut_decider: boolean;
+        };
+        Accepte: {
+            message: string;
+        };
+        /**
+         * @description * `DECIDER` - Décider
+         *     * `SIGNER` - Signer
+         *     * `VALIDER` - Valider
+         *     * `COMPLETER` - Compléter
+         *     * `TRAITER` - Traiter
+         * @enum {string}
+         */
+        ActionEnum: "DECIDER" | "SIGNER" | "VALIDER" | "COMPLETER" | "TRAITER";
+        Affectation: {
+            /** Format: uuid */
+            id: string;
+            role: components["schemas"]["Reference"];
+            unite: components["schemas"]["Reference"] | null;
+            principal: boolean;
+            /** Format: date */
+            debut: string;
+            /** Format: date */
+            fin: string | null;
+        };
+        AffectationMoi: {
+            role: components["schemas"]["ReferenceMoi"];
+            unite: components["schemas"]["ReferenceMoi"] | null;
+            principal: boolean;
+        };
+        AnnulationSignalementRequest: {
+            /** @default  */
+            commentaire: string;
+            /** @description Code TOTP de l'administrateur (confirmation). */
+            code: string;
+        };
+        /**
+         * @description * `ACTIVE` - ACTIVE
+         *     * `NON_CONFIGUREE` - NON_CONFIGUREE
+         *     * `SUSPENDUE` - SUSPENDUE
+         * @enum {string}
+         */
+        AuthenticatorEnum: "ACTIVE" | "NON_CONFIGUREE" | "SUSPENDUE";
+        CodeTotpRequest: {
+            /** @description Code à 6 chiffres de l'application. */
+            code: string;
+        };
+        CodesSecours: {
+            /** @description 10 codes « XXXX-XXXX », affichés une seule fois. */
+            codes_secours: string[];
+        };
+        ComptesGroupes: {
+            EN_RETARD: number;
+            AUJOURDHUI: number;
+            CETTE_SEMAINE: number;
+            PLUS_TARD: number;
+        };
+        Compteurs: {
+            total: number;
+            par_groupe: components["schemas"]["ComptesGroupes"];
+            /** @description Modules ayant au moins une tâche. */
+            par_module: {
+                [key: string]: number;
+            };
+        };
+        ConnexionRequest: {
+            /** Format: email */
+            email: string;
+            mot_de_passe: string;
+        };
+        ConnexionReussie: {
+            utilisateur: components["schemas"]["Moi"];
+            codes_secours_restants: number;
+        };
+        /** @description ``ControleIntegriteAudit`` (§ 2.2) ; l'empreinte de l'ancre n'est pas exposée. */
+        Controle: {
+            /** Format: uuid */
+            readonly id: string;
+            /**
+             * Lancé le
+             * Format: date-time
+             */
+            readonly lance_le: string;
+            /**
+             * Terminé le
+             * Format: date-time
+             */
+            readonly termine_le: string | null;
+            /** Déclencheur */
+            readonly declencheur: components["schemas"]["DeclencheurEnum"];
+            readonly statut: components["schemas"]["StatutControleEnum"];
+            /** Événements vérifiés */
+            readonly nb_evenements: number;
+            /** Dernier rang */
+            readonly dernier_seq: number | null;
+            /** Premier rang invalide */
+            readonly premier_seq_invalide: number | null;
+            readonly message: string;
+        };
+        CreationAbsenceRequest: {
+            /** Format: date-time */
+            debut: string;
+            /** Format: date-time */
+            fin: string;
+            motif: components["schemas"]["MotifEnum"];
+            /** @default  */
+            commentaire: string;
+            /** Format: uuid */
+            delegataire_id: string;
+            /**
+             * Format: uuid
+             * @description Vide : tous vos rôles.
+             */
+            role_id?: string | null;
+        };
+        /** @description Corps de ``POST /admin/roles``. */
+        CreationRoleRequest: {
+            libelle: string;
+            description?: string;
+            permissions?: components["schemas"]["PermissionsEnum"][];
+            ordre?: number;
+            code?: string;
+        };
+        /** @description Corps de ``POST /admin/unites``. */
+        CreationUniteRequest: {
+            /** Format: uuid */
+            parent_id?: string | null;
+            type: components["schemas"]["TypeEnum"];
+            code: string;
+            libelle: string;
+            actif?: boolean;
+        };
+        /**
+         * @description * `PLANIFIE` - Planifié
+         *     * `MANUEL` - Manuel
+         * @enum {string}
+         */
+        DeclencheurEnum: "PLANIFIE" | "MANUEL";
+        DefinitionMotDePasseRequest: {
+            mot_de_passe: string;
+            confirmation: string;
+        };
+        Delegant: {
+            /** Format: uuid */
+            id: string;
+            nom: string;
+        };
+        DelegatairePossible: {
+            /** Format: uuid */
+            id: string;
+            nom: string;
+            role_principal: string | null;
+            /** @description Pouvoirs au moins égaux aux vôtres (P5) ; sinon la demande sera refusée. */
+            pouvoirs_suffisants: boolean;
+        };
+        Delegation: {
+            /** Format: uuid */
+            id: string;
+            readonly delegataire: components["schemas"]["Personne"];
+            readonly role: components["schemas"]["RoleCourt"] | null;
+            /** Format: date-time */
+            debut: string;
+            /** Format: date-time */
+            fin: string;
+            statut: components["schemas"]["StatutDelegationEnum"];
+        };
+        DelegationRecue: {
+            /** Format: uuid */
+            id: string;
+            readonly delegant: components["schemas"]["Personne"];
+            readonly role: components["schemas"]["RoleCourt"] | null;
+            /** Format: date-time */
+            debut: string;
+            /** Format: date-time */
+            fin: string;
+            statut: components["schemas"]["StatutDelegationEnum"];
+            readonly effective: boolean;
+        };
+        DernierControle: {
+            /** Format: uuid */
+            id: string;
+            statut: components["schemas"]["StatutControleEnum"];
+            /** Format: date-time */
+            lance_le: string;
+            /** Format: date-time */
+            termine_le: string | null;
+            dernier_seq: number | null;
+            /** @description Rang du premier événement invalide si la chaîne est rompue. */
+            premier_seq_invalide: number | null;
+            message: string;
+        };
+        DetailsAutoTraitement: {
+            /** @description Vrai si aucun autre administrateur disponible : demande écrite à FYXOP (P4). */
+            recours_fyxop: boolean;
+        };
+        DetailsCodeInvalide: {
+            tentatives_restantes: number;
+        };
+        DetailsJetonInvalide: {
+            /** @description TROP_D_ESSAIS si le lien a été annulé après 5 codes faux. */
+            motif?: string;
+        };
+        DetailsTropDeRequetes: {
+            reessayer_dans_s: number;
+        };
+        DetailsVerrouillage: {
+            /**
+             * Format: date-time
+             * @description Fin du verrouillage ; null si déblocage administrateur.
+             */
+            jusqua: string | null;
+            deblocage_administrateur: boolean;
+        };
+        EnrolementAuthenticator: {
+            /** @description QR code SVG de l'URI otpauth:// (affichage seul). */
+            qr_svg: string;
+            /** @description Secret base32 par groupes de 4, pour une saisie manuelle. */
+            secret_affichable: string;
+            emetteur: string;
+            compte: string;
+        };
+        /** @description Corps de toute réponse d'erreur de l'API. */
+        Erreur: {
+            /** @description Constante stable, ex. « DERNIER_ADMINISTRATEUR ». */
+            code: string;
+            /** @description Message en français, affichable tel quel. */
+            message: string;
+            /** @description Détails ; validation : {champ: [messages]}. */
+            details: {
+                [key: string]: unknown;
+            };
+        };
+        /** @description Corps de toute réponse d'erreur de l'API. */
+        ErreurAutoTraitement: {
+            /** @description Constante stable, ex. « DERNIER_ADMINISTRATEUR ». */
+            code: string;
+            /** @description Message en français, affichable tel quel. */
+            message: string;
+            details: components["schemas"]["DetailsAutoTraitement"];
+        };
+        /** @description Corps de toute réponse d'erreur de l'API. */
+        ErreurCodeInvalide: {
+            /** @description Constante stable, ex. « DERNIER_ADMINISTRATEUR ». */
+            code: string;
+            /** @description Message en français, affichable tel quel. */
+            message: string;
+            details: components["schemas"]["DetailsCodeInvalide"];
+        };
+        /** @description Corps de toute réponse d'erreur de l'API. */
+        ErreurJetonInvalide: {
+            /** @description Constante stable, ex. « DERNIER_ADMINISTRATEUR ». */
+            code: string;
+            /** @description Message en français, affichable tel quel. */
+            message: string;
+            details: components["schemas"]["DetailsJetonInvalide"];
+        };
+        /** @description Corps de toute réponse d'erreur de l'API. */
+        ErreurTropDeRequetes: {
+            /** @description Constante stable, ex. « DERNIER_ADMINISTRATEUR ». */
+            code: string;
+            /** @description Message en français, affichable tel quel. */
+            message: string;
+            details: components["schemas"]["DetailsTropDeRequetes"];
+        };
+        /** @description Corps de toute réponse d'erreur de l'API. */
+        ErreurVerrouillage: {
+            /** @description Constante stable, ex. « DERNIER_ADMINISTRATEUR ». */
+            code: string;
+            /** @description Message en français, affichable tel quel. */
+            message: string;
+            details: components["schemas"]["DetailsVerrouillage"];
+        };
+        EtablissementMoi: {
+            /** Format: uuid */
+            id: string;
+            raison_sociale: string;
+            type: string;
+            statut: string;
+        };
+        EtapeConnexion: {
+            etape: components["schemas"]["EtapeConnexionEnum"];
+            /** @description Méthodes MFA utilisables (TOTP absent si l'Authenticator est suspendu). */
+            methodes: components["schemas"]["MethodesEnum"][];
+        };
+        /**
+         * @description * `MFA_REQUIS` - MFA_REQUIS
+         *     * `REENROLEMENT_REQUIS` - REENROLEMENT_REQUIS
+         * @enum {string}
+         */
+        EtapeConnexionEnum: "MFA_REQUIS" | "REENROLEMENT_REQUIS";
+        /**
+         * @description * `CREE` - Créé
+         *     * `MDP_OK` - Mot de passe défini
+         *     * `TOTP_EN_ATTENTE` - Authenticator en attente
+         *     * `TOTP_OK` - Authenticator confirmé
+         * @enum {string}
+         */
+        EtapeJetonEnum: "CREE" | "MDP_OK" | "TOTP_EN_ATTENTE" | "TOTP_OK";
+        /** @description ``EvenementAudit`` (§ 5.1), pour l'historique des actions d'administration. */
+        EvenementAudit: {
+            seq: number;
+            /** Format: date-time */
+            horodatage: string;
+            acteur_type: string;
+            acteur_libelle: string;
+            categorie: string;
+            action: string;
+            action_libelle: string;
+            objet_type: string;
+            objet_id: string;
+            objet_libelle: string;
+            avant: unknown;
+            apres: unknown;
+            detail: string;
+            ip: string | null;
+            hash: string;
+            hash_court: string;
+        };
+        /**
+         * @description * `EN_RETARD` - En retard
+         *     * `AUJOURDHUI` - Aujourd'hui
+         *     * `CETTE_SEMAINE` - Cette semaine
+         *     * `PLUS_TARD` - Plus tard
+         * @enum {string}
+         */
+        GroupeEnum: "EN_RETARD" | "AUJOURDHUI" | "CETTE_SEMAINE" | "PLUS_TARD";
+        Indicateurs: {
+            evenements_aujourdhui: number;
+            connexions_echouees_24h: number;
+            actions_administration_24h: number;
+            /** @description Dernier contrôle terminé (null s'il n'y en a aucun). */
+            dernier_controle: components["schemas"]["DernierControle"] | null;
+            /** @description Un contrôle est en cours d'exécution. */
+            controle_en_cours: boolean;
+        };
+        InfosActivation: {
+            prenom: string;
+            etablissement: string;
+            role: string;
+            etape: components["schemas"]["EtapeJetonEnum"];
+        };
+        InfosReenrolement: {
+            prenom: string;
+            etablissement: string;
+            etape: components["schemas"]["EtapeJetonEnum"];
+        };
+        InfosReinitialisation: {
+            email_masque: string;
+            /** @description Preuves MFA utilisables ; vide : passer par « Téléphone perdu ». */
+            methodes: components["schemas"]["MethodesEnum"][];
+        };
+        InvitationRenvoyee: {
+            /** Format: date-time */
+            expire_le: string;
+        };
+        /** @description Corps de ``POST /admin/utilisateurs`` (§ 4.3). */
+        InvitationRequest: {
+            /** Format: email */
+            email: string;
+            prenom: string;
+            nom: string;
+            /** Format: uuid */
+            role_id: string;
+            /** Format: uuid */
+            unite_id?: string | null;
+            /** Format: uuid */
+            responsable_id?: string | null;
+            telephone_mobile?: (string) | null;
+        };
+        LancementControle: {
+            /**
+             * Format: uuid
+             * @description Contrôle créé (statut EN_COURS), à suivre via /audit/controles.
+             */
+            id: string;
+            statut: components["schemas"]["StatutControleEnum"];
+        };
+        /**
+         * @description * `TOTP` - TOTP
+         *     * `CODE_SECOURS` - CODE_SECOURS
+         * @enum {string}
+         */
+        MethodesEnum: "TOTP" | "CODE_SECOURS";
+        MfaRequest: {
+            /** @description Code TOTP à 6 chiffres. */
+            code?: string;
+            /** @description Code de secours « XXXX-XXXX ». */
+            code_secours?: string;
+        };
+        /**
+         * @description * `PRESENTIEL_PIECE` - En présentiel, avec pièce d'identité
+         *     * `RAPPEL_TELEPHONIQUE` - Rappel au numéro connu
+         *     * `VISIO` - Appel vidéo
+         *     * `AUTRE` - Autre
+         * @enum {string}
+         */
+        ModeVerificationEnum: "PRESENTIEL_PIECE" | "RAPPEL_TELEPHONIQUE" | "VISIO" | "AUTRE";
+        /**
+         * @description * `COMPTE` - Mon compte
+         *     * `ADMINISTRATION` - Administration
+         *     * `CREDIT` - Crédit
+         *     * `INTERNE` - Décisions internes
+         *     * `RH` - Ressources humaines
+         *     * `TRESORERIE` - Trésorerie
+         *     * `CONTRATS` - Contrats
+         *     * `GOUVERNANCE` - Gouvernance
+         *     * `FISCAL` - Fiscalité
+         *     * `PME_FOURNISSEURS` - Fournisseurs
+         *     * `PME_BUDGET` - Budget
+         *     * `PME_COMMERCIAL` - Commercial
+         * @enum {string}
+         */
+        ModuleEnum: "COMPTE" | "ADMINISTRATION" | "CREDIT" | "INTERNE" | "RH" | "TRESORERIE" | "CONTRATS" | "GOUVERNANCE" | "FISCAL" | "PME_FOURNISSEURS" | "PME_BUDGET" | "PME_COMMERCIAL";
+        Moi: {
+            /** Format: uuid */
+            id: string;
+            prenom: string;
+            nom: string;
+            initiales: string;
+            /** Format: email */
+            email: string;
+            telephone_mobile: string | null;
+            langue: string;
+            etablissement: components["schemas"]["EtablissementMoi"] | null;
+            role_principal: components["schemas"]["RolePrincipal"] | null;
+            affectations: components["schemas"]["AffectationMoi"][];
+            permissions: string[];
+            modules: string[];
+            signature_bloquee: boolean;
+            inactivite_session_min: number;
+            est_super_admin: boolean;
+            /** @description Expiration périodique (réglage de l'établissement, P3) atteinte. */
+            mot_de_passe_expire: boolean;
+        };
+        MotDePasseActuelRequest: {
+            /** @description Mot de passe ACTUEL du compte. */
+            mot_de_passe: string;
+        };
+        /**
+         * @description * `CONGE` - Congé
+         *     * `MISSION` - Mission
+         *     * `FORMATION` - Formation
+         *     * `MALADIE` - Maladie
+         *     * `AUTRE` - Autre
+         * @enum {string}
+         */
+        MotifEnum: "CONGE" | "MISSION" | "FORMATION" | "MALADIE" | "AUTRE";
+        /** @description Corps de ``POST /admin/utilisateurs/{id}/affectations``. */
+        NouvelleAffectationRequest: {
+            /** Format: uuid */
+            role_id: string;
+            /** Format: uuid */
+            unite_id?: string | null;
+            /** @default false */
+            principal: boolean;
+        };
+        OubliRequest: {
+            /** Format: email */
+            email: string;
+        };
+        PageSignalements: {
+            count: number;
+            /** Format: uri */
+            next: string | null;
+            /** Format: uri */
+            previous: string | null;
+            results: components["schemas"]["SignalementTelephone"][];
+        };
+        PageUtilisateurs: {
+            count: number;
+            /** Format: uri */
+            next: string | null;
+            /** Format: uri */
+            previous: string | null;
+            results: components["schemas"]["UtilisateurListe"][];
+        };
+        PaginatedControleList: {
+            /** @example 123 */
+            count: number;
+            /**
+             * Format: uri
+             * @example http://api.example.org/accounts/?page=4
+             */
+            next?: string | null;
+            /**
+             * Format: uri
+             * @example http://api.example.org/accounts/?page=2
+             */
+            previous?: string | null;
+            results: components["schemas"]["Controle"][];
+        };
+        PaginatedEvenementAuditList: {
+            /**
+             * Format: uri
+             * @description URL de la page suivante ; null quand il n'y en a plus.
+             */
+            next: string | null;
+            results: components["schemas"]["EvenementAudit"][];
+        };
+        /** @description ``ParametresEtablissement`` exposé à l'administrateur (lecture). */
+        ParametresSecurite: {
+            inactivite_session_min: number;
+            duree_max_session_h: number;
+            mdp_longueur_min: number;
+            mdp_historique: number;
+            mdp_expiration_jours: number | null;
+            tentatives_max: number;
+            verrouillage_min: number;
+            verrouillages_max_24h: number;
+            validite_invitation_h: number;
+            validite_reinit_mdp_min: number;
+            retention_audit_annees: number;
+            email_controle_interne: string;
+            modules_actifs: string[];
+            /** Format: date-time */
+            modifie_le: string;
+        };
+        /** @description Corps de ``PATCH /admin/parametres-securite`` : réglages facultatifs + ``code`` TOTP. */
+        PatchedModificationParametresRequest: {
+            /** @description Code TOTP de confirmation (step-up). */
+            code?: string;
+            inactivite_session_min?: number;
+            duree_max_session_h?: number;
+            mdp_longueur_min?: number;
+            mdp_historique?: number;
+            mdp_expiration_jours?: number | null;
+            tentatives_max?: number;
+            verrouillage_min?: number;
+            verrouillages_max_24h?: number;
+            validite_invitation_h?: number;
+            validite_reinit_mdp_min?: number;
+            retention_audit_annees?: number;
+            email_controle_interne?: string;
+        };
+        /** @description Corps de ``PATCH /admin/roles/{id}`` (le code n'est pas modifiable). */
+        PatchedModificationRoleRequest: {
+            libelle?: string;
+            description?: string;
+            permissions?: components["schemas"]["PermissionsEnum"][];
+            ordre?: number;
+        };
+        /** @description Corps de ``PATCH /admin/unites/{id}`` (tous les champs facultatifs). */
+        PatchedModificationUniteRequest: {
+            /** Format: uuid */
+            parent_id?: string | null;
+            type?: components["schemas"]["TypeEnum"];
+            code?: string;
+            libelle?: string;
+            actif?: boolean;
+        };
+        /** @description Corps de ``PATCH /admin/utilisateurs/{id}`` (l'e-mail n'est pas modifiable). */
+        PatchedModificationUtilisateurRequest: {
+            prenom?: string;
+            nom?: string;
+            telephone_mobile?: (string) | null;
+            /** Format: uuid */
+            responsable_id?: string | null;
+        };
+        Permission: {
+            code: string;
+            libelle: string;
+            description: string;
+        };
+        /**
+         * @description * `admin.utilisateurs` - Inviter, modifier, suspendre, déverrouiller les utilisateurs ; traiter « téléphone perdu »
+         *     * `admin.roles` - Gérer le catalogue des rôles et les habilitations
+         *     * `admin.organisation` - Gérer les unités et périmètres
+         *     * `admin.securite` - Régler les paramètres de sécurité de l'établissement
+         *     * `admin.absences` - Voir et valider toute absence (à défaut de responsable)
+         *     * `audit.lecture` - Consulter le journal d'audit
+         *     * `audit.export` - Exporter le journal d'audit (Excel)
+         * @enum {string}
+         */
+        PermissionsEnum: "admin.utilisateurs" | "admin.roles" | "admin.organisation" | "admin.securite" | "admin.absences" | "audit.lecture" | "audit.export";
+        Personne: {
+            /** Format: uuid */
+            id: string;
+            nom: string;
+        };
+        Reference: {
+            /** Format: uuid */
+            id: string;
+            libelle: string;
+        };
+        ReferenceMoi: {
+            /** Format: uuid */
+            id: string;
+            libelle: string;
+        };
+        ReferencePersonne: {
+            /** Format: uuid */
+            id: string;
+            nom: string;
+        };
+        ReferencePersonneSignalement: {
+            /** Format: uuid */
+            id: string;
+            nom: string;
+        };
+        RefusRequest: {
+            motif: string;
+        };
+        ReinitialisationRequest: {
+            mot_de_passe: string;
+            confirmation: string;
+            /** @description Code TOTP. */
+            code?: string;
+            /** @description Code de secours « XXXX-XXXX ». */
+            code_secours?: string;
+        };
+        ReinitialisationSignalementRequest: {
+            mode_verification: components["schemas"]["ModeVerificationEnum"];
+            /** @default  */
+            commentaire: string;
+            /** @description Code TOTP de l'administrateur (confirmation). */
+            code: string;
+        };
+        RevocationSessions: {
+            revoquees: number;
+        };
+        Role: {
+            /** Format: uuid */
+            id: string;
+            code: string;
+            libelle: string;
+            description: string;
+            permissions: components["schemas"]["PermissionsEnum"][];
+            est_systeme: boolean;
+            actif: boolean;
+            ordre: number;
+            nb_titulaires: number;
+            vacant: boolean;
+        };
+        RoleCourt: {
+            /** Format: uuid */
+            id: string;
+            libelle: string;
+        };
+        RolePrincipal: {
+            /** Format: uuid */
+            id: string;
+            libelle: string;
+            unite: string | null;
+        };
+        SessionActive: {
+            /** Format: uuid */
+            id: string;
+            appareil: string;
+            ip: string | null;
+            methode_mfa: string;
+            /** Format: date-time */
+            cree_le: string;
+            /** Format: date-time */
+            derniere_activite: string;
+        };
+        Signalement: {
+            /** Format: uuid */
+            id: string;
+            statut: string;
+            canal: string;
+            /** Format: date-time */
+            signale_le: string;
+        };
+        SignalementTelephone: {
+            /** Format: uuid */
+            id: string;
+            utilisateur: components["schemas"]["UtilisateurSignalement"];
+            canal: string;
+            statut: components["schemas"]["SignalementTelephoneStatutEnum"];
+            /** Format: date-time */
+            signale_le: string;
+            traite_par: components["schemas"]["ReferencePersonneSignalement"] | null;
+            mode_verification: string | null;
+            reference_demande: string | null;
+            commentaire: string;
+            /** Format: date-time */
+            traite_le: string | null;
+        };
+        /**
+         * @description * `OUVERT` - Ouvert
+         *     * `REINITIALISE` - Réinitialisé
+         *     * `ANNULE` - Annulé (téléphone retrouvé)
+         * @enum {string}
+         */
+        SignalementTelephoneStatutEnum: "OUVERT" | "REINITIALISE" | "ANNULE";
+        /**
+         * @description * `SOUMISE` - Soumise
+         *     * `VALIDEE` - Validée
+         *     * `REFUSEE` - Refusée
+         *     * `ANNULEE` - Annulée
+         * @enum {string}
+         */
+        StatutAbsenceEnum: "SOUMISE" | "VALIDEE" | "REFUSEE" | "ANNULEE";
+        /**
+         * @description * `EN_COURS` - En cours
+         *     * `INTACTE` - Intacte
+         *     * `ROMPUE` - Rompue
+         *     * `ERREUR` - Erreur
+         * @enum {string}
+         */
+        StatutControleEnum: "EN_COURS" | "INTACTE" | "ROMPUE" | "ERREUR";
+        /**
+         * @description * `EN_ATTENTE` - En attente
+         *     * `ACTIVE` - Active
+         *     * `TERMINEE` - Terminée
+         *     * `ANNULEE` - Annulée
+         *     * `REFUSEE` - Refusée
+         * @enum {string}
+         */
+        StatutDelegationEnum: "EN_ATTENTE" | "ACTIVE" | "TERMINEE" | "ANNULEE" | "REFUSEE";
+        /**
+         * @description * `INVITE` - Invité
+         *     * `ACTIF` - Actif
+         *     * `SUSPENDU` - Suspendu
+         *     * `DESACTIVE` - Désactivé
+         * @enum {string}
+         */
+        StatutUtilisateurEnum: "INVITE" | "ACTIF" | "SUSPENDU" | "DESACTIVE";
+        /** @description Fiche administrateur (``GET /admin/utilisateurs/{id}``). */
+        SuspensionReponse: {
+            /** Format: uuid */
+            id: string;
+            prenom: string;
+            nom: string;
+            initiales: string;
+            /** Format: email */
+            email: string;
+            role_principal: string | null;
+            perimetre: string | null;
+            authenticator: components["schemas"]["AuthenticatorEnum"];
+            /** Format: date-time */
+            derniere_connexion: string | null;
+            statut: components["schemas"]["StatutUtilisateurEnum"];
+            verrouille: boolean;
+            telephone_mobile: string | null;
+            langue: string;
+            responsable: components["schemas"]["ReferencePersonne"] | null;
+            echecs_connexion: number;
+            /** Format: date-time */
+            verrouille_jusqua: string | null;
+            bloque_par_admin: boolean;
+            mfa_a_reconfigurer: boolean;
+            signature_bloquee: boolean;
+            /** Format: date-time */
+            active_le: string | null;
+            /** Format: date-time */
+            cree_le: string;
+            affectations: components["schemas"]["Affectation"][];
+            sessions_actives: components["schemas"]["SessionActive"][];
+            signalement: components["schemas"]["Signalement"] | null;
+            sessions_revoquees: number;
+        };
+        /** @description Corps de ``POST /admin/utilisateurs/{id}/suspendre``. */
+        SuspensionRequest: {
+            motif: string;
+        };
+        /** @description Lecture seule ; contexte : ``bornes`` (``Bornes``) et ``delegants`` ({uuid: nom}). */
+        Tache: {
+            /** Format: uuid */
+            id: string;
+            module: components["schemas"]["ModuleEnum"];
+            readonly module_libelle: string;
+            reference: string;
+            titre: string;
+            sous_titre: string;
+            /** Format: decimal */
+            montant: string | null;
+            devise: string;
+            action: components["schemas"]["ActionEnum"];
+            readonly action_libelle: string;
+            type_echeance: string;
+            /** Format: date-time */
+            echeance: string | null;
+            readonly groupe: components["schemas"]["GroupeEnum"];
+            readonly retard_jours: number | null;
+            lien: string;
+            readonly par_delegation_de: components["schemas"]["Delegant"] | null;
+            /** Format: date-time */
+            cree_le: string;
+        };
+        TelephonePerduRequest: {
+            /** Format: email */
+            email: string;
+            mot_de_passe: string;
+        };
+        TerminerRequest: {
+            codes_conserves: boolean;
+        };
+        /**
+         * @description * `DIRECTION` - Direction
+         *     * `SERVICE` - Service
+         *     * `AGENCE` - Agence
+         *     * `COMITE` - Comité
+         * @enum {string}
+         */
+        TypeEnum: "DIRECTION" | "SERVICE" | "AGENCE" | "COMITE";
+        Unite: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            parent_id: string | null;
+            type: components["schemas"]["TypeEnum"];
+            code: string;
+            libelle: string;
+            actif: boolean;
+        };
+        /** @description Nœud de l'arbre des unités (``enfants`` récursif). */
+        UniteArbre: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            parent_id: string | null;
+            type: components["schemas"]["TypeEnum"];
+            code: string;
+            libelle: string;
+            actif: boolean;
+            enfants: components["schemas"]["UniteArbre"][];
+        };
+        /** @description Fiche administrateur (``GET /admin/utilisateurs/{id}``). */
+        UtilisateurDetail: {
+            /** Format: uuid */
+            id: string;
+            prenom: string;
+            nom: string;
+            initiales: string;
+            /** Format: email */
+            email: string;
+            role_principal: string | null;
+            perimetre: string | null;
+            authenticator: components["schemas"]["AuthenticatorEnum"];
+            /** Format: date-time */
+            derniere_connexion: string | null;
+            statut: components["schemas"]["StatutUtilisateurEnum"];
+            verrouille: boolean;
+            telephone_mobile: string | null;
+            langue: string;
+            responsable: components["schemas"]["ReferencePersonne"] | null;
+            echecs_connexion: number;
+            /** Format: date-time */
+            verrouille_jusqua: string | null;
+            bloque_par_admin: boolean;
+            mfa_a_reconfigurer: boolean;
+            signature_bloquee: boolean;
+            /** Format: date-time */
+            active_le: string | null;
+            /** Format: date-time */
+            cree_le: string;
+            affectations: components["schemas"]["Affectation"][];
+            sessions_actives: components["schemas"]["SessionActive"][];
+            signalement: components["schemas"]["Signalement"] | null;
+        };
+        /** @description ``UtilisateurListe`` (§ 5.1). */
+        UtilisateurListe: {
+            /** Format: uuid */
+            id: string;
+            prenom: string;
+            nom: string;
+            initiales: string;
+            /** Format: email */
+            email: string;
+            role_principal: string | null;
+            perimetre: string | null;
+            authenticator: components["schemas"]["AuthenticatorEnum"];
+            /** Format: date-time */
+            derniere_connexion: string | null;
+            statut: components["schemas"]["StatutUtilisateurEnum"];
+            verrouille: boolean;
+        };
+        UtilisateurSignalement: {
+            /** Format: uuid */
+            id: string;
+            nom: string;
+            /** Format: email */
+            email: string;
+        };
+    };
     responses: never;
     parameters: never;
     requestBodies: never;
@@ -14,4 +1944,3300 @@ export interface components {
     pathItems: never;
 }
 export type $defs = Record<string, never>;
-export type operations = Record<string, never>;
+export interface operations {
+    absences_detail: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                absence_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AbsenceDetail"];
+                };
+            };
+            /** @description Non authentifié. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+            /** @description Permission refusée (y compris super-administrateur FYXOP sur une route d'établissement). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+            /** @description Inexistant ou appartenant à un autre établissement. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+        };
+    };
+    absences_refuser: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                absence_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RefusRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AbsenceDetail"];
+                };
+            };
+            /** @description Données invalides (VALIDATION ou code métier). */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+            /** @description Non authentifié. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+            /** @description Permission refusée (y compris super-administrateur FYXOP sur une route d'établissement). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+            /** @description Inexistant ou appartenant à un autre établissement. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+            /** @description STATUT_INVALIDE */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+        };
+    };
+    absences_valider: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                absence_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AbsenceDetail"];
+                };
+            };
+            /** @description Non authentifié. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+            /** @description Ni valideur désigné, ni admin.absences (ou l'absent lui-même). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+            /** @description Inexistant ou appartenant à un autre établissement. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+            /** @description STATUT_INVALIDE, ABSENCE_EXPIREE, POUVOIRS_INSUFFISANTS, SOUS_DELEGATION_INTERDITE. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+        };
+    };
+    admin_affectation_terminer: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                affectation_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Affectation"];
+                };
+            };
+            /** @description Non authentifié. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+            /** @description Permission refusée (y compris super-administrateur FYXOP sur une route d'établissement). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+            /** @description Inexistant ou appartenant à un autre établissement. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+            /** @description DERNIER_ADMINISTRATEUR ou AFFECTATION_TERMINEE. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+        };
+    };
+    admin_parametres_securite_lire: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ParametresSecurite"];
+                };
+            };
+            /** @description Non authentifié. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+            /** @description Permission refusée (y compris super-administrateur FYXOP sur une route d'établissement). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+            /** @description Inexistant ou appartenant à un autre établissement. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+        };
+    };
+    admin_parametres_securite_modifier: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["PatchedModificationParametresRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ParametresSecurite"];
+                };
+            };
+            /** @description VALIDATION (bornes). */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+            /** @description Non authentifié. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+            /** @description Permission refusée (y compris super-administrateur FYXOP sur une route d'établissement). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+            /** @description Inexistant ou appartenant à un autre établissement. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+        };
+    };
+    admin_permissions_liste: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Permission"][];
+                };
+            };
+            /** @description Non authentifié. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+            /** @description Permission refusée (y compris super-administrateur FYXOP sur une route d'établissement). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+        };
+    };
+    admin_roles_liste: {
+        parameters: {
+            query?: {
+                /** @description true : actifs ; false : inactifs. */
+                actif?: boolean;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Role"][];
+                };
+            };
+            /** @description Données invalides (VALIDATION ou code métier). */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+            /** @description Non authentifié. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+            /** @description Permission refusée (y compris super-administrateur FYXOP sur une route d'établissement). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+        };
+    };
+    admin_roles_creer: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreationRoleRequest"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Role"];
+                };
+            };
+            /** @description Données invalides (VALIDATION ou code métier). */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+            /** @description Non authentifié. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+            /** @description Permission refusée (y compris super-administrateur FYXOP sur une route d'établissement). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+            /** @description LIBELLE_EXISTE ou CODE_EXISTE. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+        };
+    };
+    admin_role_modifier: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                role_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["PatchedModificationRoleRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Role"];
+                };
+            };
+            /** @description Données invalides (VALIDATION ou code métier). */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+            /** @description Non authentifié. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+            /** @description Permission refusée (y compris super-administrateur FYXOP sur une route d'établissement). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+            /** @description Inexistant ou appartenant à un autre établissement. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+            /** @description ROLE_SYSTEME (permissions d'un rôle système), LIBELLE_EXISTE ou DERNIER_ADMINISTRATEUR. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+        };
+    };
+    admin_role_activer: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                role_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Role"];
+                };
+            };
+            /** @description Non authentifié. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+            /** @description Permission refusée (y compris super-administrateur FYXOP sur une route d'établissement). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+            /** @description Inexistant ou appartenant à un autre établissement. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+            /** @description ROLE_SYSTEME ou DERNIER_ADMINISTRATEUR. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+        };
+    };
+    admin_role_desactiver: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                role_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Role"];
+                };
+            };
+            /** @description Non authentifié. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+            /** @description Permission refusée (y compris super-administrateur FYXOP sur une route d'établissement). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+            /** @description Inexistant ou appartenant à un autre établissement. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+            /** @description ROLE_SYSTEME ou DERNIER_ADMINISTRATEUR. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+        };
+    };
+    admin_signalements_telephone_liste: {
+        parameters: {
+            query?: {
+                page?: number;
+                statut?: "ANNULE" | "OUVERT" | "REINITIALISE";
+                /** @description 25 par défaut, 100 au plus. */
+                taille?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PageSignalements"];
+                };
+            };
+            /** @description Données invalides (VALIDATION ou code métier). */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+            /** @description Non authentifié. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+            /** @description Permission refusée (y compris super-administrateur FYXOP sur une route d'établissement). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+        };
+    };
+    admin_signalement_telephone_annuler: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                signalement_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AnnulationSignalementRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SignalementTelephone"];
+                };
+            };
+            /** @description Données invalides (VALIDATION ou code métier). */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+            /** @description CODE_INVALIDE (step-up) ou non connecté. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+            /** @description AUTO_TRAITEMENT_INTERDIT {recours_fyxop} ou permission refusée. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErreurAutoTraitement"];
+                };
+            };
+            /** @description Inexistant ou appartenant à un autre établissement. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+            /** @description SIGNALEMENT_DEJA_TRAITE. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+            /** @description Erreur. */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+        };
+    };
+    admin_signalement_telephone_reinitialiser: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                signalement_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReinitialisationSignalementRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SignalementTelephone"];
+                };
+            };
+            /** @description Données invalides (VALIDATION ou code métier). */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+            /** @description CODE_INVALIDE (step-up) ou non connecté. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+            /** @description AUTO_TRAITEMENT_INTERDIT {recours_fyxop} ou permission refusée. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErreurAutoTraitement"];
+                };
+            };
+            /** @description Inexistant ou appartenant à un autre établissement. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+            /** @description SIGNALEMENT_DEJA_TRAITE. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+            /** @description Erreur. */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+        };
+    };
+    admin_unites_arbre: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UniteArbre"][];
+                };
+            };
+            /** @description Non authentifié. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+            /** @description Permission refusée (y compris super-administrateur FYXOP sur une route d'établissement). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+        };
+    };
+    admin_unites_creer: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreationUniteRequest"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Unite"];
+                };
+            };
+            /** @description Données invalides (VALIDATION ou code métier). */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+            /** @description Non authentifié. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+            /** @description Permission refusée (y compris super-administrateur FYXOP sur une route d'établissement). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+            /** @description CODE_EXISTE. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+        };
+    };
+    admin_unite_modifier: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                unite_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["PatchedModificationUniteRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Unite"];
+                };
+            };
+            /** @description Données invalides (VALIDATION ou code métier). */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+            /** @description Non authentifié. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+            /** @description Permission refusée (y compris super-administrateur FYXOP sur une route d'établissement). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+            /** @description Inexistant ou appartenant à un autre établissement. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+            /** @description CODE_EXISTE. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+        };
+    };
+    admin_utilisateurs_liste: {
+        parameters: {
+            query?: {
+                page?: number;
+                /** @description Nom, prénom ou e-mail. */
+                q?: string;
+                /** @description Titulaires de ce rôle. */
+                role_id?: string;
+                statut?: "ACTIF" | "DESACTIVE" | "INVITE" | "SUSPENDU";
+                /** @description 25 par défaut, 100 au plus. */
+                taille?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PageUtilisateurs"];
+                };
+            };
+            /** @description Données invalides (VALIDATION ou code métier). */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+            /** @description Non authentifié. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+            /** @description Permission refusée (y compris super-administrateur FYXOP sur une route d'établissement). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+        };
+    };
+    admin_utilisateurs_inviter: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["InvitationRequest"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UtilisateurDetail"];
+                };
+            };
+            /** @description VALIDATION ou ROLE_HORS_CATALOGUE. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+            /** @description Non authentifié. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+            /** @description Permission refusée (y compris super-administrateur FYXOP sur une route d'établissement). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+            /** @description EMAIL_EXISTE. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+        };
+    };
+    admin_utilisateur_detail: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                utilisateur_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UtilisateurDetail"];
+                };
+            };
+            /** @description Non authentifié. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+            /** @description Permission refusée (y compris super-administrateur FYXOP sur une route d'établissement). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+            /** @description Inexistant ou appartenant à un autre établissement. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+        };
+    };
+    admin_utilisateur_modifier: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                utilisateur_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["PatchedModificationUtilisateurRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UtilisateurDetail"];
+                };
+            };
+            /** @description Données invalides (VALIDATION ou code métier). */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+            /** @description Non authentifié. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+            /** @description Permission refusée (y compris super-administrateur FYXOP sur une route d'établissement). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+            /** @description Inexistant ou appartenant à un autre établissement. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+        };
+    };
+    admin_utilisateur_affecter: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                utilisateur_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["NouvelleAffectationRequest"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Affectation"];
+                };
+            };
+            /** @description Données invalides (VALIDATION ou code métier). */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+            /** @description Non authentifié. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+            /** @description Permission refusée (y compris super-administrateur FYXOP sur une route d'établissement). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+            /** @description Inexistant ou appartenant à un autre établissement. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+            /** @description AFFECTATION_EXISTE (même rôle, même périmètre). */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+        };
+    };
+    admin_utilisateur_deverrouiller: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                utilisateur_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UtilisateurDetail"];
+                };
+            };
+            /** @description Non authentifié. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+            /** @description Permission refusée (y compris super-administrateur FYXOP sur une route d'établissement). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+            /** @description Inexistant ou appartenant à un autre établissement. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+        };
+    };
+    admin_utilisateur_reactiver: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                utilisateur_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UtilisateurDetail"];
+                };
+            };
+            /** @description Non authentifié. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+            /** @description Permission refusée (y compris super-administrateur FYXOP sur une route d'établissement). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+            /** @description Inexistant ou appartenant à un autre établissement. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+            /** @description STATUT_INVALIDE. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+        };
+    };
+    admin_utilisateur_renvoyer_invitation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                utilisateur_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InvitationRenvoyee"];
+                };
+            };
+            /** @description Non authentifié. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+            /** @description Permission refusée (y compris super-administrateur FYXOP sur une route d'établissement). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+            /** @description Inexistant ou appartenant à un autre établissement. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+            /** @description UTILISATEUR_NON_INVITE. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+        };
+    };
+    admin_utilisateur_revoquer_sessions: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                utilisateur_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RevocationSessions"];
+                };
+            };
+            /** @description Non authentifié. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+            /** @description Permission refusée (y compris super-administrateur FYXOP sur une route d'établissement). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+            /** @description Inexistant ou appartenant à un autre établissement. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+        };
+    };
+    admin_utilisateur_suspendre: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                utilisateur_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SuspensionRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SuspensionReponse"];
+                };
+            };
+            /** @description Données invalides (VALIDATION ou code métier). */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+            /** @description Non authentifié. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+            /** @description Permission refusée (y compris super-administrateur FYXOP sur une route d'établissement). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+            /** @description Inexistant ou appartenant à un autre établissement. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+            /** @description DERNIER_ADMINISTRATEUR ou STATUT_INVALIDE. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+        };
+    };
+    admin_utilisateurs_historique: {
+        parameters: {
+            query?: {
+                /** @description 3 par défaut, 50 au plus. */
+                limite?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EvenementAudit"][];
+                };
+            };
+            /** @description Données invalides (VALIDATION ou code métier). */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+            /** @description Non authentifié. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+            /** @description Permission refusée (y compris super-administrateur FYXOP sur une route d'établissement). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+        };
+    };
+    audit_controles_liste: {
+        parameters: {
+            query?: {
+                /** @description Numéro de page (à partir de 1). */
+                page?: number;
+                /** @description Nombre d'éléments par page (25 par défaut, 100 au maximum). */
+                taille?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedControleList"];
+                };
+            };
+            /** @description Non authentifié. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+            /** @description Permission refusée (y compris super-administrateur FYXOP sur une route d'établissement). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+        };
+    };
+    audit_controles_lancer: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LancementControle"];
+                };
+            };
+            /** @description Non authentifié. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+            /** @description Permission refusée (y compris super-administrateur FYXOP sur une route d'établissement). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+            /** @description CONTROLE_EN_COURS : un contrôle est déjà en cours. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+        };
+    };
+    audit_evenements_liste: {
+        parameters: {
+            query?: {
+                /** @description Identifiant de l'acteur. */
+                acteur_id?: string;
+                /** @description Codes d'action séparés par des virgules ; `utilisateur.*` : préfixe. */
+                action?: string;
+                /** @description Fin incluse : AAAA-MM-JJ (jour entier) ou date-heure ISO 8601. */
+                au?: string;
+                /** @description Catégories séparées par des virgules : CONNEXION, DECISION, MODIFICATION, PARAMETRAGE, ACCES_API, SUPER_ADMIN, SECURITE, DOCUMENT, ENVOI_EXTERNE, IA. */
+                categorie?: string;
+                /** @description Curseur opaque renvoyé dans `next` par la page précédente. */
+                curseur?: string;
+                /** @description Début inclus : AAAA-MM-JJ (minuit) ou date-heure ISO 8601. */
+                du?: string;
+                objet_id?: string;
+                objet_type?: string;
+                /**
+                 * @description Aujourd'hui, 7 ou 30 derniers jours (jour en cours compris). Incompatible avec du/au.
+                 *
+                 *     * `aujourdhui` - aujourdhui
+                 *     * `7j` - 7j
+                 *     * `30j` - 30j
+                 */
+                periode?: "aujourdhui" | "7j" | "30j";
+                /** @description Recherche libre : utilisateur, objet (libellé, identifiant), IP, détail. */
+                q?: string;
+                /** @description Nombre d'événements par page (50 par défaut, 100 au plus). */
+                taille?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedEvenementAuditList"];
+                };
+            };
+            /** @description Données invalides (VALIDATION ou code métier). */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+            /** @description Non authentifié. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+            /** @description Permission refusée (y compris super-administrateur FYXOP sur une route d'établissement). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+        };
+    };
+    audit_export_xlsx: {
+        parameters: {
+            query?: {
+                /** @description Identifiant de l'acteur. */
+                acteur_id?: string;
+                /** @description Codes d'action séparés par des virgules ; `utilisateur.*` : préfixe. */
+                action?: string;
+                /** @description Fin incluse : AAAA-MM-JJ (jour entier) ou date-heure ISO 8601. */
+                au?: string;
+                /** @description Catégories séparées par des virgules : CONNEXION, DECISION, MODIFICATION, PARAMETRAGE, ACCES_API, SUPER_ADMIN, SECURITE, DOCUMENT, ENVOI_EXTERNE, IA. */
+                categorie?: string;
+                /** @description Début inclus : AAAA-MM-JJ (minuit) ou date-heure ISO 8601. */
+                du?: string;
+                objet_id?: string;
+                objet_type?: string;
+                /**
+                 * @description Aujourd'hui, 7 ou 30 derniers jours (jour en cours compris). Incompatible avec du/au.
+                 *
+                 *     * `aujourdhui` - aujourdhui
+                 *     * `7j` - 7j
+                 *     * `30j` - 30j
+                 */
+                periode?: "aujourdhui" | "7j" | "30j";
+                /** @description Recherche libre : utilisateur, objet (libellé, identifiant), IP, détail. */
+                q?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Classeur Excel (pièce jointe). */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": string;
+                };
+            };
+            /** @description VALIDATION (filtres) ou EXPORT_TROP_VOLUMINEUX. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+            /** @description Non authentifié. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+            /** @description Permission refusée (y compris super-administrateur FYXOP sur une route d'établissement). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+        };
+    };
+    audit_indicateurs: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Indicateurs"];
+                };
+            };
+            /** @description Non authentifié. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+            /** @description Permission refusée (y compris super-administrateur FYXOP sur une route d'établissement). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+        };
+    };
+    auth_activation_infos: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                jeton: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InfosActivation"];
+                };
+            };
+            /** @description JETON_INVALIDE (lien expiré, utilisé ou annulé). */
+            410: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErreurJetonInvalide"];
+                };
+            };
+        };
+    };
+    auth_activation_authenticator: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                jeton: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EnrolementAuthenticator"];
+                };
+            };
+            /** @description CSRF_INVALIDE. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+            /** @description ETAPE_INVALIDE (étape non disponible). */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErreurJetonInvalide"];
+                };
+            };
+            /** @description JETON_INVALIDE (lien expiré, utilisé ou annulé). */
+            410: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErreurJetonInvalide"];
+                };
+            };
+        };
+    };
+    auth_activation_authenticator_confirmer: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                jeton: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CodeTotpRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CodesSecours"];
+                };
+            };
+            /** @description VALIDATION (corps invalide). */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+            /** @description CODE_INVALIDE {tentatives_restantes}. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErreurCodeInvalide"];
+                };
+            };
+            /** @description CSRF_INVALIDE. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+            /** @description ETAPE_INVALIDE (étape non disponible). */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErreurJetonInvalide"];
+                };
+            };
+            /** @description JETON_INVALIDE (lien expiré, utilisé ou annulé). */
+            410: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErreurJetonInvalide"];
+                };
+            };
+        };
+    };
+    auth_activation_mot_de_passe: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                jeton: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DefinitionMotDePasseRequest"];
+            };
+        };
+        responses: {
+            /** @description Mot de passe enregistré. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description VALIDATION (corps invalide). */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+            /** @description CSRF_INVALIDE. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+            /** @description ETAPE_INVALIDE (étape non disponible). */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErreurJetonInvalide"];
+                };
+            };
+            /** @description JETON_INVALIDE (lien expiré, utilisé ou annulé). */
+            410: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErreurJetonInvalide"];
+                };
+            };
+        };
+    };
+    auth_activation_terminer: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                jeton: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TerminerRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Moi"];
+                };
+            };
+            /** @description VALIDATION (corps invalide). */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+            /** @description ETABLISSEMENT_SUSPENDU ou CSRF_INVALIDE. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErreurJetonInvalide"];
+                };
+            };
+            /** @description ETAPE_INVALIDE (étape non disponible). */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErreurJetonInvalide"];
+                };
+            };
+            /** @description JETON_INVALIDE (lien expiré, utilisé ou annulé). */
+            410: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErreurJetonInvalide"];
+                };
+            };
+            /** @description COMPTE_VERROUILLE. */
+            423: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErreurVerrouillage"];
+                };
+            };
+        };
+    };
+    auth_connexion: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ConnexionRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EtapeConnexion"];
+                };
+            };
+            /** @description VALIDATION (corps invalide). */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+            /** @description IDENTIFIANTS_INVALIDES. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+            /** @description ETABLISSEMENT_SUSPENDU ou CSRF_INVALIDE. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+            /** @description TROP_DE_REQUETES (en-tête Retry-After). */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErreurTropDeRequetes"];
+                };
+            };
+        };
+    };
+    auth_csrf: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Cookie alpha_csrf posé. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    auth_deconnexion: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Déconnecté. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Non authentifié. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+            /** @description CSRF_INVALIDE. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+        };
+    };
+    auth_mfa: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["MfaRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConnexionReussie"];
+                };
+            };
+            /** @description VALIDATION (corps invalide). */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+            /** @description CODE_INVALIDE {tentatives_restantes} ou PREAUTH_EXPIREE. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErreurCodeInvalide"];
+                };
+            };
+            /** @description CSRF_INVALIDE. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+            /** @description COMPTE_VERROUILLE {jusqua}. */
+            423: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErreurVerrouillage"];
+                };
+            };
+            /** @description TROP_DE_REQUETES (en-tête Retry-After). */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErreurTropDeRequetes"];
+                };
+            };
+        };
+    };
+    auth_mot_de_passe_oubli: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["OubliRequest"];
+            };
+        };
+        responses: {
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Accepte"];
+                };
+            };
+            /** @description VALIDATION (corps invalide). */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+            /** @description CSRF_INVALIDE. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+            /** @description TROP_DE_REQUETES (en-tête Retry-After). */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErreurTropDeRequetes"];
+                };
+            };
+        };
+    };
+    auth_mot_de_passe_reinitialisation_infos: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                jeton: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InfosReinitialisation"];
+                };
+            };
+            /** @description JETON_INVALIDE (lien expiré, utilisé ou annulé). */
+            410: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErreurJetonInvalide"];
+                };
+            };
+        };
+    };
+    auth_mot_de_passe_reinitialisation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                jeton: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReinitialisationRequest"];
+            };
+        };
+        responses: {
+            /** @description Mot de passe modifié ; se reconnecter. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description VALIDATION (corps invalide). */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+            /** @description CODE_INVALIDE {tentatives_restantes}. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErreurCodeInvalide"];
+                };
+            };
+            /** @description CSRF_INVALIDE. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+            /** @description JETON_INVALIDE (lien expiré, utilisé ou annulé). */
+            410: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErreurJetonInvalide"];
+                };
+            };
+            /** @description COMPTE_VERROUILLE. */
+            423: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErreurVerrouillage"];
+                };
+            };
+        };
+    };
+    auth_reenrolement_infos: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                jeton: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InfosReenrolement"];
+                };
+            };
+            /** @description JETON_INVALIDE (lien expiré, utilisé ou annulé). */
+            410: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErreurJetonInvalide"];
+                };
+            };
+        };
+    };
+    auth_reenrolement_authenticator: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                jeton: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EnrolementAuthenticator"];
+                };
+            };
+            /** @description CSRF_INVALIDE. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+            /** @description ETAPE_INVALIDE (étape non disponible). */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErreurJetonInvalide"];
+                };
+            };
+            /** @description JETON_INVALIDE (lien expiré, utilisé ou annulé). */
+            410: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErreurJetonInvalide"];
+                };
+            };
+        };
+    };
+    auth_reenrolement_authenticator_confirmer: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                jeton: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CodeTotpRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CodesSecours"];
+                };
+            };
+            /** @description VALIDATION (corps invalide). */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+            /** @description CODE_INVALIDE {tentatives_restantes}. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErreurCodeInvalide"];
+                };
+            };
+            /** @description CSRF_INVALIDE. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+            /** @description ETAPE_INVALIDE (étape non disponible). */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErreurJetonInvalide"];
+                };
+            };
+            /** @description JETON_INVALIDE (lien expiré, utilisé ou annulé). */
+            410: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErreurJetonInvalide"];
+                };
+            };
+        };
+    };
+    auth_reenrolement_mot_de_passe: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                jeton: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MotDePasseActuelRequest"];
+            };
+        };
+        responses: {
+            /** @description Mot de passe vérifié. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description VALIDATION (corps invalide). */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+            /** @description MOT_DE_PASSE_INCORRECT {tentatives_restantes}. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErreurCodeInvalide"];
+                };
+            };
+            /** @description CSRF_INVALIDE. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+            /** @description ETAPE_INVALIDE (étape non disponible). */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErreurJetonInvalide"];
+                };
+            };
+            /** @description JETON_INVALIDE (lien expiré, utilisé ou annulé). */
+            410: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErreurJetonInvalide"];
+                };
+            };
+            /** @description COMPTE_VERROUILLE. */
+            423: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErreurVerrouillage"];
+                };
+            };
+        };
+    };
+    auth_reenrolement_terminer: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                jeton: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TerminerRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Moi"];
+                };
+            };
+            /** @description VALIDATION (corps invalide). */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+            /** @description ETABLISSEMENT_SUSPENDU ou CSRF_INVALIDE. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErreurJetonInvalide"];
+                };
+            };
+            /** @description ETAPE_INVALIDE (étape non disponible). */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErreurJetonInvalide"];
+                };
+            };
+            /** @description JETON_INVALIDE (lien expiré, utilisé ou annulé). */
+            410: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErreurJetonInvalide"];
+                };
+            };
+            /** @description COMPTE_VERROUILLE. */
+            423: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErreurVerrouillage"];
+                };
+            };
+        };
+    };
+    auth_session: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Moi"];
+                };
+            };
+            /** @description Non authentifié. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+        };
+    };
+    auth_telephone_perdu: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TelephonePerduRequest"];
+            };
+        };
+        responses: {
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Accepte"];
+                };
+            };
+            /** @description VALIDATION (corps invalide). */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+            /** @description CSRF_INVALIDE. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+            /** @description TROP_DE_REQUETES (en-tête Retry-After). */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErreurTropDeRequetes"];
+                };
+            };
+        };
+    };
+    moi_absences_liste: {
+        parameters: {
+            query?: {
+                page?: number;
+                statut?: "ANNULEE" | "REFUSEE" | "SOUMISE" | "VALIDEE";
+                taille?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Absence"][];
+                };
+            };
+            /** @description Données invalides (VALIDATION ou code métier). */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+            /** @description Non authentifié. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+            /** @description Permission refusée (y compris super-administrateur FYXOP sur une route d'établissement). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+        };
+    };
+    moi_absences_creer: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreationAbsenceRequest"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AbsenceDetail"];
+                };
+            };
+            /** @description VALIDATION, DELEGATAIRE_INVALIDE, ROLE_NON_DETENU. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+            /** @description Non authentifié. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+            /** @description Permission refusée (y compris super-administrateur FYXOP sur une route d'établissement). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+            /** @description CHEVAUCHEMENT, POUVOIRS_INSUFFISANTS, SOUS_DELEGATION_INTERDITE, AUCUN_VALIDEUR. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+        };
+    };
+    moi_absences_annuler: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                absence_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AbsenceDetail"];
+                };
+            };
+            /** @description Non authentifié. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+            /** @description Permission refusée (y compris super-administrateur FYXOP sur une route d'établissement). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+            /** @description Inexistant ou appartenant à un autre établissement. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+            /** @description STATUT_INVALIDE */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+        };
+    };
+    moi_delegataires_possibles: {
+        parameters: {
+            query?: {
+                /** @description Nom ou e-mail. */
+                q?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DelegatairePossible"][];
+                };
+            };
+            /** @description Non authentifié. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+            /** @description Permission refusée (y compris super-administrateur FYXOP sur une route d'établissement). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+        };
+    };
+    moi_delegations_recues: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DelegationRecue"][];
+                };
+            };
+            /** @description Non authentifié. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+            /** @description Permission refusée (y compris super-administrateur FYXOP sur une route d'établissement). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+        };
+    };
+    taches_liste: {
+        parameters: {
+            query?: {
+                groupe?: "AUJOURDHUI" | "CETTE_SEMAINE" | "EN_RETARD" | "PLUS_TARD";
+                module?: "ADMINISTRATION" | "COMPTE" | "CONTRATS" | "CREDIT" | "FISCAL" | "GOUVERNANCE" | "INTERNE" | "PME_BUDGET" | "PME_COMMERCIAL" | "PME_FOURNISSEURS" | "RH" | "TRESORERIE";
+                page?: number;
+                /** @description Référence, titre ou sous-titre. */
+                q?: string;
+                /** @description 25 par défaut, 100 au plus. */
+                taille?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Tache"][];
+                };
+            };
+            /** @description Données invalides (VALIDATION ou code métier). */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+            /** @description Non authentifié. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+            /** @description Permission refusée (y compris super-administrateur FYXOP sur une route d'établissement). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+        };
+    };
+    taches_detail: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                tache_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Tache"];
+                };
+            };
+            /** @description Non authentifié. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+            /** @description Permission refusée (y compris super-administrateur FYXOP sur une route d'établissement). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+            /** @description Inexistante ou non visible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+        };
+    };
+    taches_compteurs: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Compteurs"];
+                };
+            };
+            /** @description Non authentifié. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+            /** @description Permission refusée (y compris super-administrateur FYXOP sur une route d'établissement). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+        };
+    };
+}

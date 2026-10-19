@@ -1,9 +1,8 @@
 import type { Metadata } from "next";
-import { ATraiterProvisoire } from "./provisoire";
+import { EcranATraiter } from "@/components/taches/EcranATraiter";
 
 export const metadata: Metadata = { title: "À traiter" };
 
-/** Page provisoire : l'écran « À traiter » (01c) est la tâche F5. */
 export default function PageATraiter() {
-  return <ATraiterProvisoire />;
+  return <EcranATraiter />;
 }

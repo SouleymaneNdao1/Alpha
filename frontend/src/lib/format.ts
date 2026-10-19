@@ -40,6 +40,20 @@ export function formatDate(iso: string | null | undefined): string {
   return `${p.day}/${p.month}/${p.year}`;
 }
 
+/** `2026-10-14T16:00:00Z` → `14/10`. */
+export function formatJourMois(iso: string | null | undefined): string {
+  if (!iso) return "—";
+  const p = parties(new Date(iso), { day: "2-digit", month: "2-digit" });
+  return `${p.day}/${p.month}`;
+}
+
+/** `2026-10-14T16:00:00Z` → `16:00`. */
+export function formatHeure(iso: string | null | undefined): string {
+  if (!iso) return "—";
+  const p = parties(new Date(iso), { hour: "2-digit", minute: "2-digit" });
+  return `${p.hour}:${p.minute}`;
+}
+
 /** Empreinte abrégée : `a41f…9c2e`. */
 export function formatEmpreinte(hash: string): string {
   return hash.length > 8 ? `${hash.slice(0, 4)}…${hash.slice(-4)}` : hash;
