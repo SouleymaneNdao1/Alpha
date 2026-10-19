@@ -64,7 +64,8 @@ function redirigerVersConnexion(): void {
   const { pathname, search } = window.location;
   if (pathname.startsWith("/connexion")) return;
   redirectionEnCours = true;
-  window.location.assign(`/connexion?suivant=${encodeURIComponent(pathname + search)}`);
+  // `motif=expiree` : l'écran de connexion affiche « Votre session a expiré ».
+  window.location.assign(`/connexion?suivant=${encodeURIComponent(pathname + search)}&motif=expiree`);
 }
 
 async function envoyer(url: string, o: OptionsRequete, methode: Methode, forcerCsrf: boolean): Promise<Response> {

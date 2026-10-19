@@ -41,6 +41,15 @@ export function OtpInput({
   const id = useId();
   const cases = useRef<Array<HTMLInputElement | null>>([]);
   const chiffres = Array.from({ length: longueur }, (_, i) => valeur[i] ?? "");
+  // Longueur la plus récente, mise à jour dès la saisie : `onFocus` s'exécute pendant
+  // `focaliser`, avant le rendu suivant, et lirait sinon une valeur périmée (la case
+  // suivante renverrait le focus à la première case et un chiffre sur deux serait perdu).
+  const longueurCourante = useRef(valeur.length);
+  longueurCourante.current = valeur.length;
+  const changer = (v: string) => {
+    longueurCourante.current = v.length;
+    onChange(v);
+  };
 
   const focaliser = (i: number) => {
     const c = cases.current[Math.max(0, Math.min(longueur - 1, i))];
@@ -59,7 +68,7 @@ export function OtpInput({
     const suite = [...chiffres];
     for (let k = 0; k < nouveaux.length && debut + k < longueur; k++) suite[debut + k] = nouveaux[k]!;
     const resultat = suite.join("").slice(0, longueur);
-    onChange(resultat);
+    changer(resultat);
     focaliser(Math.min(debut + nouveaux.length, longueur - 1));
     if (resultat.length === longueur && !suite.includes("")) onComplete?.(resultat);
   };
@@ -69,9 +78,9 @@ export function OtpInput({
       case "Backspace":
         e.preventDefault();
         if (chiffres[i]) {
-          onChange(retirer(i));
+          changer(retirer(i));
         } else if (i > 0) {
-          onChange(retirer(i - 1));
+          changer(retirer(i - 1));
           focaliser(i - 1);
         }
         break;
@@ -124,12 +133,12 @@ export function OtpInput({
             autoFocus={autoFocus && i === 0}
             onFocus={(e) => {
               // Pas de case vide au milieu : on renvoie vers la première case libre.
-              if (i > valeur.length) focaliser(valeur.length);
+              if (i > longueurCourante.current) focaliser(longueurCourante.current);
               else e.currentTarget.select();
             }}
             onChange={(e) => {
               const v = e.currentTarget.value;
-              if (v === "") onChange(retirer(i));
+              if (v === "") changer(retirer(i));
               // Une case déjà remplie reçoit un 2e caractère : on garde le nouveau.
               else ecrire(i, c && v.length === 2 ? (v.startsWith(c) ? v.slice(1) : v.slice(0, 1)) : v);
             }}
