@@ -50,6 +50,7 @@ class Graine:
     cible: Utilisateur
     tache_id: uuid.UUID
     absence_id: uuid.UUID
+    delegation_id: uuid.UUID
     notification_id: uuid.UUID
     session_id: uuid.UUID
     signalement_id: uuid.UUID
@@ -67,6 +68,7 @@ class Graine:
             "unite_id": self.unite_id,
             "tache_id": self.tache_id,
             "absence_id": self.absence_id,
+            "delegation_id": self.delegation_id,
             "notification_id": self.notification_id,
             "session_id": self.session_id,
         }
@@ -121,7 +123,7 @@ def semer(etab: Etablissement) -> Graine:
             statut=StatutAbsence.SOUMISE,
             valideur=org.mamadou,
         )
-        Delegation.objects.create(
+        delegation = Delegation.objects.create(
             etablissement=etab,
             absence=absence,
             delegant=org.awa,
@@ -158,6 +160,7 @@ def semer(etab: Etablissement) -> Graine:
         cible=cible,
         tache_id=tache_id,
         absence_id=absence.pk,
+        delegation_id=delegation.pk,
         notification_id=notification.pk,
         session_id=session_id,
         signalement_id=signalement.pk,

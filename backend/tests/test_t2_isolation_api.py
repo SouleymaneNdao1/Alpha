@@ -104,10 +104,12 @@ def test_tous_les_parametres_de_route_sont_connus(mondes):
 def test_l_enumeration_voit_les_routes_attendues():
     chemins = {c for _, c in ROUTES}
     for attendu in (
-        "/api/v1/taches/",
-        "/api/v1/taches/<uuid:tache_id>/",
-        "/api/v1/moi/absences/",
-        "/api/v1/absences/<uuid:absence_id>/valider/",
+        "/api/v1/taches",
+        "/api/v1/taches/<uuid:tache_id>",
+        "/api/v1/admin/absences",
+        "/api/v1/admin/delegations/<uuid:delegation_id>/revoquer",
+        "/api/v1/moi/absences",
+        "/api/v1/absences/<uuid:absence_id>/valider",
         "/api/v1/moi/notifications/<uuid:notification_id>/lue",
         "/api/v1/moi/sessions/<uuid:session_id>",
         "/api/v1/admin/utilisateurs/<uuid:utilisateur_id>",
@@ -209,7 +211,7 @@ def test_creation_dans_a_ne_peut_pas_referencer_un_objet_de_b(mondes, client_a):
     assert reponse.status_code in (400, 404, 422), reponse.content[:300]
     assert str(b.role_id) not in reponse.content.decode()
     reponse = client_a.post(
-        "/api/v1/moi/absences/",
+        "/api/v1/moi/absences",
         {
             "debut": "2031-03-11T00:00:00+00:00",
             "fin": "2031-03-16T00:00:00+00:00",

@@ -550,7 +550,7 @@ def test_expiration_desactivee_par_defaut_meme_tres_ancien(etab_a):
     client = _client()
     se_connecter(client, compte)
     assert client.get("/api/v1/moi").json()["mot_de_passe_expire"] is False
-    assert client.get("/api/v1/taches/").status_code == 200
+    assert client.get("/api/v1/taches").status_code == 200
 
 
 def test_expiration_bornes_exactes_et_reglage_par_etablissement(etab_a, etab_b):
@@ -647,7 +647,7 @@ def test_changer_le_mot_de_passe_leve_l_expiration(etab_a):
     _vieillir(compte, 100)
     client = _client()
     se_connecter(client, compte)
-    assert client.get("/api/v1/taches/").status_code == 403
+    assert client.get("/api/v1/taches").status_code == 403
     _libere(compte)
     nouveau = "Baobab-Sahel#42xw"
     r = poster(
@@ -656,7 +656,7 @@ def test_changer_le_mot_de_passe_leve_l_expiration(etab_a):
         {"actuel": MDP, "nouveau": nouveau, "confirmation": nouveau, "code": compte.totp(+1)},
     )
     assert r.status_code == 204, r.content
-    assert client.get("/api/v1/taches/").status_code == 200
+    assert client.get("/api/v1/taches").status_code == 200
     # Le mot de passe expiré ne peut pas être « renouvelé » à l'identique.
     _libere(compte)
     r = poster(
