@@ -141,3 +141,30 @@ Les fonctions suivent l'horloge (`freezegun.freeze_time` compris) ; `a=instant` 
 `backend/tests/` : tests transverses (isolation, RLS, sécurité, audit). Tests unitaires
 d'une application : `backend/alpha/<app>/tests/test_*.py`. Le test
 `tests/test_infrastructure.py` vérifie ce montage (critère T1 : `pytest` tourne sous alpha_app).
+
+## 7. Tests de bout en bout avec le vrai backend (T5)
+
+Suite `frontend/e2e-integration/`, **séparée** des specs `frontend/e2e/` (qui simulent l'API avec
+`page.route`). Ici rien n'est simulé : navigateur Chromium, `next start`, un petit proxy qui joue le
+rôle de Caddy (`/api/*` vers Django, même origine), Django sous gunicorn, PostgreSQL (RLS) et Redis.
+
+Parcours : invitation puis activation (mot de passe, Authenticator, codes de secours) jusqu'à
+« À traiter » ; absence avec délégataire validée par l'administrateur (tâches « par délégation ») ;
+« téléphone perdu » (signalement, réinitialisation, réenrôlement, reconnexion) ; console FYXOP
+(super-admin accepté, utilisateur d'établissement refusé).
+
+Lancer (depuis `frontend/`, après `npm ci` et `npm run build`, avec l'environnement du backend
+chargé : `DATABASE_URL`, `DATABASE_URL_OWNER`, `REDIS_URL`, `CELERY_BROKER_URL`, clés Django) :
+
+```bash
+export ALPHA_E2E_BASE_JETABLE=1      # la base désignée sera REMISE À ZÉRO (inutile si son nom contient « e2e »)
+npm run test:e2e:integration
+```
+
+Le script `e2e-integration/preparer.mjs` remet la base à zéro, migre (alpha_owner), vide le cache
+Redis, sème le jeu de démonstration (`semer_demo`) et lit `ACCES.txt` pour obtenir mots de passe et
+secrets TOTP (écrits dans `frontend/.e2e-integration/`, ignoré par git). Réglages dédiés :
+`backend/config/settings/e2e.py` (e-mails écrits dans un dossier, Celery immédiat ; dev et prod
+inchangés). Les codes TOTP sont calculés par `otpauth` ; le serveur refusant le rejeu d'un pas de
+30 s, certains tests attendent le pas suivant (d'où ~1,5 min au total). Variables facultatives :
+`ALPHA_E2E_PYTHON`, `E2E_INT_PORT` (3123), `E2E_INT_PORT_BACKEND` (8123), `ALPHA_E2E_DOSSIER`.

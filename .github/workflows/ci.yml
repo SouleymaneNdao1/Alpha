@@ -1,0 +1,153 @@
+# Intégration continue ALPHA (tâche D2) : vérifie, ne déploie rien.
+# Trois jobs en parallèle : backend, frontend, e2e-integration.
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+# Une nouvelle exécution annule la précédente pour la même branche ou la même PR.
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  PYTHON_VERSION: "3.12"
+  NODE_VERSION: "22"
+
+jobs:
+  backend:
+    name: Backend (Django, PostgreSQL 16, Redis)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U postgres" --health-interval 5s --health-timeout 5s --health-retries 10
+      redis:
+        image: redis:7
+        ports: ["6379:6379"]
+        options: >-
+          --health-cmd "redis-cli ping" --health-interval 5s --health-timeout 5s --health-retries 10
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+          cache-dependency-path: backend/requirements-dev.lock
+      - name: Secrets de test (tirés au hasard)
+        run: ../.github/scripts/env-ci.sh alpha
+      - name: Rôles et base PostgreSQL (script d'initialisation de docker-compose)
+        run: bash ../infra/postgres/init/01-roles.sh
+      - name: Dépendances
+        run: pip install --require-hashes -r requirements-dev.lock
+      - name: Migrations (alpha_owner)
+        run: DATABASE_URL="$DATABASE_URL_OWNER" python manage.py migrate --noinput
+      - name: Tests
+        run: pytest -q
+      - name: ruff check
+        run: ruff check .
+      - name: ruff format
+        run: ruff format --check .
+      - name: Migrations à jour
+        run: python manage.py makemigrations --check --dry-run
+      - name: Schéma OpenAPI
+        run: python manage.py spectacular --validate --fail-on-warn --file /tmp/schema.yml
+
+  frontend:
+    name: Frontend (lint, types, build, Playwright simulé)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci
+      - run: npm run lint
+      - run: npx tsc --noEmit
+      - run: npm run build
+      - name: Navigateur Playwright
+        run: npx playwright install --with-deps chromium
+      - name: Tests E2E (API simulée)
+        run: npm run test:e2e
+        env:
+          CI: "true"
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: frontend-test-results
+          path: frontend/test-results
+          if-no-files-found: ignore
+
+  e2e-integration:
+    name: E2E d'intégration (vrai backend)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U postgres" --health-interval 5s --health-timeout 5s --health-retries 10
+      redis:
+        image: redis:7
+        ports: ["6379:6379"]
+        options: >-
+          --health-cmd "redis-cli ping" --health-interval 5s --health-timeout 5s --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+          cache-dependency-path: backend/requirements-dev.lock
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Secrets de test (tirés au hasard)
+        run: .github/scripts/env-ci.sh alpha_e2e
+      - name: Rôles et base PostgreSQL
+        run: bash infra/postgres/init/01-roles.sh
+      - name: Dépendances backend
+        run: pip install --require-hashes -r backend/requirements-dev.lock
+      - name: Dépendances frontend, build et navigateur
+        working-directory: frontend
+        run: |
+          npm ci
+          npm run build
+          npx playwright install --with-deps chromium
+      - name: Suite d'intégration (migrations, jeu de démonstration, Django + Next.js)
+        working-directory: frontend
+        run: npm run test:e2e:integration
+        env:
+          CI: "true"
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: e2e-integration-rapport
+          path: |
+            frontend/playwright-report-integration
+            frontend/test-results-integration
+          if-no-files-found: ignore
