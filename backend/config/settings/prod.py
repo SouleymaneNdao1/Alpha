@@ -35,3 +35,6 @@ if not SECURE_HSTS_PRELOAD:
 # Production : ni schéma OpenAPI ni documentation ne sont routés (404).
 ALPHA_DOC_API_ACTIVE = False
 ALPHA_DOC_API_RESERVEE_CONNECTES = True
+
+# Jeu de démonstration : JAMAIS en production (manage.py semer_demo refuse de s'exécuter).
+ALPHA_DEMO_AUTORISEE = False
