@@ -52,7 +52,7 @@ test.describe("Coquille de l'application (F2)", () => {
     });
     await page.goto("/a-traiter");
     await expect(page.getByTestId("compteur-cloche")).toHaveText("4");
-    await expect(page.getByRole("link", { name: "Notifications : 4 non lues" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Notifications : 4 non lues" })).toBeVisible();
   });
 
   test("session expirée : retour à la connexion avec la route demandée", async ({ page }) => {

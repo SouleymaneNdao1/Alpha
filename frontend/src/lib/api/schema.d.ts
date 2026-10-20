@@ -893,6 +893,27 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/moi": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Mon profil (objet Moi) */
+        get: operations["moi_lire"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Modifier mon profil
+         * @description Prénom, nom, téléphone mobile (E.164) et langue. L'e-mail n'est pas modifiable : s'il est envoyé, 400 VALIDATION. Journalisé (utilisateur.modifie).
+         */
+        patch: operations["moi_modifier"];
+        trace?: never;
+    };
     "/api/v1/moi/absences/": {
         parameters: {
             query?: never;
@@ -928,6 +949,66 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/moi/authenticator/changement": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Changer de téléphone, étape 1 : nouveau QR code
+         * @description Step-up avec le code de l'application ACTUELLE (`code_actuel`). Crée une nouvelle application EN ATTENTE, liée à cette session pendant 10 minutes ; l'actuelle reste active jusqu'à la confirmation. Le secret n'est renvoyé qu'ici (QR et saisie manuelle) ; il n'est jamais journalisé. 409 AUTHENTICATOR_INDISPONIBLE si aucune application active (téléphone perdu : passer par le signalement).
+         */
+        post: operations["moi_authenticator_changement"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/moi/authenticator/changement/confirmer": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Changer de téléphone, étape 2 : confirmer avec le nouveau code
+         * @description Premier code de la NOUVELLE application : l'ancienne est révoquée, la nouvelle devient active ; les codes de secours sont conservés. E-mail d'alerte, audit mfa.change. 5 codes faux : le changement est annulé (recommencer l'étape 1). 409 AUCUN_CHANGEMENT_EN_COURS si l'étape 1 n'a pas été faite dans cette session ou date de plus de 10 minutes.
+         */
+        post: operations["moi_authenticator_changement_confirmer"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/moi/codes-secours": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Régénérer mes codes de secours
+         * @description Step-up TOTP (`code`). 10 nouveaux codes, affichés UNE SEULE FOIS ; les anciens sont invalidés. Audit mfa.codes_regeneres (sans les codes).
+         */
+        post: operations["moi_codes_secours"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/moi/delegataires-possibles/": {
         parameters: {
             query?: never;
@@ -956,6 +1037,198 @@ export interface paths {
         get: operations["moi_delegations_recues"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/moi/mot-de-passe": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Changer mon mot de passe
+         * @description Ordre des contrôles : verrouillage (423), mot de passe actuel (401 MOT_DE_PASSE_INCORRECT {tentatives_restantes}, compté dans le verrouillage), politique et historique de l'établissement (400 VALIDATION sur `nouveau` ou `confirmation`), puis step-up TOTP (`code`, 401 CODE_INVALIDE, 429). Succès : les AUTRES sessions sont révoquées, la session courante est conservée, e-mail d'alerte. Seule action ouverte, avec la lecture du profil, quand le mot de passe a expiré (P3).
+         */
+        post: operations["moi_mot_de_passe"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/moi/notifications": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Mes notifications (cloche du bandeau)
+         * @description Les plus récentes d'abord. Appel de fond : envoyer l'en-tête X-Alpha-Fond: 1 (ne prolonge pas l'inactivité).
+         */
+        get: operations["moi_notifications_liste"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/moi/notifications/{notification_id}/lue": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Marquer une notification comme lue */
+        post: operations["moi_notification_lue"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/moi/notifications/tout-lu": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Marquer toutes mes notifications comme lues */
+        post: operations["moi_notifications_tout_lu"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/moi/preferences-notification": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Mes préférences de notification */
+        get: operations["moi_preferences_notification_lire"];
+        /**
+         * Enregistrer mes préférences de notification
+         * @description Tous les champs sont attendus. SMS et notification mobile sont enregistrés ; leur envoi arrive au sprint 4.
+         */
+        put: operations["moi_preferences_notification_modifier"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/moi/securite": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * État de sécurité de mon compte
+         * @description Application d'authentification, nombre de codes de secours restants (jamais les codes), signature, signalement en cours, date du mot de passe.
+         */
+        get: operations["moi_securite"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/moi/sessions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Mes appareils et sessions actives */
+        get: operations["moi_sessions"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/moi/sessions/{session_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Fermer une de mes sessions (autre appareil)
+         * @description 404 si la session n'existe pas, n'est plus active ou appartient à un autre utilisateur ; 409 SESSION_COURANTE pour la session de cet appareil (utiliser la déconnexion).
+         */
+        delete: operations["moi_session_revoquer"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/moi/sessions/revoquer-autres": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Fermer toutes mes autres sessions
+         * @description Toutes les sessions actives sauf celle de cet appareil.
+         */
+        post: operations["moi_sessions_revoquer_autres"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/moi/telephone-perdu": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Signaler la perte de mon téléphone
+         * @description Signature bloquée, application d'authentification suspendue, TOUTES les sessions révoquées (y compris celle-ci : l'utilisateur est déconnecté), tâche pour les administrateurs, e-mails. Idempotent si un signalement est déjà ouvert.
+         */
+        post: operations["moi_telephone_perdu"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1097,13 +1370,24 @@ export interface components {
             /** @description Code TOTP de l'administrateur (confirmation). */
             code: string;
         };
-        /**
-         * @description * `ACTIVE` - ACTIVE
-         *     * `NON_CONFIGUREE` - NON_CONFIGUREE
-         *     * `SUSPENDUE` - SUSPENDUE
-         * @enum {string}
-         */
-        AuthenticatorEnum: "ACTIVE" | "NON_CONFIGUREE" | "SUSPENDUE";
+        AuthenticatorSecurite: {
+            statut: components["schemas"]["EtatAuthenticatorEnum"];
+            libelle: string;
+            /** Format: date-time */
+            active_le: string | null;
+        };
+        ChangementAuthenticatorRequest: {
+            /** @description Code de l'application ACTUELLE (step-up). */
+            code_actuel: string;
+        };
+        ChangementMotDePasseRequest: {
+            /** @description Mot de passe actuel. */
+            actuel: string;
+            nouveau: string;
+            confirmation: string;
+            /** @description Code TOTP de confirmation (step-up). */
+            code: string;
+        };
         CodeTotpRequest: {
             /** @description Code à 6 chiffres de l'application. */
             code: string;
@@ -1125,6 +1409,10 @@ export interface components {
             par_module: {
                 [key: string]: number;
             };
+        };
+        ConfirmationAuthenticatorRequest: {
+            /** @description Premier code de la NOUVELLE application. */
+            code_nouveau: string;
         };
         ConnexionRequest: {
             /** Format: email */
@@ -1359,6 +1647,13 @@ export interface components {
          * @enum {string}
          */
         EtapeJetonEnum: "CREE" | "MDP_OK" | "TOTP_EN_ATTENTE" | "TOTP_OK";
+        /**
+         * @description * `ACTIVE` - ACTIVE
+         *     * `NON_CONFIGUREE` - NON_CONFIGUREE
+         *     * `SUSPENDUE` - SUSPENDUE
+         * @enum {string}
+         */
+        EtatAuthenticatorEnum: "ACTIVE" | "NON_CONFIGUREE" | "SUSPENDUE";
         /** @description ``EvenementAudit`` (§ 5.1), pour l'historique des actions d'administration. */
         EvenementAudit: {
             seq: number;
@@ -1439,6 +1734,18 @@ export interface components {
             statut: components["schemas"]["StatutControleEnum"];
         };
         /**
+         * @description * `fr` - Français
+         *     * `en` - English
+         * @enum {string}
+         */
+        LangueEnum: "fr" | "en";
+        /**
+         * @description * `TOTP` - Application d'authentification
+         *     * `CODE_SECOURS` - Code de secours
+         * @enum {string}
+         */
+        MethodeMfaEnum: "TOTP" | "CODE_SECOURS";
+        /**
          * @description * `TOTP` - TOTP
          *     * `CODE_SECOURS` - CODE_SECOURS
          * @enum {string}
@@ -1508,6 +1815,22 @@ export interface components {
          * @enum {string}
          */
         MotifEnum: "CONGE" | "MISSION" | "FORMATION" | "MALADIE" | "AUTRE";
+        Notification: {
+            /** Format: uuid */
+            readonly id: string;
+            readonly type: string;
+            readonly titre: string;
+            readonly corps: string;
+            /** Lien (route du frontend) */
+            readonly lien: string;
+            /** Format: date-time */
+            readonly lue_le: string | null;
+            /**
+             * Créée le
+             * Format: date-time
+             */
+            readonly cree_le: string;
+        };
         /** @description Corps de ``POST /admin/utilisateurs/{id}/affectations``. */
         NouvelleAffectationRequest: {
             /** Format: uuid */
@@ -1520,6 +1843,16 @@ export interface components {
         OubliRequest: {
             /** Format: email */
             email: string;
+        };
+        PageNotifications: {
+            count: number;
+            /** Format: uri */
+            next: string | null;
+            /** Format: uri */
+            previous: string | null;
+            results: components["schemas"]["Notification"][];
+            /** @description Nombre total de notifications non lues. */
+            non_lues: number;
         };
         PageSignalements: {
             count: number;
@@ -1619,6 +1952,13 @@ export interface components {
             /** Format: uuid */
             responsable_id?: string | null;
         };
+        /** @description Corps de ``PATCH /moi`` : l'e-mail n'est pas modifiable (refusé s'il est envoyé). */
+        PatchedProfilRequest: {
+            prenom?: string;
+            nom?: string;
+            telephone_mobile?: (string) | null;
+            langue?: components["schemas"]["LangueEnum"];
+        };
         Permission: {
             code: string;
             libelle: string;
@@ -1639,6 +1979,36 @@ export interface components {
             /** Format: uuid */
             id: string;
             nom: string;
+        };
+        /** @description Corps du PUT (tous les champs) et réponse du GET. */
+        PreferencesNotification: {
+            /** @description Notifications par e-mail. Les alertes de sécurité partent toujours par e-mail. */
+            email: boolean;
+            /** @description Notification mobile (« Téléphone ») : enregistrée, envoi au sprint 4. */
+            push: boolean;
+            /** @description SMS : enregistré, envoi au sprint 4. */
+            sms: boolean;
+            resume_quotidien: boolean;
+            /**
+             * Format: time
+             * @description « HH:MM ».
+             */
+            heure_resume: string;
+        };
+        /** @description Corps du PUT (tous les champs) et réponse du GET. */
+        PreferencesNotificationRequest: {
+            /** @description Notifications par e-mail. Les alertes de sécurité partent toujours par e-mail. */
+            email: boolean;
+            /** @description Notification mobile (« Téléphone ») : enregistrée, envoi au sprint 4. */
+            push: boolean;
+            /** @description SMS : enregistré, envoi au sprint 4. */
+            sms: boolean;
+            resume_quotidien: boolean;
+            /**
+             * Format: time
+             * @description « HH:MM ».
+             */
+            heure_resume: string;
         };
         Reference: {
             /** Format: uuid */
@@ -1678,6 +2048,9 @@ export interface components {
             /** @description Code TOTP de l'administrateur (confirmation). */
             code: string;
         };
+        RevocationMesSessions: {
+            revoquees: number;
+        };
         RevocationSessions: {
             revoquees: number;
         };
@@ -1705,6 +2078,17 @@ export interface components {
             libelle: string;
             unite: string | null;
         };
+        Securite: {
+            authenticator: components["schemas"]["AuthenticatorSecurite"];
+            codes_secours_restants: number;
+            signature_bloquee: boolean;
+            /** @description Signalement « téléphone perdu » en cours, sinon null. */
+            signalement: components["schemas"]["SignalementSecurite"] | null;
+            /** Format: date-time */
+            mdp_modifie_le: string | null;
+            /** @description Expiration périodique atteinte (P3) : changement obligatoire. */
+            mot_de_passe_expire: boolean;
+        };
         SessionActive: {
             /** Format: uuid */
             id: string;
@@ -1716,6 +2100,19 @@ export interface components {
             /** Format: date-time */
             derniere_activite: string;
         };
+        SessionMoi: {
+            /** Format: uuid */
+            id: string;
+            appareil: string;
+            ip: string | null;
+            methode_mfa: components["schemas"]["MethodeMfaEnum"];
+            /** Format: date-time */
+            cree_le: string;
+            /** Format: date-time */
+            derniere_activite: string;
+            /** @description Session de cet appareil. */
+            courante: boolean;
+        };
         Signalement: {
             /** Format: uuid */
             id: string;
@@ -1724,12 +2121,17 @@ export interface components {
             /** Format: date-time */
             signale_le: string;
         };
+        SignalementSecurite: {
+            statut: components["schemas"]["StatutSignalementEnum"];
+            /** Format: date-time */
+            signale_le: string;
+        };
         SignalementTelephone: {
             /** Format: uuid */
             id: string;
             utilisateur: components["schemas"]["UtilisateurSignalement"];
             canal: string;
-            statut: components["schemas"]["SignalementTelephoneStatutEnum"];
+            statut: components["schemas"]["StatutSignalementEnum"];
             /** Format: date-time */
             signale_le: string;
             traite_par: components["schemas"]["ReferencePersonneSignalement"] | null;
@@ -1739,13 +2141,6 @@ export interface components {
             /** Format: date-time */
             traite_le: string | null;
         };
-        /**
-         * @description * `OUVERT` - Ouvert
-         *     * `REINITIALISE` - Réinitialisé
-         *     * `ANNULE` - Annulé (téléphone retrouvé)
-         * @enum {string}
-         */
-        SignalementTelephoneStatutEnum: "OUVERT" | "REINITIALISE" | "ANNULE";
         /**
          * @description * `SOUMISE` - Soumise
          *     * `VALIDEE` - Validée
@@ -1772,6 +2167,13 @@ export interface components {
          */
         StatutDelegationEnum: "EN_ATTENTE" | "ACTIVE" | "TERMINEE" | "ANNULEE" | "REFUSEE";
         /**
+         * @description * `OUVERT` - Ouvert
+         *     * `REINITIALISE` - Réinitialisé
+         *     * `ANNULE` - Annulé (téléphone retrouvé)
+         * @enum {string}
+         */
+        StatutSignalementEnum: "OUVERT" | "REINITIALISE" | "ANNULE";
+        /**
          * @description * `INVITE` - Invité
          *     * `ACTIF` - Actif
          *     * `SUSPENDU` - Suspendu
@@ -1779,6 +2181,10 @@ export interface components {
          * @enum {string}
          */
         StatutUtilisateurEnum: "INVITE" | "ACTIF" | "SUSPENDU" | "DESACTIVE";
+        StepUpRequest: {
+            /** @description Code TOTP de confirmation (step-up). */
+            code: string;
+        };
         /** @description Fiche administrateur (``GET /admin/utilisateurs/{id}``). */
         SuspensionReponse: {
             /** Format: uuid */
@@ -1790,7 +2196,7 @@ export interface components {
             email: string;
             role_principal: string | null;
             perimetre: string | null;
-            authenticator: components["schemas"]["AuthenticatorEnum"];
+            authenticator: components["schemas"]["EtatAuthenticatorEnum"];
             /** Format: date-time */
             derniere_connexion: string | null;
             statut: components["schemas"]["StatutUtilisateurEnum"];
@@ -1890,7 +2296,7 @@ export interface components {
             email: string;
             role_principal: string | null;
             perimetre: string | null;
-            authenticator: components["schemas"]["AuthenticatorEnum"];
+            authenticator: components["schemas"]["EtatAuthenticatorEnum"];
             /** Format: date-time */
             derniere_connexion: string | null;
             statut: components["schemas"]["StatutUtilisateurEnum"];
@@ -1923,7 +2329,7 @@ export interface components {
             email: string;
             role_principal: string | null;
             perimetre: string | null;
-            authenticator: components["schemas"]["AuthenticatorEnum"];
+            authenticator: components["schemas"]["EtatAuthenticatorEnum"];
             /** Format: date-time */
             derniere_connexion: string | null;
             statut: components["schemas"]["StatutUtilisateurEnum"];
@@ -4858,6 +5264,93 @@ export interface operations {
             };
         };
     };
+    moi_lire: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Moi"];
+                };
+            };
+            /** @description Non authentifié. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+            /** @description Permission refusée (y compris super-administrateur FYXOP sur une route d'établissement). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+        };
+    };
+    moi_modifier: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["PatchedProfilRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Moi"];
+                };
+            };
+            /** @description Données invalides (VALIDATION ou code métier). */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+            /** @description Non authentifié. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+            /** @description Permission refusée (y compris super-administrateur FYXOP sur une route d'établissement). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+        };
+    };
     moi_absences_liste: {
         parameters: {
             query?: {
@@ -5024,6 +5517,191 @@ export interface operations {
             };
         };
     };
+    moi_authenticator_changement: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ChangementAuthenticatorRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EnrolementAuthenticator"];
+                };
+            };
+            /** @description Données invalides (VALIDATION ou code métier). */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+            /** @description CODE_INVALIDE (step-up refusé) ou non authentifié. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErreurCodeInvalide"];
+                };
+            };
+            /** @description Permission refusée (y compris super-administrateur FYXOP sur une route d'établissement). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+            /** @description AUTHENTICATOR_INDISPONIBLE. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+            /** @description TROP_DE_REQUETES (step-up : 5 essais/min). */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErreurTropDeRequetes"];
+                };
+            };
+        };
+    };
+    moi_authenticator_changement_confirmer: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ConfirmationAuthenticatorRequest"];
+            };
+        };
+        responses: {
+            /** @description Nouvelle application active. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Données invalides (VALIDATION ou code métier). */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+            /** @description CODE_INVALIDE {tentatives_restantes}. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErreurCodeInvalide"];
+                };
+            };
+            /** @description Permission refusée (y compris super-administrateur FYXOP sur une route d'établissement). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+            /** @description AUCUN_CHANGEMENT_EN_COURS. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+        };
+    };
+    moi_codes_secours: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StepUpRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CodesSecours"];
+                };
+            };
+            /** @description Données invalides (VALIDATION ou code métier). */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+            /** @description CODE_INVALIDE (step-up refusé) ou non authentifié. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErreurCodeInvalide"];
+                };
+            };
+            /** @description Permission refusée (y compris super-administrateur FYXOP sur une route d'établissement). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+            /** @description TROP_DE_REQUETES (step-up : 5 essais/min). */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErreurTropDeRequetes"];
+                };
+            };
+        };
+    };
     moi_delegataires_possibles: {
         parameters: {
             query?: {
@@ -5079,6 +5757,489 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["DelegationRecue"][];
+                };
+            };
+            /** @description Non authentifié. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+            /** @description Permission refusée (y compris super-administrateur FYXOP sur une route d'établissement). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+        };
+    };
+    moi_mot_de_passe: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ChangementMotDePasseRequest"];
+            };
+        };
+        responses: {
+            /** @description Mot de passe modifié. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description VALIDATION. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+            /** @description MOT_DE_PASSE_INCORRECT {tentatives_restantes} ou CODE_INVALIDE. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErreurCodeInvalide"];
+                };
+            };
+            /** @description Permission refusée. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+            /** @description COMPTE_VERROUILLE. */
+            423: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErreurVerrouillage"];
+                };
+            };
+            /** @description TROP_DE_REQUETES (step-up : 5 essais/min). */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErreurTropDeRequetes"];
+                };
+            };
+        };
+    };
+    moi_notifications_liste: {
+        parameters: {
+            query?: {
+                non_lues?: 0 | 1;
+                page?: number;
+                /** @description 25 par défaut, 100 au plus. */
+                taille?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PageNotifications"];
+                };
+            };
+            /** @description Non authentifié. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+            /** @description Permission refusée (y compris super-administrateur FYXOP sur une route d'établissement). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+        };
+    };
+    moi_notification_lue: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                notification_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Lue. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Non authentifié. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+            /** @description Permission refusée (y compris super-administrateur FYXOP sur une route d'établissement). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+            /** @description Inexistant ou appartenant à un autre établissement. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+        };
+    };
+    moi_notifications_tout_lu: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Toutes lues. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Non authentifié. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+            /** @description Permission refusée (y compris super-administrateur FYXOP sur une route d'établissement). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+        };
+    };
+    moi_preferences_notification_lire: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PreferencesNotification"];
+                };
+            };
+            /** @description Non authentifié. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+            /** @description Permission refusée (y compris super-administrateur FYXOP sur une route d'établissement). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+        };
+    };
+    moi_preferences_notification_modifier: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PreferencesNotificationRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PreferencesNotification"];
+                };
+            };
+            /** @description Données invalides (VALIDATION ou code métier). */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+            /** @description Non authentifié. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+            /** @description Permission refusée (y compris super-administrateur FYXOP sur une route d'établissement). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+        };
+    };
+    moi_securite: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Securite"];
+                };
+            };
+            /** @description Non authentifié. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+            /** @description Permission refusée (y compris super-administrateur FYXOP sur une route d'établissement). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+        };
+    };
+    moi_sessions: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SessionMoi"][];
+                };
+            };
+            /** @description Non authentifié. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+            /** @description Permission refusée (y compris super-administrateur FYXOP sur une route d'établissement). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+        };
+    };
+    moi_session_revoquer: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                session_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Session fermée. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Non authentifié. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+            /** @description Permission refusée (y compris super-administrateur FYXOP sur une route d'établissement). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+            /** @description Inexistant ou appartenant à un autre établissement. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+            /** @description SESSION_COURANTE. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+        };
+    };
+    moi_sessions_revoquer_autres: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RevocationMesSessions"];
+                };
+            };
+            /** @description Non authentifié. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+            /** @description Permission refusée (y compris super-administrateur FYXOP sur une route d'établissement). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+        };
+    };
+    moi_telephone_perdu: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Accepte"];
                 };
             };
             /** @description Non authentifié. */
