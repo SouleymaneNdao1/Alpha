@@ -221,6 +221,12 @@ ALPHA_AUDIT_RESOLVEUR_ACTEUR = "alpha.comptes.audit.resoudre_acteur"
 #   etablissement_id -> list[str]                (titulaires de audit.lecture, alerte de rupture)
 ALPHA_AUDIT_DESTINATAIRES_AUDIT_LECTURE = "alpha.comptes.audit.destinataires_audit_lecture"
 
+# --- Jeu de démonstration (tâche B12) -------------------------------------------------------
+# Jeu de démonstration (manage.py semer_demo, tâche B12) : refusé tant que ce réglage n'est pas
+# vrai. Vrai en développement et en test ; faux en production ; en recette, activable
+# explicitement par la variable d'environnement ALPHA_DEMO_AUTORISEE.
+ALPHA_DEMO_AUTORISEE = False
+
 # --- Console FYXOP (§ 3.8, décision P6, B10) ---------------------------------------------------
 # Suspension manuelle d'un établissement (statut ACTIF / LECTURE_SEULE / SUSPENDU) depuis la
 # console. P6 la laisse « à confirmer avec FYXOP » : DÉSACTIVÉE par défaut ; l'API répond

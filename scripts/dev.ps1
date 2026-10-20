@@ -63,7 +63,9 @@ Usage : .\scripts\dev.ps1 <commande> [arguments]
   psql [owner|app|postgres] [args]
                         Console SQL sur la base alpha (owner par défaut ; app = soumis à la RLS)
   test [args pytest]    Lance pytest dans le service « tests »
-  seed                  Charge le jeu de démonstration (manage.py semer_demo, tâche B12)
+  seed [args]           Sème le jeu de démonstration dans le conteneur backend (manage.py
+                        semer_demo) : comptes prêts à se connecter, QR codes et ACCES.txt dans
+                        backend\demo-acces\ ; « seed --reinitialiser » régénère les identifiants
   reset [--oui]         EFFACE la base et les volumes locaux, puis redémarre tout
   help                  Affiche cette aide
 
@@ -310,7 +312,11 @@ switch ($Commande) {
         Invoke-Compose -Arguments (@('exec', 'db', 'psql', '-U', $roleSql, '-d', $base) + $options)
     }
     'test' { Invoke-Compose -Arguments (@('--profile', 'outils', 'run', '--rm', 'tests', 'pytest') + $Reste) }
-    'seed' { Invoke-Compose -Arguments (@('run', '--rm', 'migrate', 'python', 'manage.py', 'semer_demo') + $Reste) }
+    'seed' {
+        # Dans le conteneur backend (connexion alpha_app, RLS active) ; le dossier de sortie
+        # demo-acces\ est dans backend\, monté dans /app : accessible depuis le poste.
+        Invoke-Compose -Arguments (@('exec', 'backend', 'python', 'manage.py', 'semer_demo') + $Reste)
+    }
     'reset' { Invoke-Reset $Reste }
 }
 

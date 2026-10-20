@@ -41,6 +41,8 @@ x-env-recette: &env-recette
   ALPHA_HSTS_SECONDES: ${ALPHA_HSTS_SECONDES:-31536000}
   ALPHA_HSTS_PRELOAD: ${ALPHA_HSTS_PRELOAD:-false}
   ALPHA_NIVEAU_JOURNAL: ${ALPHA_NIVEAU_JOURNAL:-INFO}
+  # Jeu de démonstration (manage.py semer_demo) : refusé sauf activation explicite (.env.recette).
+  ALPHA_DEMO_AUTORISEE: ${ALPHA_DEMO_AUTORISEE:-false}
   # P11 : Mailpit par défaut (voir .env.recette.example).
   EMAIL_HOST: ${EMAIL_HOST:-mailpit}
   EMAIL_PORT: ${EMAIL_PORT:-1025}

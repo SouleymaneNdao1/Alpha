@@ -12,6 +12,9 @@
 *.key
 secrets/
 
+# Comptes de démonstration (mots de passe, secrets TOTP, codes de secours : manage.py semer_demo)
+demo-acces/
+
 # Python
 __pycache__/
 *.py[cod]
