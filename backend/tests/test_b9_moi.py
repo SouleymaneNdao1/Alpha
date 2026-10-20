@@ -185,7 +185,7 @@ def test_mot_de_passe_expire_impose_le_changement(client, compte, banque):
     assert client.get("/api/v1/moi/securite").status_code == 200
     r = client.get("/api/v1/moi/sessions")
     assert r.status_code == 403 and r.json()["code"] == "MOT_DE_PASSE_EXPIRE"
-    assert client.get("/api/v1/taches/").status_code == 403
+    assert client.get("/api/v1/taches").status_code == 403
     assert _changer(client, compte).status_code == 204
     assert client.get("/api/v1/moi").json()["mot_de_passe_expire"] is False
     assert client.get("/api/v1/moi/sessions").status_code == 200

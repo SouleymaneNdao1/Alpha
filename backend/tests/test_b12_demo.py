@@ -270,7 +270,7 @@ def test_connexion_totp_taches_absence_et_audit(tmp_path):
         assert r.status_code == 401
 
         # 4. Tâches du DAF : 9 tâches sur les 4 urgences (écran « À traiter » du prototype).
-        compteurs = client.get("/api/v1/taches/compteurs/").json()
+        compteurs = client.get("/api/v1/taches/compteurs").json()
         assert compteurs["total"] == 9
         assert compteurs["par_groupe"] == {
             "EN_RETARD": 1,
@@ -279,7 +279,7 @@ def test_connexion_totp_taches_absence_et_audit(tmp_path):
             "PLUS_TARD": 2,
         }
         assert set(compteurs["par_module"]) == {"INTERNE", "TRESORERIE", "FISCAL", "RH", "CONTRATS"}
-        liste = client.get("/api/v1/taches/").json()
+        liste = client.get("/api/v1/taches").json()
         references = {t["reference"] for t in liste["results"]}
         assert {"ED-2026-0077", "PAY-2026-0412", "CTR-2026-0009"} <= references
         assert all(t["par_delegation_de"] is None for t in liste["results"])
@@ -287,7 +287,7 @@ def test_connexion_totp_taches_absence_et_audit(tmp_path):
         # 5. Absence validée, délégation active : le suppléant voit les tâches du DAF.
         faye = _acces(resultat, "o.faye@etablissement-demo.sn")
         suppleant = _connecte(faye.email, faye)
-        taches = suppleant.get("/api/v1/taches/?taille=100").json()["results"]
+        taches = suppleant.get("/api/v1/taches?taille=100").json()["results"]
         par_delegation = [t for t in taches if t["par_delegation_de"]]
         assert len(par_delegation) == 9
         assert {t["par_delegation_de"]["nom"] for t in par_delegation} == {"Abdou Kane"}
@@ -296,11 +296,11 @@ def test_connexion_totp_taches_absence_et_audit(tmp_path):
         diop = _connecte(
             "a.diop@etablissement-demo.sn", _acces(resultat, "a.diop@etablissement-demo.sn")
         )
-        assert diop.get("/api/v1/taches/compteurs/").json()["total"] == 4
+        assert diop.get("/api/v1/taches/compteurs").json()["total"] == 4
         seck = _connecte(
             "k.seck@etablissement-demo.sn", _acces(resultat, "k.seck@etablissement-demo.sn")
         )
-        assert [t["reference"] for t in seck.get("/api/v1/taches/").json()["results"]] == [
+        assert [t["reference"] for t in seck.get("/api/v1/taches").json()["results"]] == [
             "CR-2026-0425"
         ]
 

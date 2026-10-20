@@ -173,7 +173,7 @@ def test_premier_acces_puis_provisionnement_avec_un_vrai_code(variables, client_
 
     # Session plateforme : la console répond, les routes d'établissement non.
     assert client.get("/api/v1/plateforme/moi").status_code == 200
-    assert client.get("/api/v1/taches/").status_code == 403
+    assert client.get("/api/v1/taches").status_code == 403
 
     corps = {
         "code": "pme-teranga",

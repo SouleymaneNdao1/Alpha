@@ -1,4 +1,4 @@
-"""API « À traiter » : ``/api/v1/taches/`` (§ 5.4, tâche B8). Permission : Session."""
+"""API « À traiter » : ``/api/v1/taches`` (§ 5.4, tâche B8). Permission : Session."""
 
 from __future__ import annotations
 

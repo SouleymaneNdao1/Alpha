@@ -67,6 +67,41 @@ def _detail(absence: Absence, request, *, statut_http=status.HTTP_200_OK) -> Res
     return Response(AbsenceDetailSerializer(absence, context=contexte).data, status=statut_http)
 
 
+def lister_candidats(texte, *, pour_id=None) -> list[dict]:
+    """Utilisateurs ACTIFS (établissement courant, hors ``pour_id``) filtrés par ``texte``.
+
+    ``pouvoirs_suffisants`` : couvre-t-il les pouvoirs de ``pour_id`` (P5) ? ``None`` sans
+    ``pour_id``. Partagé par ``/moi/delegataires-possibles`` et ``/admin/absences/candidats``.
+    """
+    qs = Utilisateur.objects.filter(statut=StatutUtilisateur.ACTIF)
+    if pour_id is not None:
+        qs = qs.exclude(pk=pour_id)
+    for mot in (texte or "").strip().split()[:5]:
+        qs = qs.filter(Q(prenom__icontains=mot) | Q(nom__icontains=mot) | Q(email__icontains=mot))
+    candidats = list(qs.order_by("nom", "prenom", "id")[:NB_DELEGATAIRES_MAX])
+    ids = [c.pk for c in candidats]
+    roles = dict(
+        AffectationRole.objects.en_cours()
+        .filter(utilisateur_id__in=ids, principal=True)
+        .values_list("utilisateur_id", "role__libelle")
+    )
+    suffisants: dict = {}
+    if pour_id is not None:
+        requis = Pouvoirs.de(pour_id)
+        pouvoirs = services.pouvoirs_de_plusieurs(ids)
+        parents = parents_des_unites()
+        suffisants = {i: pouvoirs[i].couvre(requis, parents) for i in ids}
+    return [
+        {
+            "id": c.pk,
+            "nom": c.nom_complet,
+            "role_principal": roles.get(c.pk),
+            "pouvoirs_suffisants": suffisants.get(c.pk),
+        }
+        for c in candidats
+    ]
+
+
 # --- /moi/absences ------------------------------------------------------------------------------
 
 
@@ -153,33 +188,7 @@ class DelegatairesPossiblesVue(APIView):
         responses={200: DelegatairePossibleSerializer(many=True), **erreurs()},
     )
     def get(self, request):
-        qs = Utilisateur.objects.filter(statut=StatutUtilisateur.ACTIF).exclude(pk=request.user.pk)
-        texte = (request.query_params.get("q") or "").strip()
-        for mot in texte.split()[:5]:
-            qs = qs.filter(
-                Q(prenom__icontains=mot) | Q(nom__icontains=mot) | Q(email__icontains=mot)
-            )
-        candidats = list(qs.order_by("nom", "prenom", "id")[:NB_DELEGATAIRES_MAX])
-        ids = [c.pk for c in candidats]
-        roles = dict(
-            AffectationRole.objects.en_cours()
-            .filter(utilisateur_id__in=ids, principal=True)
-            .values_list("utilisateur_id", "role__libelle")
-        )
-        requis = Pouvoirs.de(request.user.pk)
-        pouvoirs = services.pouvoirs_de_plusieurs(ids)
-        parents = parents_des_unites()
-        return Response(
-            [
-                {
-                    "id": c.pk,
-                    "nom": c.nom_complet,
-                    "role_principal": roles.get(c.pk),
-                    "pouvoirs_suffisants": pouvoirs[c.pk].couvre(requis, parents),
-                }
-                for c in candidats
-            ]
-        )
+        return Response(lister_candidats(request.query_params.get("q"), pour_id=request.user.pk))
 
 
 class DelegationsRecuesVue(APIView):
