@@ -271,7 +271,7 @@ ROUTES_CONSOLE = _routes(lambda c: c.startswith("api/v1/plateforme/"))
 
 def test_les_routes_sont_bien_enumerees():
     chemins = {c for _, c in ROUTES_ETABLISSEMENT}
-    for attendu in ("/api/v1/taches/", "/api/v1/moi/absences/", "/api/v1/admin/utilisateurs"):
+    for attendu in ("/api/v1/taches", "/api/v1/moi/absences", "/api/v1/admin/utilisateurs"):
         assert attendu in chemins, sorted(chemins)
     assert "/api/v1/audit/evenements" in chemins
     assert len(ROUTES_CONSOLE) == 8

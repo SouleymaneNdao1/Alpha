@@ -253,7 +253,9 @@ def _journaliser_absence(action: str, absence: Absence, *, avant=None, acteur=No
     )
 
 
-def _journaliser_delegation(action: str, delegation: Delegation, *, avant=None, acteur=None):
+def _journaliser_delegation(
+    action: str, delegation: Delegation, *, avant=None, acteur=None, detail=""
+):
     journaliser(
         action,
         Categorie.MODIFICATION,
@@ -265,6 +267,7 @@ def _journaliser_delegation(action: str, delegation: Delegation, *, avant=None, 
         avant=avant,
         apres=extraire_champs(delegation),
         acteur=acteur,
+        detail=detail,
     )
 
 
@@ -280,8 +283,15 @@ def soumettre_absence(
     delegataire_id: Any,
     role_id: Any = None,
     commentaire: str = "",
+    acteur: Utilisateur | None = None,
 ) -> Absence:
-    """Crée l'absence (SOUMISE), sa délégation (EN_ATTENTE) et la tâche du valideur."""
+    """Crée l'absence (SOUMISE), sa délégation (EN_ATTENTE) et la tâche du valideur.
+
+    ``acteur`` : auteur de la déclaration s'il n'est pas l'absent (administrateur qui
+    déclare pour le compte d'un utilisateur, ``POST /admin/absences``, B13). Les règles
+    (période, chevauchement, P5, valideur) sont les mêmes ; seul l'auteur journalisé change.
+    """
+    auteur = acteur or utilisateur
     if motif not in MotifAbsence.values:
         raise ErreurApi(VALIDATION, "Certaines données sont invalides.", details={"motif": ["?"]})
     verifier_periode(debut, fin)
@@ -344,14 +354,12 @@ def soumettre_absence(
         assigne_utilisateur=valideur,
         demandeur=utilisateur,
         lien=f"/absences/{absence.pk}",
-        acteur=utilisateur,
+        acteur=auteur,
     )
-    _journaliser_absence(
-        "absence.soumise",
-        absence,
-        acteur=utilisateur,
-        detail=f"Délégataire : {delegataire.nom_complet}",
-    )
+    detail = f"Délégataire : {delegataire.nom_complet}"
+    if auteur.pk != utilisateur.pk:
+        detail += f" · déclarée par {auteur.nom_complet} pour le compte de l'absent"
+    _journaliser_absence("absence.soumise", absence, acteur=auteur, detail=detail)
     signaux.absence_soumise.send(sender=Absence, absence=absence, delegation=delegation)
     return absence
 
@@ -494,6 +502,57 @@ def annuler_absence(absence: Absence, par: Utilisateur) -> Absence:
     _journaliser_absence("absence.annulee", absence, avant=avant, acteur=par)
     signaux.absence_annulee.send(sender=Absence, absence=absence, delegation=delegation)
     return absence
+
+
+# --- Révocation par un administrateur (B13) --------------------------------------------------
+
+
+def revoquer_delegation(delegation: Delegation, par: Utilisateur, motif: str) -> Delegation:
+    """Retire ses pouvoirs au délégataire d'une délégation ACTIVE (``admin.absences``).
+
+    L'absence reste ce qu'elle est (l'absent est toujours absent) ; seule la délégation
+    prend fin : ANNULEE si elle n'a pas commencé, sinon ``fin`` est avancée à
+    maintenant et elle passe TERMINEE. Une délégation EN_ATTENTE suit son absence :
+    on refuse l'absence plutôt que de révoquer. Audit ``delegation.revoquee`` (motif en
+    détail) ; le délégataire est notifié comme pour une fin de délégation.
+    """
+    motif = (motif or "").strip()
+    if not motif:
+        raise ErreurApi(
+            VALIDATION, "Certaines données sont invalides.", details={"motif": ["Obligatoire."]}
+        )
+    delegation = (
+        Delegation.objects.select_for_update(of=("self",))
+        .select_related("delegant", "delegataire", "absence")
+        .get(pk=delegation.pk)
+    )
+    if delegation.statut != StatutDelegation.ACTIVE:
+        raise _conflit(
+            STATUT_INVALIDE,
+            "Seule une délégation active peut être révoquée. Une délégation en attente "
+            "suit sa demande d'absence : refusez l'absence.",
+        )
+    if par.pk == delegation.delegant_id or par.pk == delegation.delegataire_id:
+        raise ErreurApi(
+            PERMISSION_REFUSEE,
+            "Vous ne pouvez pas révoquer une délégation qui vous concerne.",
+            statut=status.HTTP_403_FORBIDDEN,
+        )
+    maintenant = timezone.now()
+    avant = extraire_champs(delegation, ["statut", "fin", "terminee_le"])
+    if maintenant <= delegation.debut:
+        delegation.statut = StatutDelegation.ANNULEE
+        delegation.save(update_fields=["statut"])
+    else:
+        delegation.fin = min(delegation.fin, maintenant)
+        delegation.statut = StatutDelegation.TERMINEE
+        delegation.terminee_le = maintenant
+        delegation.save(update_fields=["fin", "statut", "terminee_le"])
+    _journaliser_delegation(
+        "delegation.revoquee", delegation, avant=avant, acteur=par, detail=motif
+    )
+    signaux.delegation_terminee.send(sender=Delegation, delegation=delegation)
+    return delegation
 
 
 # --- Entrée en vigueur et clôture (tâches planifiées, § 6.5) --------------------------------------

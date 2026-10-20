@@ -1,8 +1,8 @@
 "use client";
 
 /**
- * Hooks de l'écran « À traiter » (F5) : `GET /taches/` (page, triée groupe puis
- * échéance) et `GET /taches/compteurs/`. Contrat réel : serializers du backend
+ * Hooks de l'écran « À traiter » (F5) : `GET /taches` (page, triée groupe puis
+ * échéance) et `GET /taches/compteurs`. Contrat réel : serializers du backend
  * (`alpha/taches/serializers.py`).
  */
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
@@ -65,7 +65,7 @@ export const CLE_COMPTEURS = ["taches", "compteurs"] as const;
 export function useCompteursTaches(options: { active?: boolean } = {}) {
   return useQuery({
     queryKey: CLE_COMPTEURS,
-    queryFn: ({ signal }) => api.get<CompteursTaches>("/taches/compteurs/", { signal, fond: true }),
+    queryFn: ({ signal }) => api.get<CompteursTaches>("/taches/compteurs", { signal, fond: true }),
     enabled: options.active ?? true,
     refetchInterval: INTERVALLE_COMPTEURS_MS,
     staleTime: 15_000,
@@ -90,7 +90,7 @@ export function useTaches(filtres: FiltresTaches, fond: () => boolean) {
     queryKey: ["taches", "liste", filtres.module, filtres.groupe],
     initialPageParam: 1,
     queryFn: ({ signal, pageParam }) =>
-      api.get<Page<Tache>>("/taches/", {
+      api.get<Page<Tache>>("/taches", {
         signal,
         fond: fond(),
         params: { module: filtres.module, groupe: filtres.groupe, page: pageParam, taille: TAILLE_PAGE_TACHES },

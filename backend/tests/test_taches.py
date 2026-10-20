@@ -201,7 +201,7 @@ def test_api_liste_filtres_compteurs(etab_a, client_connecte):
         _ouvrir(org, echeance=None, assigne_role=org.analyste, assigne_unite=org.agence)
         client = client_connecte(org.awa)
 
-        reponse = client.get("/api/v1/taches/")
+        reponse = client.get("/api/v1/taches")
         assert reponse.status_code == 200
         corps = reponse.json()
         assert corps["count"] == 4
@@ -219,21 +219,21 @@ def test_api_liste_filtres_compteurs(etab_a, client_connecte):
             "PLUS_TARD",
         ]
 
-        assert client.get("/api/v1/taches/?module=CREDIT").json()["count"] == 1
-        assert client.get("/api/v1/taches/?groupe=PLUS_TARD").json()["count"] == 1
-        assert client.get("/api/v1/taches/?q=sonatel").json()["count"] == 1
-        assert client.get("/api/v1/taches/?groupe=DEMAIN").status_code == 400
-        assert client.get("/api/v1/taches/?module=X").json()["code"] == "VALIDATION"
+        assert client.get("/api/v1/taches?module=CREDIT").json()["count"] == 1
+        assert client.get("/api/v1/taches?groupe=PLUS_TARD").json()["count"] == 1
+        assert client.get("/api/v1/taches?q=sonatel").json()["count"] == 1
+        assert client.get("/api/v1/taches?groupe=DEMAIN").status_code == 400
+        assert client.get("/api/v1/taches?module=X").json()["code"] == "VALIDATION"
 
-        compteurs = client.get("/api/v1/taches/compteurs/").json()
+        compteurs = client.get("/api/v1/taches/compteurs").json()
         assert compteurs == {
             "total": 4,
             "par_groupe": {"EN_RETARD": 1, "AUJOURDHUI": 1, "CETTE_SEMAINE": 1, "PLUS_TARD": 1},
             "par_module": {"CREDIT": 1, "INTERNE": 3},
         }
         # Cheikh ne voit que la tâche de rôle (sous-arbre de la Direction).
-        assert client_connecte(org.cheikh).get("/api/v1/taches/compteurs/").json()["total"] == 1
-        assert client_connecte(org.fatou).get("/api/v1/taches/compteurs/").json() == {
+        assert client_connecte(org.cheikh).get("/api/v1/taches/compteurs").json()["total"] == 1
+        assert client_connecte(org.fatou).get("/api/v1/taches/compteurs").json() == {
             "total": 0,
             "par_groupe": {"EN_RETARD": 0, "AUJOURDHUI": 0, "CETTE_SEMAINE": 0, "PLUS_TARD": 0},
             "par_module": {},
@@ -243,19 +243,19 @@ def test_api_liste_filtres_compteurs(etab_a, client_connecte):
 def test_api_detail_404_si_non_visible(etab_a, client_connecte):
     org = organisation_b8(etab_a)
     tache = _ouvrir(org)
-    assert client_connecte(org.awa).get(f"/api/v1/taches/{tache.pk}/").status_code == 200
-    reponse = client_connecte(org.fatou).get(f"/api/v1/taches/{tache.pk}/")
+    assert client_connecte(org.awa).get(f"/api/v1/taches/{tache.pk}").status_code == 200
+    reponse = client_connecte(org.fatou).get(f"/api/v1/taches/{tache.pk}")
     assert reponse.status_code == 404
     assert reponse.json()["code"] == "INTROUVABLE"
 
 
 def test_api_exige_une_session(client_api):
-    assert client_api.get("/api/v1/taches/").status_code == 401
-    assert client_api.get("/api/v1/taches/compteurs/").status_code == 401
+    assert client_api.get("/api/v1/taches").status_code == 401
+    assert client_api.get("/api/v1/taches/compteurs").status_code == 401
 
 
 def test_api_refuse_le_super_admin(client_connecte):
     from tests.fabriques import UtilisateurFactory
 
     admin = UtilisateurFactory(super_admin=True)
-    assert client_connecte(admin).get("/api/v1/taches/").status_code == 403
+    assert client_connecte(admin).get("/api/v1/taches").status_code == 403

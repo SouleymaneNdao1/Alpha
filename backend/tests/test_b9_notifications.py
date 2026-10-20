@@ -134,14 +134,14 @@ def test_liste_lecture_et_isolation(etab_a, etab_b, client_connecte):
 
 def test_parcours_absence_notifie_demandeur_et_delegataire(org, horloge, client_connecte):
     corps = {"debut": DEBUT, "fin": FIN, "motif": "CONGE", "delegataire_id": str(org.cheikh.pk)}
-    r = client_connecte(org.awa).post("/api/v1/moi/absences/", corps, format="json")
+    r = client_connecte(org.awa).post("/api/v1/moi/absences", corps, format="json")
     assert r.status_code == 201, r.content
     absence_id = r.json()["id"]
     assert _types(org, org.mamadou) == ["TACHE_NOUVELLE"]  # le valideur, par sa tâche
     assert _types(org, org.cheikh) == ["DELEGATION_PROPOSEE"]
 
     r = client_connecte(org.mamadou).post(
-        f"/api/v1/absences/{absence_id}/valider/", {}, format="json"
+        f"/api/v1/absences/{absence_id}/valider", {}, format="json"
     )
     assert r.status_code == 200, r.content
     assert _types(org, org.awa) == ["ABSENCE_VALIDEE"]
@@ -166,11 +166,11 @@ def test_validation_pendant_l_absence_sans_doublon(org, horloge, client_connecte
         "delegataire_id": str(org.cheikh.pk),
     }
     absence_id = (
-        client_connecte(org.awa).post("/api/v1/moi/absences/", corps, format="json").json()["id"]
+        client_connecte(org.awa).post("/api/v1/moi/absences", corps, format="json").json()["id"]
     )
     horloge.move_to("2030-03-12T10:00:00+00:00")
     r = client_connecte(org.mamadou).post(
-        f"/api/v1/absences/{absence_id}/valider/", {}, format="json"
+        f"/api/v1/absences/{absence_id}/valider", {}, format="json"
     )
     assert r.status_code == 200, r.content
     assert _types(org, org.cheikh) == ["DELEGATION_PROPOSEE", "DELEGATION_RECUE"]
@@ -179,10 +179,10 @@ def test_validation_pendant_l_absence_sans_doublon(org, horloge, client_connecte
 def test_refus_notifie_le_demandeur(org, horloge, client_connecte):
     corps = {"debut": DEBUT, "fin": FIN, "motif": "CONGE", "delegataire_id": str(org.cheikh.pk)}
     absence_id = (
-        client_connecte(org.awa).post("/api/v1/moi/absences/", corps, format="json").json()["id"]
+        client_connecte(org.awa).post("/api/v1/moi/absences", corps, format="json").json()["id"]
     )
     r = client_connecte(org.mamadou).post(
-        f"/api/v1/absences/{absence_id}/refuser/", {"motif": "Clôture"}, format="json"
+        f"/api/v1/absences/{absence_id}/refuser", {"motif": "Clôture"}, format="json"
     )
     assert r.status_code == 200
     assert _types(org, org.awa) == ["ABSENCE_REFUSEE"]

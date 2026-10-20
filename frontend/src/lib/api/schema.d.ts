@@ -4,7 +4,7 @@
  */
 
 export interface paths {
-    "/api/v1/absences/{absence_id}/": {
+    "/api/v1/absences/{absence_id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -21,7 +21,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/absences/{absence_id}/refuser/": {
+    "/api/v1/absences/{absence_id}/refuser": {
         parameters: {
             query?: never;
             header?: never;
@@ -38,7 +38,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/absences/{absence_id}/valider/": {
+    "/api/v1/absences/{absence_id}/valider": {
         parameters: {
             query?: never;
             header?: never;
@@ -49,6 +49,41 @@ export interface paths {
         put?: never;
         /** Valider une absence : la délégation devient active */
         post: operations["absences_valider"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/absences": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Absences de l'établissement (avec leur délégation) */
+        get: operations["admin_absences_liste"];
+        put?: never;
+        /** Déclarer une absence pour le compte d'un utilisateur (validation facultative) */
+        post: operations["admin_absences_creer"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/absences/candidats": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Utilisateurs actifs (absent ou délégataire), avec le contrôle P5 pour « pour » */
+        get: operations["admin_absences_candidats"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -66,6 +101,40 @@ export interface paths {
         put?: never;
         /** Retirer un rôle (terminer une affectation) */
         post: operations["admin_affectation_terminer"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/delegations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Délégations de l'établissement */
+        get: operations["admin_delegations_liste"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/delegations/{delegation_id}/revoquer": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Révoquer une délégation active (motif obligatoire) */
+        post: operations["admin_delegations_revoquer"];
         delete?: never;
         options?: never;
         head?: never;
@@ -914,7 +983,7 @@ export interface paths {
         patch: operations["moi_modifier"];
         trace?: never;
     };
-    "/api/v1/moi/absences/": {
+    "/api/v1/moi/absences": {
         parameters: {
             query?: never;
             header?: never;
@@ -932,7 +1001,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/moi/absences/{absence_id}/annuler/": {
+    "/api/v1/moi/absences/{absence_id}/annuler": {
         parameters: {
             query?: never;
             header?: never;
@@ -1009,7 +1078,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/moi/delegataires-possibles/": {
+    "/api/v1/moi/delegataires-possibles": {
         parameters: {
             query?: never;
             header?: never;
@@ -1026,7 +1095,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/moi/delegations-recues/": {
+    "/api/v1/moi/delegations-recues": {
         parameters: {
             query?: never;
             header?: never;
@@ -1354,7 +1423,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/taches/": {
+    "/api/v1/taches": {
         parameters: {
             query?: never;
             header?: never;
@@ -1371,7 +1440,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/taches/{tache_id}/": {
+    "/api/v1/taches/{tache_id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -1388,7 +1457,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/taches/compteurs/": {
+    "/api/v1/taches/compteurs": {
         parameters: {
             query?: never;
             header?: never;
@@ -1432,6 +1501,28 @@ export interface components {
             /** Format: date-time */
             cree_le: string;
             readonly delegation: components["schemas"]["Delegation"] | null;
+        };
+        /** @description Ligne de ``GET /admin/absences``. Contexte : ``delegations``, ``moi`` (id). */
+        AbsenceAdmin: {
+            /** Format: uuid */
+            id: string;
+            readonly demandeur: components["schemas"]["Personne"];
+            /** Format: date-time */
+            debut: string;
+            /** Format: date-time */
+            fin: string;
+            motif: components["schemas"]["MotifEnum"];
+            readonly motif_libelle: string;
+            commentaire: string;
+            statut: components["schemas"]["StatutAbsenceEnum"];
+            readonly valideur: components["schemas"]["Personne"] | null;
+            /** Format: date-time */
+            decide_le: string | null;
+            motif_refus: string;
+            /** Format: date-time */
+            cree_le: string;
+            readonly delegation: components["schemas"]["Delegation"] | null;
+            readonly peut_decider: boolean;
         };
         /** @description ``GET /absences/{id}`` : ce que l'utilisateur courant peut faire. */
         AbsenceDetail: {
@@ -1503,6 +1594,14 @@ export interface components {
             libelle: string;
             /** Format: date-time */
             active_le: string | null;
+        };
+        Candidat: {
+            /** Format: uuid */
+            id: string;
+            nom: string;
+            role_principal: string | null;
+            /** @description Pouvoirs au moins égaux à ceux de « pour » (P5) ; null sans « pour ». */
+            pouvoirs_suffisants: boolean | null;
         };
         ChangementAuthenticatorRequest: {
             /** @description Code de l'application ACTUELLE (step-up). */
@@ -1576,6 +1675,32 @@ export interface components {
             readonly premier_seq_invalide: number | null;
             readonly message: string;
         };
+        CreationAbsenceAdminRequest: {
+            /** Format: date-time */
+            debut: string;
+            /** Format: date-time */
+            fin: string;
+            motif: components["schemas"]["MotifEnum"];
+            /** @default  */
+            commentaire: string;
+            /** Format: uuid */
+            delegataire_id: string;
+            /**
+             * Format: uuid
+             * @description Vide : tous ses rôles.
+             */
+            role_id?: string | null;
+            /**
+             * Format: uuid
+             * @description Utilisateur absent (actif).
+             */
+            utilisateur_id: string;
+            /**
+             * @description Valider aussitôt (même contrôle P5 qu'une validation séparée).
+             * @default false
+             */
+            valider: boolean;
+        };
         CreationAbsenceRequest: {
             /** Format: date-time */
             debut: string;
@@ -1642,6 +1767,29 @@ export interface components {
             /** Format: date-time */
             fin: string;
             statut: components["schemas"]["StatutDelegationEnum"];
+        };
+        /** @description Ligne de ``GET /admin/delegations``. Contexte : ``maintenant``. */
+        DelegationAdmin: {
+            /** Format: uuid */
+            id: string;
+            origine: string;
+            /** Format: uuid */
+            absence_id: string | null;
+            readonly delegant: components["schemas"]["Personne"];
+            readonly delegataire: components["schemas"]["Personne"];
+            readonly role: components["schemas"]["RoleCourt"] | null;
+            /** Format: date-time */
+            debut: string;
+            /** Format: date-time */
+            fin: string;
+            statut: components["schemas"]["StatutDelegationEnum"];
+            readonly effective: boolean;
+            /** Format: date-time */
+            activee_le: string | null;
+            /** Format: date-time */
+            terminee_le: string | null;
+            /** Format: date-time */
+            cree_le: string;
         };
         DelegationRecue: {
             /** Format: uuid */
@@ -2288,6 +2436,9 @@ export interface components {
         RevocationMesSessions: {
             revoquees: number;
         };
+        RevocationRequest: {
+            motif: string;
+        };
         RevocationSessions: {
             revoquees: number;
         };
@@ -2788,6 +2939,172 @@ export interface operations {
             };
         };
     };
+    admin_absences_liste: {
+        parameters: {
+            query?: {
+                /** @description Période chevauchant ce jour ou avant. */
+                au?: string;
+                /** @description Période chevauchant ce jour ou après. */
+                du?: string;
+                page?: number;
+                statut?: "ANNULEE" | "REFUSEE" | "SOUMISE" | "VALIDEE";
+                taille?: number;
+                /** @description Absent (absences) ; délégant ou délégataire (délégations). */
+                utilisateur_id?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AbsenceAdmin"][];
+                };
+            };
+            /** @description Données invalides (VALIDATION ou code métier). */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+            /** @description Non authentifié. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+            /** @description Permission refusée (y compris super-administrateur FYXOP sur une route d'établissement). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+        };
+    };
+    admin_absences_creer: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreationAbsenceAdminRequest"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AbsenceDetail"];
+                };
+            };
+            /** @description VALIDATION, DELEGATAIRE_INVALIDE, ROLE_NON_DETENU. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+            /** @description Non authentifié. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+            /** @description Permission admin.absences absente. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+            /** @description CHEVAUCHEMENT, POUVOIRS_INSUFFISANTS, SOUS_DELEGATION_INTERDITE, AUCUN_VALIDEUR. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+        };
+    };
+    admin_absences_candidats: {
+        parameters: {
+            query?: {
+                /** @description Absent : exclu de la liste ; sert au contrôle des pouvoirs. */
+                pour?: string;
+                /** @description Nom ou e-mail. */
+                q?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Candidat"][];
+                };
+            };
+            /** @description Données invalides (VALIDATION ou code métier). */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+            /** @description Non authentifié. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+            /** @description Permission refusée (y compris super-administrateur FYXOP sur une route d'établissement). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+        };
+    };
     admin_affectation_terminer: {
         parameters: {
             query?: never;
@@ -2835,6 +3152,132 @@ export interface operations {
                 };
             };
             /** @description DERNIER_ADMINISTRATEUR ou AFFECTATION_TERMINEE. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+        };
+    };
+    admin_delegations_liste: {
+        parameters: {
+            query?: {
+                /** @description Période chevauchant ce jour ou avant. */
+                au?: string;
+                /** @description Période chevauchant ce jour ou après. */
+                du?: string;
+                page?: number;
+                statut?: "ACTIVE" | "ANNULEE" | "EN_ATTENTE" | "REFUSEE" | "TERMINEE";
+                taille?: number;
+                /** @description Absent (absences) ; délégant ou délégataire (délégations). */
+                utilisateur_id?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DelegationAdmin"][];
+                };
+            };
+            /** @description Données invalides (VALIDATION ou code métier). */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+            /** @description Non authentifié. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+            /** @description Permission refusée (y compris super-administrateur FYXOP sur une route d'établissement). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+        };
+    };
+    admin_delegations_revoquer: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                delegation_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RevocationRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DelegationAdmin"];
+                };
+            };
+            /** @description Données invalides (VALIDATION ou code métier). */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+            /** @description Non authentifié. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+            /** @description Permission admin.absences absente, ou délégation qui vous concerne. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+            /** @description Inexistant ou appartenant à un autre établissement. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+            /** @description STATUT_INVALIDE (seule une délégation active se révoque). */
             409: {
                 headers: {
                     [name: string]: unknown;

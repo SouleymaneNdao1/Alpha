@@ -21,6 +21,7 @@ from rest_framework.permissions import BasePermission
 
 from alpha.core.permissions import Session
 
+from .codes_permission import CodePermission
 from .models import AffectationRole
 
 _ATTRIBUT_CACHE = "_alpha_permissions"
@@ -71,3 +72,11 @@ def Perm(*codes: str) -> type[BasePermission]:  # notation « Perm(x) » du cont
         sorted(c.replace(".", "_") for c in attendus)
     )
     return _Perm
+
+
+# --- Permissions dédiées (B13) -------------------------------------------------------------------
+
+#: ``/admin/absences`` et écritures sur ``/admin/delegations`` (§ 5.5) : ``admin.absences``.
+AdminAbsences = Perm(CodePermission.ADMIN_ABSENCES)
+#: Lecture de ``/admin/delegations`` (§ 5.5) : ``admin.utilisateurs`` ou ``admin.absences``.
+AdminDelegationsLecture = Perm(CodePermission.ADMIN_ABSENCES, CodePermission.ADMIN_UTILISATEURS)
