@@ -371,7 +371,7 @@ export function PiedAuth() {
     >
       <span title="Disponible prochainement">Confidentialité et CGU</span>
       <span title="Disponible prochainement">Support</span>
-      <Link href="/console" className="text-texte-attenue">
+      <Link href="/console" prefetch={false} className="text-texte-attenue">
         Console FYXOP
       </Link>
     </nav>

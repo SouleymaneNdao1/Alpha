@@ -29,6 +29,8 @@ export function Bandeau({ moi, onMenu, menuOuvert }: BandeauProps) {
         Menu
       </button>
 
+      {/* Pas de recherche de dossiers dans la console : FYXOP n'accède à aucun contenu. */}
+      {!moi.est_super_admin && (
       <div className="relative min-w-0 flex-1 basis-[80px] md:basis-[200px] md:max-w-[420px]">
         <svg
           width="16"
@@ -53,6 +55,7 @@ export function Bandeau({ moi, onMenu, menuOuvert }: BandeauProps) {
           className="block h-10 w-full rounded-champ border border-bordure-champ bg-surface pl-9 pr-3 text-[14px] placeholder:text-texte-attenue disabled:cursor-not-allowed disabled:bg-survol"
         />
       </div>
+      )}
 
       <span className="hidden flex-1 md:block" />
 

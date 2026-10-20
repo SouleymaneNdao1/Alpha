@@ -6,7 +6,7 @@ import type { Moi } from "@/lib/api/hooks/auth";
  * la permission est détenue : un module sans permission (ou l'inverse) ne donne
  * jamais accès à l'écran.
  */
-export type IconeMenu = "taches" | "administration" | "journal" | "compte";
+export type IconeMenu = "taches" | "administration" | "journal" | "compte" | "etablissements";
 
 export interface EntreeMenu {
   id: string;
@@ -15,6 +15,8 @@ export interface EntreeMenu {
   icone: IconeMenu;
   /** Préfixes de chemin pour lesquels l'entrée est active. */
   prefixes: string[];
+  /** Préfixes qui désactivent l'entrée (ex. « /console » ne doit pas rester actif sur « /console/journal »). */
+  exclus?: string[];
 }
 
 export interface GroupeMenu {
@@ -56,6 +58,19 @@ export function pagesAdministration(moi: Pick<Moi, "permissions">): PageAdminist
 }
 
 export function construireMenu(moi: Moi): GroupeMenu[] {
+  // Super-admin FYXOP : la console seulement (la déconnexion est dans le pied du menu).
+  if (moi.est_super_admin) {
+    return [
+      {
+        titre: "Console FYXOP",
+        entrees: [
+          { id: "console", libelle: "Établissements", href: "/console", icone: "etablissements", prefixes: ["/console"], exclus: ["/console/journal"] },
+          { id: "console-journal", libelle: "Journal de la plateforme", href: "/console/journal", icone: "journal", prefixes: ["/console/journal"] },
+        ],
+      },
+    ];
+  }
+
   const groupes: GroupeMenu[] = [];
 
   // « À traiter » : accueil de tout utilisateur (un super-admin y trouve un message explicatif tant que F9 n'existe pas).
@@ -96,8 +111,11 @@ export function construireMenu(moi: Moi): GroupeMenu[] {
   return groupes;
 }
 
+const sous = (chemin: string, p: string) => chemin === p || chemin.startsWith(`${p}/`);
+
 export function entreeActive(entree: EntreeMenu, chemin: string): boolean {
-  return entree.prefixes.some((p) => chemin === p || chemin.startsWith(`${p}/`));
+  if (entree.exclus?.some((p) => sous(chemin, p))) return false;
+  return entree.prefixes.some((p) => sous(chemin, p));
 }
 
 /** `/administration/...` : route accessible à tout titulaire d'une permission `admin.*` (menu masqué sinon). */

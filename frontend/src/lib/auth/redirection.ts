@@ -6,11 +6,8 @@
  */
 export const ACCUEIL = "/a-traiter";
 export const ACCUEIL_CONSOLE = "/console";
-/**
- * Décision de coordination : tant que la console FYXOP (F9) n'existe pas, un
- * super-admin est dirigé vers `/a-traiter`. Passer à `true` avec F9.
- */
-const CONSOLE_DISPONIBLE = false;
+/** La console FYXOP (F9) existe : un super-admin est dirigé vers `/console` après la connexion. */
+const CONSOLE_DISPONIBLE = true;
 
 const ROUTES_AUTH = ["/connexion", "/activation", "/reenrolement", "/mot-de-passe-oublie", "/reinitialisation"];
 

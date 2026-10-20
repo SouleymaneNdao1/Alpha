@@ -17,7 +17,7 @@ import { MenuLateral } from "./MenuLateral";
  * latérale construite depuis Moi, bandeau, avertissement d'inactivité, tiroir
  * sur mobile. Rien n'est affiché de l'application sans session valide.
  */
-export function CoquilleApp({ children }: { children: ReactNode }) {
+export function CoquilleApp({ children, reserveSuperAdmin = false }: { children: ReactNode; reserveSuperAdmin?: boolean }) {
   const session = useSession();
   const router = useRouter();
   const chemin = usePathname();
@@ -36,7 +36,13 @@ export function CoquilleApp({ children }: { children: ReactNode }) {
   const moi = session.data;
   const compteurs = useCompteursTaches({ active: !!moi && !moi.est_super_admin });
 
-  if (!moi) {
+  // Groupe (console) : un utilisateur d'établissement est renvoyé vers « À traiter ».
+  const interdit = reserveSuperAdmin && !!moi && !moi.est_super_admin;
+  useEffect(() => {
+    if (interdit) router.replace("/a-traiter");
+  }, [interdit, router]);
+
+  if (!moi || interdit) {
     return (
       <div className="flex min-h-dvh items-center justify-center p-4">
         {session.isError && !expiree ? (

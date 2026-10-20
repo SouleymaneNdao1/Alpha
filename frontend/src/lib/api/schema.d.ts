@@ -1235,6 +1235,125 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/plateforme/audit": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Journal de la plateforme (chaîne FYXOP, plus récent d'abord)
+         * @description Mêmes filtres et même pagination par curseur que `/audit/evenements`. Seule la chaîne de la plateforme est lisible (jamais celle d'un établissement).
+         */
+        get: operations["plateforme_audit_liste"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/plateforme/etablissements": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Établissements (métadonnées et compteurs, sans contenu) */
+        get: operations["plateforme_etablissements_liste"];
+        put?: never;
+        /**
+         * Provisionner un établissement (code TOTP requis)
+         * @description Crée l'établissement, ses paramètres par défaut, son catalogue de rôles et son unité racine « Direction générale », puis invite son premier administrateur (rôle « Administrateur ALPHA », e-mail d'activation). Le code TOTP de confirmation est `code_totp` (`code` est le code de l'établissement). Double journalisation : chaîne de la plateforme et chaîne de l'établissement.
+         */
+        post: operations["plateforme_etablissements_provisionner"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/plateforme/etablissements/{etablissement_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Établissement (métadonnées et compteurs, aucun contenu) */
+        get: operations["plateforme_etablissement_lire"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Modifier la raison sociale ou le statut (code TOTP requis)
+         * @description `statut` (ACTIF, LECTURE_SEULE, SUSPENDU) n'est accepté que si la suspension manuelle est activée sur la plateforme (décision P6, réglage `ALPHA_PLATEFORME_SUSPENSION_MANUELLE`, désactivé par défaut), sinon 403 `SUSPENSION_MANUELLE_DESACTIVEE` ; `motif` est alors obligatoire. Une suspension révoque toutes les sessions ouvertes de l'établissement.
+         */
+        patch: operations["plateforme_etablissement_modifier"];
+        trace?: never;
+    };
+    "/api/v1/plateforme/etablissements/{etablissement_id}/administrateurs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Inviter un administrateur de l'établissement (code TOTP requis)
+         * @description Invitation sur le rôle « Administrateur ALPHA » (e-mail d'activation). Double journalisation `plateforme.administrateur.invite`.
+         */
+        post: operations["plateforme_etablissement_inviter_administrateur"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/plateforme/etablissements/{etablissement_id}/reinitialisation-authenticator": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Réinitialiser l'Authenticator du dernier administrateur (P4, code TOTP requis)
+         * @description Sur demande écrite signée de la direction du client et après appel vidéo avec pièce d'identité. L'administrateur est désigné par son adresse e-mail. Refusé (409 AUTRE_ADMINISTRATEUR_DISPONIBLE) si un autre administrateur actif peut traiter le cas. Lien de réenrôlement envoyé à l'intéressé, autres administrateurs notifiés, double journalisation.
+         */
+        post: operations["plateforme_etablissement_reinitialiser_authenticator"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/plateforme/moi": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Profil du super-administrateur connecté */
+        get: operations["plateforme_moi"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/taches/": {
         parameters: {
             query?: never;
@@ -1348,6 +1467,15 @@ export interface components {
          * @enum {string}
          */
         ActionEnum: "DECIDER" | "SIGNER" | "VALIDER" | "COMPLETER" | "TRAITER";
+        AdministrateurInvite: {
+            /** Format: uuid */
+            id: string;
+            /** Format: email */
+            email: string;
+            prenom: string;
+            nom: string;
+            statut: string;
+        };
         Affectation: {
             /** Format: uuid */
             id: string;
@@ -1476,7 +1604,7 @@ export interface components {
         CreationUniteRequest: {
             /** Format: uuid */
             parent_id?: string | null;
-            type: components["schemas"]["TypeEnum"];
+            type: components["schemas"]["TypeUniteEnum"];
             code: string;
             libelle: string;
             actif?: boolean;
@@ -1621,6 +1749,34 @@ export interface components {
             message: string;
             details: components["schemas"]["DetailsVerrouillage"];
         };
+        EtablissementConsole: {
+            /** Format: uuid */
+            id: string;
+            code: string;
+            raison_sociale: string;
+            type: components["schemas"]["TypeEtablissementEnum"];
+            statut: components["schemas"]["StatutEtablissementEnum"];
+            /** Format: date-time */
+            cree_le: string;
+            stats: components["schemas"]["Stats"];
+        };
+        EtablissementDetail: {
+            /** Format: uuid */
+            id: string;
+            code: string;
+            raison_sociale: string;
+            type: components["schemas"]["TypeEtablissementEnum"];
+            statut: components["schemas"]["StatutEtablissementEnum"];
+            /** Format: date-time */
+            cree_le: string;
+            stats: components["schemas"]["Stats"];
+            pays: string;
+            fuseau_horaire: string;
+            /** Format: date-time */
+            modifie_le: string;
+            /** @description Réglage P6 (ALPHA_PLATEFORME_SUSPENSION_MANUELLE) : le statut est modifiable depuis la console. */
+            suspension_manuelle_disponible: boolean;
+        };
         EtablissementMoi: {
             /** Format: uuid */
             id: string;
@@ -1682,6 +1838,12 @@ export interface components {
          * @enum {string}
          */
         GroupeEnum: "EN_RETARD" | "AUJOURDHUI" | "CETTE_SEMAINE" | "PLUS_TARD";
+        IdentiteAdministrateurRequest: {
+            /** Format: email */
+            email: string;
+            prenom: string;
+            nom: string;
+        };
         Indicateurs: {
             evenements_aujourdhui: number;
             connexions_echouees_24h: number;
@@ -1706,6 +1868,14 @@ export interface components {
             email_masque: string;
             /** @description Preuves MFA utilisables ; vide : passer par « Téléphone perdu ». */
             methodes: components["schemas"]["MethodesEnum"][];
+        };
+        InvitationAdministrateurRequest: {
+            /** Format: email */
+            email: string;
+            prenom: string;
+            nom: string;
+            /** @description Code TOTP de confirmation (step-up, § 4.9). */
+            code: string;
         };
         InvitationRenvoyee: {
             /** Format: date-time */
@@ -1911,6 +2081,22 @@ export interface components {
             /** Format: date-time */
             modifie_le: string;
         };
+        PatchedModificationEtablissementRequest: {
+            raison_sociale?: string;
+            /**
+             * @description Seulement si la suspension manuelle est activée (P6) : ACTIF, LECTURE_SEULE, SUSPENDU.
+             *
+             *     * `ACTIF` - Actif
+             *     * `LECTURE_SEULE` - Lecture seule
+             *     * `SUSPENDU` - Suspendu
+             *     * `ARCHIVE` - Archivé
+             */
+            statut?: components["schemas"]["StatutEtablissementEnum"];
+            /** @description Obligatoire pour un changement de statut (journalisé). */
+            motif?: string;
+            /** @description Code TOTP de confirmation (step-up, § 4.9). */
+            code?: string;
+        };
         /** @description Corps de ``PATCH /admin/parametres-securite`` : réglages facultatifs + ``code`` TOTP. */
         PatchedModificationParametresRequest: {
             /** @description Code TOTP de confirmation (step-up). */
@@ -1939,7 +2125,7 @@ export interface components {
         PatchedModificationUniteRequest: {
             /** Format: uuid */
             parent_id?: string | null;
-            type?: components["schemas"]["TypeEnum"];
+            type?: components["schemas"]["TypeUniteEnum"];
             code?: string;
             libelle?: string;
             actif?: boolean;
@@ -2010,6 +2196,34 @@ export interface components {
              */
             heure_resume: string;
         };
+        ProvisionnementReponse: {
+            /** Format: uuid */
+            id: string;
+            code: string;
+            raison_sociale: string;
+            type: components["schemas"]["TypeEtablissementEnum"];
+            statut: components["schemas"]["StatutEtablissementEnum"];
+            /** Format: date-time */
+            cree_le: string;
+            stats: components["schemas"]["Stats"];
+            pays: string;
+            fuseau_horaire: string;
+            /** Format: date-time */
+            modifie_le: string;
+            /** @description Réglage P6 (ALPHA_PLATEFORME_SUSPENSION_MANUELLE) : le statut est modifiable depuis la console. */
+            suspension_manuelle_disponible: boolean;
+            administrateur: components["schemas"]["AdministrateurInvite"];
+        };
+        ProvisionnementRequest: {
+            /** @description Identifiant court et définitif, ex. « banque-atlantique-sn ». */
+            code: string;
+            raison_sociale: string;
+            type: components["schemas"]["TypeEtablissementEnum"];
+            pays: string;
+            administrateur: components["schemas"]["IdentiteAdministrateurRequest"];
+            /** @description Code TOTP de confirmation (step-up, § 4.9). */
+            code_totp: string;
+        };
         Reference: {
             /** Format: uuid */
             id: string;
@@ -2032,6 +2246,29 @@ export interface components {
         };
         RefusRequest: {
             motif: string;
+        };
+        ReinitialisationAuthenticatorRequest: {
+            /**
+             * Format: email
+             * @description Adresse de l'administrateur, telle qu'indiquée sur la demande écrite signée.
+             */
+            email: string;
+            /** @description Référence de la demande écrite signée par la direction (P4). */
+            reference_demande: string;
+            /**
+             * @description Ex. « Appel vidéo avec CNI le 19/10/2026 ».
+             * @default
+             */
+            commentaire: string;
+            /** @description Code TOTP de confirmation (step-up, § 4.9). */
+            code: string;
+        };
+        ReinitialisationReponse: {
+            /** Format: uuid */
+            signalement_id: string;
+            statut: string;
+            /** Format: date-time */
+            traite_le: string;
         };
         ReinitialisationRequest: {
             mot_de_passe: string;
@@ -2141,6 +2378,16 @@ export interface components {
             /** Format: date-time */
             traite_le: string | null;
         };
+        /** @description Compteurs techniques (aucun contenu). */
+        Stats: {
+            nb_utilisateurs_actifs: number;
+            nb_invites: number;
+            /** Format: date-time */
+            derniere_activite: string | null;
+            nb_evenements_audit_30j: number;
+            /** @description INTACTE, ROMPUE ou ERREUR ; null sans contrôle terminé. */
+            dernier_controle_statut: string | null;
+        };
         /**
          * @description * `SOUMISE` - Soumise
          *     * `VALIDEE` - Validée
@@ -2166,6 +2413,14 @@ export interface components {
          * @enum {string}
          */
         StatutDelegationEnum: "EN_ATTENTE" | "ACTIVE" | "TERMINEE" | "ANNULEE" | "REFUSEE";
+        /**
+         * @description * `ACTIF` - Actif
+         *     * `LECTURE_SEULE` - Lecture seule
+         *     * `SUSPENDU` - Suspendu
+         *     * `ARCHIVE` - Archivé
+         * @enum {string}
+         */
+        StatutEtablissementEnum: "ACTIF" | "LECTURE_SEULE" | "SUSPENDU" | "ARCHIVE";
         /**
          * @description * `OUVERT` - Ouvert
          *     * `REINITIALISE` - Réinitialisé
@@ -2256,19 +2511,26 @@ export interface components {
             codes_conserves: boolean;
         };
         /**
+         * @description * `BANQUE` - Banque
+         *     * `SFD` - Système financier décentralisé
+         *     * `PME` - PME
+         * @enum {string}
+         */
+        TypeEtablissementEnum: "BANQUE" | "SFD" | "PME";
+        /**
          * @description * `DIRECTION` - Direction
          *     * `SERVICE` - Service
          *     * `AGENCE` - Agence
          *     * `COMITE` - Comité
          * @enum {string}
          */
-        TypeEnum: "DIRECTION" | "SERVICE" | "AGENCE" | "COMITE";
+        TypeUniteEnum: "DIRECTION" | "SERVICE" | "AGENCE" | "COMITE";
         Unite: {
             /** Format: uuid */
             id: string;
             /** Format: uuid */
             parent_id: string | null;
-            type: components["schemas"]["TypeEnum"];
+            type: components["schemas"]["TypeUniteEnum"];
             code: string;
             libelle: string;
             actif: boolean;
@@ -2279,7 +2541,7 @@ export interface components {
             id: string;
             /** Format: uuid */
             parent_id: string | null;
-            type: components["schemas"]["TypeEnum"];
+            type: components["schemas"]["TypeUniteEnum"];
             code: string;
             libelle: string;
             actif: boolean;
@@ -6240,6 +6502,525 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Accepte"];
+                };
+            };
+            /** @description Non authentifié. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+            /** @description Permission refusée (y compris super-administrateur FYXOP sur une route d'établissement). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+        };
+    };
+    plateforme_audit_liste: {
+        parameters: {
+            query?: {
+                /** @description Identifiant de l'acteur. */
+                acteur_id?: string;
+                /** @description Codes d'action séparés par des virgules ; `utilisateur.*` : préfixe. */
+                action?: string;
+                /** @description Fin incluse : AAAA-MM-JJ (jour entier) ou date-heure ISO 8601. */
+                au?: string;
+                /** @description Catégories séparées par des virgules : CONNEXION, DECISION, MODIFICATION, PARAMETRAGE, ACCES_API, SUPER_ADMIN, SECURITE, DOCUMENT, ENVOI_EXTERNE, IA. */
+                categorie?: string;
+                /** @description Curseur opaque renvoyé dans `next` par la page précédente. */
+                curseur?: string;
+                /** @description Début inclus : AAAA-MM-JJ (minuit) ou date-heure ISO 8601. */
+                du?: string;
+                objet_id?: string;
+                objet_type?: string;
+                /**
+                 * @description Aujourd'hui, 7 ou 30 derniers jours (jour en cours compris). Incompatible avec du/au.
+                 *
+                 *     * `aujourdhui` - aujourdhui
+                 *     * `7j` - 7j
+                 *     * `30j` - 30j
+                 */
+                periode?: "aujourdhui" | "7j" | "30j";
+                /** @description Recherche libre : utilisateur, objet (libellé, identifiant), IP, détail. */
+                q?: string;
+                /** @description Nombre d'événements par page (50 par défaut, 100 au plus). */
+                taille?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedEvenementAuditList"];
+                };
+            };
+            /** @description Données invalides (VALIDATION ou code métier). */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+            /** @description Non authentifié. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+            /** @description Permission refusée (y compris super-administrateur FYXOP sur une route d'établissement). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+        };
+    };
+    plateforme_etablissements_liste: {
+        parameters: {
+            query?: {
+                /** @description Recherche : code ou raison sociale. */
+                q?: string;
+                /**
+                 * @description * `ACTIF` - Actif
+                 *     * `LECTURE_SEULE` - Lecture seule
+                 *     * `SUSPENDU` - Suspendu
+                 *     * `ARCHIVE` - Archivé
+                 */
+                statut?: "ACTIF" | "LECTURE_SEULE" | "SUSPENDU" | "ARCHIVE";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EtablissementConsole"][];
+                };
+            };
+            /** @description Données invalides (VALIDATION ou code métier). */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+            /** @description Non authentifié. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+            /** @description Permission refusée (y compris super-administrateur FYXOP sur une route d'établissement). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+        };
+    };
+    plateforme_etablissements_provisionner: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProvisionnementRequest"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProvisionnementReponse"];
+                };
+            };
+            /** @description Données invalides (VALIDATION ou code métier). */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+            /** @description Non authentifié, ou CODE_INVALIDE (code TOTP refusé). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+            /** @description Permission refusée (y compris super-administrateur FYXOP sur une route d'établissement). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+            /** @description CODE_EXISTE ou EMAIL_EXISTE. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+            /** @description TROP_DE_REQUETES : trop de codes essayés (5 par minute). */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+        };
+    };
+    plateforme_etablissement_lire: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                etablissement_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EtablissementDetail"];
+                };
+            };
+            /** @description Non authentifié. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+            /** @description Permission refusée (y compris super-administrateur FYXOP sur une route d'établissement). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+            /** @description Inexistant ou appartenant à un autre établissement. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+        };
+    };
+    plateforme_etablissement_modifier: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                etablissement_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["PatchedModificationEtablissementRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EtablissementDetail"];
+                };
+            };
+            /** @description Données invalides (VALIDATION ou code métier). */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+            /** @description Non authentifié, ou CODE_INVALIDE (code TOTP refusé). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+            /** @description Permission refusée, ou SUSPENSION_MANUELLE_DESACTIVEE. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+            /** @description Inexistant ou appartenant à un autre établissement. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+            /** @description ETABLISSEMENT_ARCHIVE. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+            /** @description TROP_DE_REQUETES : trop de codes essayés (5 par minute). */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+        };
+    };
+    plateforme_etablissement_inviter_administrateur: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                etablissement_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["InvitationAdministrateurRequest"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdministrateurInvite"];
+                };
+            };
+            /** @description Données invalides (VALIDATION ou code métier). */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+            /** @description Non authentifié, ou CODE_INVALIDE (code TOTP refusé). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+            /** @description Permission refusée (y compris super-administrateur FYXOP sur une route d'établissement). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+            /** @description Inexistant ou appartenant à un autre établissement. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+            /** @description EMAIL_EXISTE ou ETABLISSEMENT_ARCHIVE. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+            /** @description TROP_DE_REQUETES : trop de codes essayés (5 par minute). */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+        };
+    };
+    plateforme_etablissement_reinitialiser_authenticator: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                etablissement_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReinitialisationAuthenticatorRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReinitialisationReponse"];
+                };
+            };
+            /** @description VALIDATION ou REFERENCE_OBLIGATOIRE. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+            /** @description Non authentifié, ou CODE_INVALIDE (code TOTP refusé). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+            /** @description Permission refusée (y compris super-administrateur FYXOP sur une route d'établissement). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+            /** @description Établissement inconnu, ou adresse étrangère à l'établissement. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+            /** @description PAS_ADMINISTRATEUR, AUTRE_ADMINISTRATEUR_DISPONIBLE ou ETABLISSEMENT_ARCHIVE. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+            /** @description TROP_DE_REQUETES : trop de codes essayés (5 par minute). */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Erreur"];
+                };
+            };
+        };
+    };
+    plateforme_moi: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Moi"];
                 };
             };
             /** @description Non authentifié. */

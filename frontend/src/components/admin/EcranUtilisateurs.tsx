@@ -63,8 +63,7 @@ export function EcranUtilisateurs() {
             <thead>
               <tr>
                 <Th>Utilisateur</Th>
-                <Th>Rôle</Th>
-                <Th>Périmètre</Th>
+                <Th>Rôle et périmètre</Th>
                 <Th>Authenticator</Th>
                 <Th className="min-w-[96px] whitespace-normal">Dernière connexion</Th>
                 <Th>Statut</Th>
@@ -83,8 +82,10 @@ export function EcranUtilisateurs() {
                       </div>
                     </div>
                   </Td>
-                  <Td retourLigne className="min-w-[100px] max-w-[140px]">{u.role_principal ?? "—"}</Td>
-                  <Td retourLigne className="min-w-[90px] max-w-[120px]">{u.perimetre ?? "—"}</Td>
+                  <Td retourLigne className="min-w-[130px] max-w-[190px]">
+                    <span className="block">{u.role_principal ?? "—"}</span>
+                    {u.perimetre && <span className="block text-[13px] text-texte-attenue">{u.perimetre}</span>}
+                  </Td>
                   <Td><BadgeAuthenticator etat={u.authenticator} /></Td>
                   <Td mono>{formatDateHeureCourte(u.derniere_connexion)}</Td>
                   <Td><BadgeStatutUtilisateur u={u} /></Td>

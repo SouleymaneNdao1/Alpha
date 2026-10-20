@@ -27,7 +27,7 @@ test.describe("Administration · utilisateurs (F7)", () => {
     await expect(nav.getByRole("link", { name: "Utilisateurs" })).toHaveAttribute("aria-current", "page");
 
     const table = page.getByRole("region", { name: /Utilisateurs de l'établissement/ });
-    for (const col of ["Utilisateur", "Rôle", "Périmètre", "Authenticator", "Dernière connexion", "Statut"]) {
+    for (const col of ["Utilisateur", "Rôle et périmètre", "Authenticator", "Dernière connexion", "Statut"]) {
       await expect(table.getByRole("columnheader", { name: col })).toBeVisible();
     }
     const ligne = table.getByRole("row").filter({ hasText: "Ibrahima" });
