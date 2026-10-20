@@ -38,7 +38,7 @@ def org(etab_a, horloge):
 def _demande(client, delegataire, **champs):
     corps = {"debut": DEBUT, "fin": FIN, "motif": "CONGE", "delegataire_id": str(delegataire.pk)}
     corps.update(champs)
-    return client.post("/api/v1/moi/absences/", corps, format="json")
+    return client.post("/api/v1/moi/absences", corps, format="json")
 
 
 def _audit(etab, *actions) -> list[str]:
@@ -79,19 +79,19 @@ def test_parcours_absence_validation_delegation_visibilite_fin(org, horloge, cli
 
     # 2. Le responsable (Mamadou) a une tâche « Valider » vers /absences/{id}.
     client_mamadou = client_connecte(org.mamadou)
-    a_traiter = client_mamadou.get("/api/v1/taches/").json()["results"]
+    a_traiter = client_mamadou.get("/api/v1/taches").json()["results"]
     assert [(t["action"], t["lien"]) for t in a_traiter] == [
         ("VALIDER", f"/absences/{absence['id']}")
     ]
     assert a_traiter[0]["titre"] == "Absence · Awa Diop"
-    assert client_mamadou.get(f"/api/v1/absences/{absence['id']}/").json()["peut_decider"]
+    assert client_mamadou.get(f"/api/v1/absences/{absence['id']}").json()["peut_decider"]
 
     # 3. Validation : délégation ACTIVE (pas encore effective), tâche terminée.
-    reponse = client_mamadou.post(f"/api/v1/absences/{absence['id']}/valider/", {}, format="json")
+    reponse = client_mamadou.post(f"/api/v1/absences/{absence['id']}/valider", {}, format="json")
     assert reponse.status_code == 200, reponse.json()
     assert reponse.json()["statut"] == "VALIDEE"
     assert reponse.json()["delegation"]["statut"] == "ACTIVE"
-    assert client_mamadou.get("/api/v1/taches/").json()["count"] == 0
+    assert client_mamadou.get("/api/v1/taches").json()["count"] == 0
     with contexte_tenant(org.etab.id):
         validation = Tache.objects.get(source_id=absence["id"])
         assert (validation.statut, validation.resultat) == (StatutTache.TERMINEE, "VALIDEE")
@@ -102,11 +102,11 @@ def test_parcours_absence_validation_delegation_visibilite_fin(org, horloge, cli
     horloge.move_to("2030-03-12T09:00:00+00:00")
     assert tasks.activer_delegations.delay().get() == 1
     client_cheikh = client_connecte(org.cheikh)
-    visibles = client_cheikh.get("/api/v1/taches/").json()["results"]
+    visibles = client_cheikh.get("/api/v1/taches").json()["results"]
     assert [(t["id"], t["par_delegation_de"]) for t in visibles] == [
         (str(tache_awa.pk), {"id": str(org.awa.pk), "nom": "Awa Diop"})
     ]
-    recues = client_cheikh.get("/api/v1/moi/delegations-recues/").json()
+    recues = client_cheikh.get("/api/v1/moi/delegations-recues").json()
     assert [(d["delegant"]["nom"], d["statut"], d["effective"]) for d in recues] == [
         ("Awa Diop", "ACTIVE", True)
     ]
@@ -121,7 +121,7 @@ def test_parcours_absence_validation_delegation_visibilite_fin(org, horloge, cli
 
     # 5. Après la fin : visibilité retirée aussitôt, puis clôture planifiée.
     horloge.move_to("2030-03-16T00:00:01+00:00")
-    assert client_connecte(org.cheikh).get("/api/v1/taches/").json()["count"] == 0
+    assert client_connecte(org.cheikh).get("/api/v1/taches").json()["count"] == 0
     assert tasks.cloturer_delegations.delay().get() == 1
     with contexte_tenant(org.etab.id):
         delegation = Delegation.objects.get(absence_id=absence["id"])
@@ -141,7 +141,7 @@ def test_parcours_absence_validation_delegation_visibilite_fin(org, horloge, cli
 def test_validation_pendant_l_absence_active_aussitot(org, horloge, client_connecte):
     absence = _demande(client_connecte(org.awa), org.cheikh).json()
     horloge.move_to("2030-03-12T09:00:00+00:00")
-    client_connecte(org.mamadou).post(f"/api/v1/absences/{absence['id']}/valider/")
+    client_connecte(org.mamadou).post(f"/api/v1/absences/{absence['id']}/valider")
     with contexte_tenant(org.etab.id):
         delegation = Delegation.objects.get(absence_id=absence["id"])
         assert delegation.activee_le is not None
@@ -184,13 +184,13 @@ def test_delegataire_invalide(org, client_connecte):
     client = client_connecte(org.awa)
     assert _demande(client, org.awa).json()["code"] == "DELEGATAIRE_INVALIDE"
     corps = {"debut": DEBUT, "fin": FIN, "motif": "CONGE", "delegataire_id": str(uuid.uuid4())}
-    assert client.post("/api/v1/moi/absences/", corps, format="json").status_code == 400
+    assert client.post("/api/v1/moi/absences", corps, format="json").status_code == 400
 
 
 def test_sous_delegation_interdite(org, horloge, client_connecte):
     # Awa → Cheikh, validée.
     absence = _demande(client_connecte(org.awa), org.cheikh).json()
-    client_connecte(org.mamadou).post(f"/api/v1/absences/{absence['id']}/valider/")
+    client_connecte(org.mamadou).post(f"/api/v1/absences/{absence['id']}/valider")
 
     # Cheikh, délégataire sur la période, ne peut pas redéléguer à Mamadou.
     reponse = _demande(client_connecte(org.cheikh), org.mamadou, debut="2030-03-13T00:00:00Z")
@@ -229,7 +229,7 @@ def test_delegation_bornee_dans_le_temps(org, client_connecte):
     reponse = _demande(client, org.cheikh, fin="2031-06-01T00:00:00Z")
     assert reponse.status_code == 400
     corps = {"debut": DEBUT, "motif": "CONGE", "delegataire_id": str(org.cheikh.pk)}
-    assert client.post("/api/v1/moi/absences/", corps, format="json").status_code == 400
+    assert client.post("/api/v1/moi/absences", corps, format="json").status_code == 400
 
 
 def test_chevauchement(org, client_connecte):
@@ -286,19 +286,19 @@ def test_droits_de_decision(org, client_connecte):
     absence = _demande(client_connecte(org.awa), org.cheikh).json()
     url = f"/api/v1/absences/{absence['id']}"
     # L'absente voit sa demande mais ne peut pas la valider (403) ; un tiers : 404.
-    reponse_awa = client_connecte(org.awa).post(f"{url}/valider/")
+    reponse_awa = client_connecte(org.awa).post(f"{url}/valider")
     assert reponse_awa.status_code == 403
-    assert client_connecte(org.awa).get(f"{url}/").json()["peut_decider"] is False
-    assert client_connecte(org.fatou).get(f"{url}/").status_code == 404
-    assert client_connecte(org.fatou).post(f"{url}/valider/").status_code == 404
+    assert client_connecte(org.awa).get(f"{url}").json()["peut_decider"] is False
+    assert client_connecte(org.fatou).get(f"{url}").status_code == 404
+    assert client_connecte(org.fatou).post(f"{url}/valider").status_code == 404
     # Un titulaire de admin.absences peut refuser ; le motif est obligatoire.
     client_admin = client_connecte(org.admin)
-    assert client_admin.post(f"{url}/refuser/", {}, format="json").status_code == 400
-    reponse = client_admin.post(f"{url}/refuser/", {"motif": "Période chargée"}, format="json")
+    assert client_admin.post(f"{url}/refuser", {}, format="json").status_code == 400
+    reponse = client_admin.post(f"{url}/refuser", {"motif": "Période chargée"}, format="json")
     assert reponse.status_code == 200
     assert reponse.json()["statut"] == "REFUSEE"
     assert reponse.json()["delegation"]["statut"] == "REFUSEE"
-    assert client_admin.post(f"{url}/valider/").json()["code"] == "STATUT_INVALIDE"
+    assert client_admin.post(f"{url}/valider").json()["code"] == "STATUT_INVALIDE"
     assert _audit(org.etab, "absence.soumise", "absence.refusee") == [
         "absence.soumise",
         "absence.refusee",
@@ -308,7 +308,7 @@ def test_droits_de_decision(org, client_connecte):
 def test_delegataire_du_valideur_decide_pour_son_compte(org, horloge, client_connecte):
     # Mamadou (responsable d'Awa) s'absente et délègue à Cheikh ; l'admin valide.
     absence_m = _demande(client_connecte(org.mamadou), org.cheikh).json()
-    client_connecte(org.admin).post(f"/api/v1/absences/{absence_m['id']}/valider/")
+    client_connecte(org.admin).post(f"/api/v1/absences/{absence_m['id']}/valider")
     # Awa demande ensuite une absence (Mamadou est son valideur) avec Fatou analyste.
     affecter(org.fatou, org.analyste, org.agence)
     absence_a = _demande(
@@ -319,9 +319,9 @@ def test_delegataire_du_valideur_decide_pour_son_compte(org, horloge, client_con
     ).json()
     horloge.move_to("2030-03-12T09:00:00+00:00")
     client_cheikh = client_connecte(org.cheikh)
-    a_traiter = client_cheikh.get("/api/v1/taches/").json()["results"]
+    a_traiter = client_cheikh.get("/api/v1/taches").json()["results"]
     assert a_traiter[0]["par_delegation_de"]["nom"] == "Mamadou Sow"
-    reponse = client_cheikh.post(f"/api/v1/absences/{absence_a['id']}/valider/")
+    reponse = client_cheikh.post(f"/api/v1/absences/{absence_a['id']}/valider")
     assert reponse.status_code == 200, reponse.json()
     with contexte_tenant(org.etab.id):
         tache = Tache.objects.get(source_id=absence_a["id"])
@@ -335,43 +335,43 @@ def test_delegataire_du_valideur_decide_pour_son_compte(org, horloge, client_con
 def test_annulation_avant_et_pendant(org, horloge, client_connecte):
     client_awa = client_connecte(org.awa)
     soumise = _demande(client_awa, org.cheikh).json()
-    reponse = client_awa.post(f"/api/v1/moi/absences/{soumise['id']}/annuler/")
+    reponse = client_awa.post(f"/api/v1/moi/absences/{soumise['id']}/annuler")
     assert reponse.json()["statut"] == "ANNULEE"
     assert reponse.json()["delegation"]["statut"] == "ANNULEE"
-    assert client_connecte(org.mamadou).get("/api/v1/taches/").json()["count"] == 0
+    assert client_connecte(org.mamadou).get("/api/v1/taches").json()["count"] == 0
     # Un tiers ne peut pas l'annuler (404).
     assert (
         client_connecte(org.cheikh)
-        .post(f"/api/v1/moi/absences/{soumise['id']}/annuler/")
+        .post(f"/api/v1/moi/absences/{soumise['id']}/annuler")
         .status_code
         == 404
     )
 
     validee = _demande(client_awa, org.cheikh).json()
-    client_connecte(org.mamadou).post(f"/api/v1/absences/{validee['id']}/valider/")
+    client_connecte(org.mamadou).post(f"/api/v1/absences/{validee['id']}/valider")
     horloge.move_to("2030-03-12T09:00:00+00:00")
     client_awa = client_connecte(org.awa)
-    reponse = client_awa.post(f"/api/v1/moi/absences/{validee['id']}/annuler/")
+    reponse = client_awa.post(f"/api/v1/moi/absences/{validee['id']}/annuler")
     assert reponse.status_code == 200
     assert reponse.json()["statut"] == "VALIDEE"
     assert reponse.json()["fin"].startswith("2030-03-12T09:00:00")
     assert reponse.json()["delegation"]["statut"] == "TERMINEE"
-    assert client_awa.post(f"/api/v1/moi/absences/{validee['id']}/annuler/").status_code == 409
+    assert client_awa.post(f"/api/v1/moi/absences/{validee['id']}/annuler").status_code == 409
 
-    liste = client_awa.get("/api/v1/moi/absences/").json()
+    liste = client_awa.get("/api/v1/moi/absences").json()
     assert liste["count"] == 2
-    assert client_awa.get("/api/v1/moi/absences/?statut=ANNULEE").json()["count"] == 1
-    assert client_awa.get("/api/v1/moi/absences/?statut=X").status_code == 400
+    assert client_awa.get("/api/v1/moi/absences?statut=ANNULEE").json()["count"] == 1
+    assert client_awa.get("/api/v1/moi/absences?statut=X").status_code == 400
 
 
 def test_delegataires_possibles(org, client_connecte):
-    reponse = client_connecte(org.awa).get("/api/v1/moi/delegataires-possibles/")
+    reponse = client_connecte(org.awa).get("/api/v1/moi/delegataires-possibles")
     lignes = {ligne["nom"]: ligne for ligne in reponse.json()}
     assert "Awa Diop" not in lignes
     assert lignes["Cheikh Badiane"]["pouvoirs_suffisants"] is True
     assert lignes["Cheikh Badiane"]["role_principal"] == "Analyste crédit"
     assert lignes["Fatou Ndiaye"]["pouvoirs_suffisants"] is False
-    filtre = client_connecte(org.awa).get("/api/v1/moi/delegataires-possibles/?q=badi").json()
+    filtre = client_connecte(org.awa).get("/api/v1/moi/delegataires-possibles?q=badi").json()
     assert [ligne["nom"] for ligne in filtre] == ["Cheikh Badiane"]
 
 
@@ -384,21 +384,21 @@ def test_isolation_entre_etablissements(org, etab_b, client_connecte):
     intrus = UtilisateurFactory(etablissement=etab_b, prenom="Moussa", nom="Fall")
     client_b = client_connecte(intrus)
     for url in (
-        f"/api/v1/absences/{absence['id']}/",
-        f"/api/v1/taches/{tache.pk}/",
+        f"/api/v1/absences/{absence['id']}",
+        f"/api/v1/taches/{tache.pk}",
     ):
         assert client_b.get(url).status_code == 404
     for url in (
-        f"/api/v1/absences/{absence['id']}/valider/",
-        f"/api/v1/absences/{absence['id']}/refuser/",
-        f"/api/v1/moi/absences/{absence['id']}/annuler/",
+        f"/api/v1/absences/{absence['id']}/valider",
+        f"/api/v1/absences/{absence['id']}/refuser",
+        f"/api/v1/moi/absences/{absence['id']}/annuler",
     ):
         assert client_b.post(url, {"motif": "x"}, format="json").status_code == 404
     # Un délégataire d'un autre établissement est inconnu.
     reponse = _demande(client_b, org.cheikh)
     assert reponse.json()["code"] == "DELEGATAIRE_INVALIDE"
-    assert client_b.get("/api/v1/taches/compteurs/").json()["total"] == 0
-    assert client_b.get("/api/v1/moi/delegataires-possibles/").json() == []
+    assert client_b.get("/api/v1/taches/compteurs").json()["total"] == 0
+    assert client_b.get("/api/v1/moi/delegataires-possibles").json() == []
 
 
 # --- Tâches planifiées ----------------------------------------------------------------------------
@@ -406,7 +406,7 @@ def test_isolation_entre_etablissements(org, etab_b, client_connecte):
 
 def test_taches_planifiees_idempotentes(org, horloge, client_connecte):
     absence = _demande(client_connecte(org.awa), org.cheikh).json()
-    client_connecte(org.mamadou).post(f"/api/v1/absences/{absence['id']}/valider/")
+    client_connecte(org.mamadou).post(f"/api/v1/absences/{absence['id']}/valider")
 
     with contexte_tenant(org.etab.id):
         assert services.activer_delegations_echues() == 0  # pas encore commencée

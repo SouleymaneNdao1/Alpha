@@ -223,12 +223,6 @@ test.describe("Administration · rôles, unités, sécurité (F7)", () => {
     expect(appels.find((a) => a.methode === "POST" && a.chemin === "/admin/unites")?.corps).toEqual({ type: "AGENCE", code: "THI", libelle: "Agence de Thiès", parent_id: "un1", actif: true });
   });
 
-  test("délégations : message clair tant que l'API d'administration n'existe pas", async ({ page }) => {
-    await ouvrir(page);
-    await page.goto("/administration/delegations");
-    await expect(page.getByRole("status")).toContainText("n’est pas encore disponible");
-  });
-
   test("paramètres de sécurité : seuls les réglages modifiés partent avec le code TOTP", async ({ page }) => {
     let essais = 0;
     const appels = await ouvrir(page, {

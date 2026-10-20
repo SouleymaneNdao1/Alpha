@@ -260,3 +260,100 @@ export function useTraiterSignalement() {
     onSuccess: () => void client.invalidateQueries({ queryKey: RACINE_SIGNALEMENTS }),
   });
 }
+
+// ---------------------------------------------------------------------------
+// Absences et délégations de l'établissement (B13)
+// ---------------------------------------------------------------------------
+
+export type AbsenceAdmin = Schema<"AbsenceAdmin">;
+export type DelegationAdmin = Schema<"DelegationAdmin">;
+export type Candidat = Schema<"Candidat">;
+export type StatutDelegation = "EN_ATTENTE" | "ACTIVE" | "TERMINEE" | "ANNULEE" | "REFUSEE";
+
+const RACINE_ABSENCES = ["admin", "absences"] as const;
+const RACINE_DELEGATIONS = ["admin", "delegations"] as const;
+
+export interface FiltresPeriode {
+  statut: string;
+  du: string;
+  au: string;
+}
+
+function parametresPeriode(f: FiltresPeriode, taille: number) {
+  return { statut: f.statut || undefined, du: f.du || undefined, au: f.au || undefined, taille };
+}
+
+/** `GET /admin/absences?statut=&du=&au=&taille=` (`admin.absences`, page). */
+export function useAbsencesAdmin(filtres: FiltresPeriode, options: { active?: boolean } = {}, taille = 25) {
+  return useInfiniteQuery({
+    queryKey: [...RACINE_ABSENCES, "liste", filtres.statut, filtres.du, filtres.au, taille],
+    initialPageParam: null as string | null,
+    queryFn: ({ pageParam, signal }) =>
+      pageParam
+        ? api.get<Page<AbsenceAdmin>>(cheminDepuisUrl(pageParam), { signal })
+        : api.get<Page<AbsenceAdmin>>("/admin/absences", { signal, params: parametresPeriode(filtres, taille) }),
+    getNextPageParam: (derniere) => derniere.next,
+    enabled: options.active ?? true,
+    retry: false,
+  });
+}
+
+/** `GET /admin/delegations?statut=&du=&au=&taille=` (`admin.absences` ou `admin.utilisateurs`, page). */
+export function useDelegationsAdmin(filtres: FiltresPeriode, taille = 25) {
+  return useInfiniteQuery({
+    queryKey: [...RACINE_DELEGATIONS, "liste", filtres.statut, filtres.du, filtres.au, taille],
+    initialPageParam: null as string | null,
+    queryFn: ({ pageParam, signal }) =>
+      pageParam
+        ? api.get<Page<DelegationAdmin>>(cheminDepuisUrl(pageParam), { signal })
+        : api.get<Page<DelegationAdmin>>("/admin/delegations", { signal, params: parametresPeriode(filtres, taille) }),
+    getNextPageParam: (derniere) => derniere.next,
+    retry: false,
+  });
+}
+
+/** `GET /admin/absences/candidats?q=&pour=` : sans `pour`, tous les actifs ; avec, contrôle P5 (`pouvoirs_suffisants`). */
+export function useCandidatsAdmin(q: string, pour: string | null) {
+  return useQuery({
+    queryKey: [...RACINE_ABSENCES, "candidats", q, pour],
+    queryFn: ({ signal }) => api.get<Candidat[]>("/admin/absences/candidats", { signal, params: { q: q || undefined, pour: pour || undefined } }),
+    staleTime: 30_000,
+    retry: false,
+  });
+}
+
+export interface CreationAbsenceAdmin {
+  utilisateur_id: string;
+  debut: string;
+  fin: string;
+  motif: "CONGE" | "MISSION" | "FORMATION" | "MALADIE" | "AUTRE";
+  commentaire: string;
+  delegataire_id: string;
+  valider: boolean;
+}
+
+/**
+ * Écritures : `POST /admin/absences` (201 · 409 CHEVAUCHEMENT | POUVOIRS_INSUFFISANTS | SOUS_DELEGATION_INTERDITE | AUCUN_VALIDEUR),
+ * décision via `POST /absences/{id}/valider|refuser` (routes de validation, ouvertes à `admin.absences`),
+ * `POST /admin/delegations/{id}/revoquer {motif}` (200 · 409 STATUT_INVALIDE).
+ */
+export function useActionsAbsencesAdmin() {
+  const client = useQueryClient();
+  const rafraichir = () => {
+    void client.invalidateQueries({ queryKey: RACINE_ABSENCES });
+    void client.invalidateQueries({ queryKey: RACINE_DELEGATIONS });
+    void client.invalidateQueries({ queryKey: ["taches"] });
+  };
+  return {
+    creer: useMutation({ mutationFn: (v: CreationAbsenceAdmin) => api.post<AbsenceAdmin>("/admin/absences", v), onSuccess: rafraichir }),
+    valider: useMutation({ mutationFn: (id: string) => api.post<AbsenceAdmin>(`/absences/${encodeURIComponent(id)}/valider`), onSuccess: rafraichir }),
+    refuser: useMutation({
+      mutationFn: ({ id, motif }: { id: string; motif: string }) => api.post<AbsenceAdmin>(`/absences/${encodeURIComponent(id)}/refuser`, { motif }),
+      onSuccess: rafraichir,
+    }),
+    revoquer: useMutation({
+      mutationFn: ({ id, motif }: { id: string; motif: string }) => api.post<DelegationAdmin>(`/admin/delegations/${encodeURIComponent(id)}/revoquer`, { motif }),
+      onSuccess: rafraichir,
+    }),
+  };
+}

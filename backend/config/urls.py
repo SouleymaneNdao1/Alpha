@@ -9,7 +9,7 @@ Les routes métier sont ajoutées par les tâches suivantes :
     /api/v1/auth/...        alpha.comptes (B5 : csrf, session, connexion, mfa, deconnexion ; B6)
     /api/v1/moi/...         alpha.comptes, alpha.notifications (B9)
     /api/v1/taches/...      alpha.taches, alpha.delegations (B8)
-    /api/v1/admin/...       alpha.comptes, alpha.organisation (B7)
+    /api/v1/admin/...       alpha.comptes, alpha.organisation (B7), alpha.delegations (B13)
     /api/v1/audit/...       alpha.audit (B11)
     /api/v1/plateforme/...  alpha.plateforme (B10)
 """
@@ -33,6 +33,7 @@ urlpatterns = [
     path("api/v1/admin/", include("alpha.comptes.urls_admin")),
     path("api/v1/admin/", include("alpha.organisation.urls_admin")),
     path("api/v1/admin/", include("alpha.tenancy.urls_admin")),
+    path("api/v1/admin/", include("alpha.delegations.urls_admin")),
     # Journal d'audit (§ 5.6, B11).
     path("api/v1/audit/", include("alpha.audit.urls")),
     # Console FYXOP (§ 5.7, B10) : super-administrateur uniquement.

@@ -46,6 +46,7 @@ LIBELLES_ACTIONS: dict[str, str] = {
     "absence.annulee": "Absence annulée",
     "delegation.active": "Délégation activée",
     "delegation.terminee": "Délégation terminée",
+    "delegation.revoquee": "Délégation révoquée",
     "tache.ouverte": "Tâche ouverte",
     "tache.reassignee": "Tâche réassignée",
     "tache.terminee": "Tâche terminée",

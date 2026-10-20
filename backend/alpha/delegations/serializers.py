@@ -137,3 +137,101 @@ class DelegationRecueSerializer(serializers.Serializer):
             delegation.statut == StatutDelegation.ACTIVE
             and delegation.debut <= maintenant < delegation.fin
         )
+
+
+# --- Administration de l'établissement (§ 5.5, B13) ----------------------------------------------
+
+
+class FiltresAdminSerializer(serializers.Serializer):
+    """Paramètres communs de ``/admin/absences`` et ``/admin/delegations``."""
+
+    du = serializers.DateField(required=False, help_text="Période chevauchant ce jour ou après.")
+    au = serializers.DateField(required=False, help_text="Période chevauchant ce jour ou avant.")
+    utilisateur_id = serializers.UUIDField(required=False)
+
+    def validate(self, attrs):
+        if attrs.get("du") and attrs.get("au") and attrs["au"] < attrs["du"]:
+            raise serializers.ValidationError({"au": ["« au » doit suivre « du »."]})
+        return attrs
+
+
+class FiltresAbsencesAdminSerializer(FiltresAdminSerializer):
+    statut = serializers.ChoiceField(choices=StatutAbsence.choices, required=False)
+
+
+class FiltresDelegationsAdminSerializer(FiltresAdminSerializer):
+    statut = serializers.ChoiceField(choices=StatutDelegation.choices, required=False)
+
+
+class AbsenceAdminSerializer(AbsenceSerializer):
+    """Ligne de ``GET /admin/absences``. Contexte : ``delegations``, ``moi`` (id)."""
+
+    peut_decider = serializers.SerializerMethodField()
+
+    def get_peut_decider(self, absence) -> bool:
+        # La vue exige admin.absences : seul l'absent lui-même ne peut pas décider.
+        moi = self.context.get("moi")
+        return absence.statut == StatutAbsence.SOUMISE and absence.utilisateur_id != moi
+
+
+class DelegationAdminSerializer(serializers.Serializer):
+    """Ligne de ``GET /admin/delegations``. Contexte : ``maintenant``."""
+
+    id = serializers.UUIDField()
+    origine = serializers.CharField()
+    absence_id = serializers.UUIDField(allow_null=True)
+    delegant = serializers.SerializerMethodField()
+    delegataire = serializers.SerializerMethodField()
+    role = serializers.SerializerMethodField()
+    debut = serializers.DateTimeField()
+    fin = serializers.DateTimeField()
+    statut = serializers.ChoiceField(choices=StatutDelegation.choices)
+    effective = serializers.SerializerMethodField()
+    activee_le = serializers.DateTimeField(allow_null=True)
+    terminee_le = serializers.DateTimeField(allow_null=True)
+    cree_le = serializers.DateTimeField()
+
+    @extend_schema_field(PersonneSerializer)
+    def get_delegant(self, delegation) -> dict | None:
+        return _personne(delegation.delegant)
+
+    @extend_schema_field(PersonneSerializer)
+    def get_delegataire(self, delegation) -> dict | None:
+        return _personne(delegation.delegataire)
+
+    @extend_schema_field(RoleCourtSerializer(allow_null=True))
+    def get_role(self, delegation) -> dict | None:
+        return _role(delegation.role)
+
+    def get_effective(self, delegation) -> bool:
+        maintenant = self.context["maintenant"]
+        return (
+            delegation.statut == StatutDelegation.ACTIVE
+            and delegation.debut <= maintenant < delegation.fin
+        )
+
+
+class CreationAbsenceAdminSerializer(CreationAbsenceSerializer):
+    utilisateur_id = serializers.UUIDField(help_text="Utilisateur absent (actif).")
+    role_id = serializers.UUIDField(
+        required=False, allow_null=True, default=None, help_text="Vide : tous ses rôles."
+    )
+    valider = serializers.BooleanField(
+        required=False,
+        default=False,
+        help_text="Valider aussitôt (même contrôle P5 qu'une validation séparée).",
+    )
+
+
+class RevocationSerializer(serializers.Serializer):
+    motif = serializers.CharField(max_length=2000)
+
+
+class CandidatSerializer(serializers.Serializer):
+    id = serializers.UUIDField()
+    nom = serializers.CharField()
+    role_principal = serializers.CharField(allow_null=True)
+    pouvoirs_suffisants = serializers.BooleanField(
+        allow_null=True,
+        help_text="Pouvoirs au moins égaux à ceux de « pour » (P5) ; null sans « pour ».",
+    )

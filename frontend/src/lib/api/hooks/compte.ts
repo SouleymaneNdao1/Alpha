@@ -119,11 +119,11 @@ export function useRevoquerAutresSessions() {
 
 export const CLE_ABSENCES = ["moi", "absences"] as const;
 
-/** `GET /moi/absences/` (page ; on lit les 100 plus récentes). */
+/** `GET /moi/absences` (page ; on lit les 100 plus récentes). */
 export function useMesAbsences() {
   return useQuery({
     queryKey: CLE_ABSENCES,
-    queryFn: ({ signal }) => api.get<Page<Absence>>("/moi/absences/", { signal, params: { taille: 100 } }),
+    queryFn: ({ signal }) => api.get<Page<Absence>>("/moi/absences", { signal, params: { taille: 100 } }),
   });
 }
 
@@ -136,43 +136,43 @@ export interface CreationAbsence {
   role_id?: string | null;
 }
 
-/** `POST /moi/absences/` → 201. 409 CHEVAUCHEMENT | POUVOIRS_INSUFFISANTS | SOUS_DELEGATION_INTERDITE | AUCUN_VALIDEUR. */
+/** `POST /moi/absences` → 201. 409 CHEVAUCHEMENT | POUVOIRS_INSUFFISANTS | SOUS_DELEGATION_INTERDITE | AUCUN_VALIDEUR. */
 export function useCreerAbsence() {
   const client = useQueryClient();
   return useMutation({
-    mutationFn: (v: CreationAbsence) => api.post<AbsenceDetail>("/moi/absences/", v),
+    mutationFn: (v: CreationAbsence) => api.post<AbsenceDetail>("/moi/absences", v),
     onSuccess: () => void client.invalidateQueries({ queryKey: CLE_ABSENCES }),
   });
 }
 
-/** `POST /moi/absences/{id}/annuler/` → 200 · 409 STATUT_INVALIDE. */
+/** `POST /moi/absences/{id}/annuler` → 200 · 409 STATUT_INVALIDE. */
 export function useAnnulerAbsence() {
   const client = useQueryClient();
   return useMutation({
-    mutationFn: (id: string) => api.post<AbsenceDetail>(`/moi/absences/${encodeURIComponent(id)}/annuler/`),
+    mutationFn: (id: string) => api.post<AbsenceDetail>(`/moi/absences/${encodeURIComponent(id)}/annuler`),
     onSuccess: () => void client.invalidateQueries({ queryKey: CLE_ABSENCES }),
   });
 }
 
-/** `GET /moi/delegataires-possibles/?q=` (tableau). */
+/** `GET /moi/delegataires-possibles?q=` (tableau). */
 export function useDelegataires(q: string) {
   return useQuery({
     queryKey: ["moi", "delegataires-possibles", q],
-    queryFn: ({ signal }) => api.get<DelegatairePossible[]>("/moi/delegataires-possibles/", { signal, params: { q: q || undefined } }),
+    queryFn: ({ signal }) => api.get<DelegatairePossible[]>("/moi/delegataires-possibles", { signal, params: { q: q || undefined } }),
     staleTime: 30_000,
   });
 }
 
-/** `GET /moi/delegations-recues/` (tableau). */
+/** `GET /moi/delegations-recues` (tableau). */
 export function useDelegationsRecues() {
-  return useQuery({ queryKey: ["moi", "delegations-recues"], queryFn: ({ signal }) => api.get<DelegationRecue[]>("/moi/delegations-recues/", { signal }) });
+  return useQuery({ queryKey: ["moi", "delegations-recues"], queryFn: ({ signal }) => api.get<DelegationRecue[]>("/moi/delegations-recues", { signal }) });
 }
 
-/** `GET /absences/{id}/` (demandeur, valideur, admin.absences ou délégataire du valideur ; sinon 404). */
+/** `GET /absences/{id}` (demandeur, valideur, admin.absences ou délégataire du valideur ; sinon 404). */
 export function useAbsence(id: string) {
   return useQuery({
     queryKey: ["absences", id],
-    queryFn: ({ signal }) => api.get<AbsenceDetail>(`/absences/${encodeURIComponent(id)}/`, { signal }),
+    queryFn: ({ signal }) => api.get<AbsenceDetail>(`/absences/${encodeURIComponent(id)}`, { signal }),
     retry: false,
   });
 }
@@ -183,20 +183,20 @@ function invalider(client: ReturnType<typeof useQueryClient>, id: string, absenc
   void client.invalidateQueries({ queryKey: CLE_ABSENCES });
 }
 
-/** `POST /absences/{id}/valider/` → 200 · 403 · 409 STATUT_INVALIDE | ABSENCE_EXPIREE | POUVOIRS_INSUFFISANTS | SOUS_DELEGATION_INTERDITE. */
+/** `POST /absences/{id}/valider` → 200 · 403 · 409 STATUT_INVALIDE | ABSENCE_EXPIREE | POUVOIRS_INSUFFISANTS | SOUS_DELEGATION_INTERDITE. */
 export function useValiderAbsence(id: string) {
   const client = useQueryClient();
   return useMutation({
-    mutationFn: () => api.post<AbsenceDetail>(`/absences/${encodeURIComponent(id)}/valider/`),
+    mutationFn: () => api.post<AbsenceDetail>(`/absences/${encodeURIComponent(id)}/valider`),
     onSuccess: (a) => invalider(client, id, a),
   });
 }
 
-/** `POST /absences/{id}/refuser/ {motif}` → 200 · 400 VALIDATION · 409 STATUT_INVALIDE. */
+/** `POST /absences/{id}/refuser {motif}` → 200 · 400 VALIDATION · 409 STATUT_INVALIDE. */
 export function useRefuserAbsence(id: string) {
   const client = useQueryClient();
   return useMutation({
-    mutationFn: (motif: string) => api.post<AbsenceDetail>(`/absences/${encodeURIComponent(id)}/refuser/`, { motif }),
+    mutationFn: (motif: string) => api.post<AbsenceDetail>(`/absences/${encodeURIComponent(id)}/refuser`, { motif }),
     onSuccess: (a) => invalider(client, id, a),
   });
 }
