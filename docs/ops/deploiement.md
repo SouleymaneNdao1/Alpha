@@ -648,3 +648,23 @@ décision du titulaire du domaine), `X-Content-Type-Options: nosniff`, `X-Frame-
 
 Les jetons présents dans les URL (activation, réenrôlement, réinitialisation) sont masqués dans
 le journal d'accès de Caddy ; gunicorn n'écrit pas de journal d'accès.
+
+## 13. Intégration continue (GitHub Actions)
+
+Fichier : `.github/workflows/ci.yml` (tâche D2). Il se déclenche à chaque *pull request* et à chaque
+push sur `main`, avec les permissions `contents: read` seulement ; une nouvelle exécution annule
+la précédente pour la même branche. **Il ne déploie rien** : le déploiement reste manuel
+(§ 6) et soumis à l'accord du client.
+
+Trois jobs tournent en parallèle :
+
+| Job | Ce qu'il vérifie |
+|---|---|
+| `backend` | PostgreSQL 16 et Redis en services ; rôles `alpha_owner` / `alpha_app` créés par le script d'initialisation de docker-compose (`infra/postgres/init/01-roles.sh`) ; migrations, `pytest -q`, `ruff check`, `ruff format --check`, `makemigrations --check`, `spectacular --validate --fail-on-warn` |
+| `frontend` | `npm ci`, lint, `tsc --noEmit`, build, tests Playwright à API simulée (`npm run test:e2e`) |
+| `e2e-integration` | suite `frontend/e2e-integration` : vrai Django (gunicorn), vrai PostgreSQL avec RLS, Redis, `next start` ; parcours d'invitation, de délégation, de téléphone perdu et de console FYXOP (`docs/tests.md` § 7) |
+
+Les secrets (mots de passe PostgreSQL, clé Django, clés de chiffrement) sont tirés au hasard à
+chaque exécution par `.github/scripts/env-ci.sh` et masqués dans les journaux : le dépôt n'en
+contient aucun. Les caches pip et npm accélèrent les installations. En cas d'échec de Playwright,
+les captures et rapports sont joints à l'exécution (artefacts).

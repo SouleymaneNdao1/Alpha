@@ -37,6 +37,10 @@ node_modules/
 .next/
 out/
 frontend/next-env.d.ts
+
+# Suite d'intégration T5 : comptes, e-mails et état TOTP d'une exécution
+frontend/.e2e-integration/
+frontend/test-results-integration/
 *.tsbuildinfo
 npm-debug.log*
 frontend/test-results/
