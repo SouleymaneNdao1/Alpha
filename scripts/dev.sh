@@ -29,7 +29,9 @@ Usage : scripts/dev.sh <commande> [arguments]
   psql [owner|app|postgres] [args]
                         Console SQL sur la base alpha (owner par défaut ; app = soumis à la RLS)
   test [args pytest]    Lance pytest dans le service « tests »
-  seed                  Charge le jeu de démonstration (manage.py semer_demo, tâche B12)
+  seed [args]           Sème le jeu de démonstration dans le conteneur backend (manage.py
+                        semer_demo) : comptes prêts à se connecter, QR codes et ACCES.txt dans
+                        backend/demo-acces/ ; « seed --reinitialiser » régénère les identifiants
   reset [--oui]         EFFACE la base et les volumes locaux, puis redémarre tout
   help                  Affiche cette aide
 
@@ -190,7 +192,11 @@ case "$commande" in
 		compose exec ${TTY[@]+"${TTY[@]}"} db psql -U "$role" -d "$(valeur_env ALPHA_DB_NAME alpha)" "$@"
 		;;
 	test) compose --profile outils run --rm ${TTY[@]+"${TTY[@]}"} tests pytest "$@" ;;
-	seed) compose run --rm ${TTY[@]+"${TTY[@]}"} migrate python manage.py semer_demo "$@" ;;
+	seed)
+		# Dans le conteneur backend (connexion alpha_app, RLS active) ; le dossier de sortie
+		# demo-acces/ est dans backend/, monté dans /app : accessible depuis le poste.
+		compose exec ${TTY[@]+"${TTY[@]}"} backend python manage.py semer_demo "$@"
+		;;
 	reset) cmd_reset "$@" ;;
 	*)
 		aide

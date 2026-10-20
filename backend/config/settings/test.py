@@ -66,3 +66,6 @@ EMAIL_PORT = env.int("EMAIL_PORT", default=1025)  # noqa: F405
 ALPHA_MAILPIT_API = env("ALPHA_MAILPIT_API", default="http://127.0.0.1:8025/api/v1")  # noqa: F405
 ALPHA_MAILPIT_UTILISATEUR = env("ALPHA_MAILPIT_UTILISATEUR", default="")  # noqa: F405
 ALPHA_MAILPIT_MOT_DE_PASSE = env("ALPHA_MAILPIT_MOT_DE_PASSE", default="")  # noqa: F405
+
+# Jeu de démonstration (manage.py semer_demo) : testé en CI.
+ALPHA_DEMO_AUTORISEE = True

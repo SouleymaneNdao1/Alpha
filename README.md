@@ -103,6 +103,66 @@ Au premier démarrage de la base, `infra/postgres/init/01-roles.sh` crée les r�
 Tous les ports sont publiés sur `127.0.0.1` uniquement. Pour en changer (port déjà pris), modifiez
 `ALPHA_PORT_*` dans `.env`.
 
+## Se connecter en local
+
+La MFA est obligatoire : chaque compte de démonstration reçoit un mot de passe, une application
+d'authentification (secret TOTP) et 10 codes de secours. Dans le dépôt, depuis PowerShell :
+
+1. Démarrer l'environnement :
+
+   ```powershell
+   .\scripts\dev.ps1 up
+   ```
+
+2. Appliquer les migrations :
+
+   ```powershell
+   .\scripts\dev.ps1 migrate
+   ```
+
+3. Semer le jeu de démonstration (dans le conteneur `backend`, qui doit être démarré) :
+
+   ```powershell
+   .\scripts\dev.ps1 seed
+   ```
+
+   La commande affiche à la fin les identifiants de chaque compte (**une seule fois**) et les écrit
+   dans `backend\demo-acces\` : `ACCES.txt` (compte, rôle, mot de passe, secret, URI `otpauth://`,
+   codes de secours) et un QR code `qr-<compte>.svg` par compte. Ce dossier est exclu de git.
+   Sous Linux/WSL : `scripts/dev.sh seed`.
+
+4. Ouvrir `backend\demo-acces\ACCES.txt`, puis ajouter chaque compte à utiliser dans Google
+   Authenticator ou Microsoft Authenticator : ouvrir le fichier `.svg` du compte dans le navigateur
+   et scanner le QR code (ou saisir le secret à la main, type « basé sur l'heure »).
+
+5. Aller sur <http://localhost:3000> : e-mail et mot de passe, puis le code à 6 chiffres de
+   l'application. Un code de secours remplace le code à 6 chiffres, une seule fois.
+
+Comptes à essayer en premier (les mots de passe sont dans `ACCES.txt`) :
+
+| Compte | Rôle | Pour voir |
+|---|---|---|
+| `s.diouf@etablissement-demo.sn` | Administrateur de l'Établissement démo (banque) | utilisateurs, rôles, organisation, journal |
+| `a.kane@etablissement-demo.sn` | DAF (en congé, délégation à `o.faye@…`) | « À traiter » : 9 tâches sur les 4 urgences |
+| `o.faye@etablissement-demo.sn` | Comptable, suppléant du DAF | tâches « par délégation de Abdou Kane » |
+| `a.diop@etablissement-demo.sn` | Analyste crédit | file de dossiers de crédit |
+| `i.ndiaye@sahel-distribution.sn` | DG et administrateur de Sahel Distribution (PME) | boîte « À traiter » de la PME |
+| `superadmin@fyxop-demo.sn` | Super-administrateur FYXOP | console de la plateforme |
+
+Le jeu contient aussi un compte invité (jamais activé) et un compte suspendu par établissement,
+comme dans le prototype. Détails :
+
+- **Idempotent** : relancer `seed` ne crée aucun doublon et ne change aucun identifiant. Pour
+  obtenir de nouveaux mots de passe, secrets et codes (les anciens cessent de fonctionner) :
+  `.\scripts\dev.ps1 seed --reinitialiser`. Dossier de sortie : `--sortie <dossier>`.
+- **Refusé hors développement** : la commande exige `ALPHA_DEMO_AUTORISEE` vrai (par défaut : vrai en
+  développement et en test, faux en production et en recette). En recette, l'activer explicitement
+  dans `.env.recette` ; le conteneur n'étant pas inscriptible, ajouter `--sortie /tmp/demo-acces`.
+- Aucun e-mail n'est envoyé : les comptes sont activés directement (adresses fictives).
+- Les échéances des tâches et l'absence du DAF (7 jours) sont calculées au moment du semis et ne sont
+  pas recalculées par une relance : pour une démonstration plus tardive, repartir d'une base vide
+  (`.\scripts\dev.ps1 reset`, puis `migrate` et `seed`).
+
 ## 4. Commandes
 
 Sous Windows `.\scripts\dev.ps1 <commande>`, sous Linux/WSL/CI `scripts/dev.sh <commande>`.
@@ -119,7 +179,7 @@ Sans argument, le script affiche l'aide.
 | `shell [service]` | shell Django dans `backend` ; `shell frontend` ouvre `sh` dans ce conteneur |
 | `psql [owner\|app\|postgres] [args]` | console SQL ; `app` est soumis à la RLS (0 ligne sans contexte) |
 | `test [args]` | `pytest` dans le service `tests` (ex. `test -k rls -x`) |
-| `seed` | jeu de démonstration (`manage.py semer_demo`, disponible après la tâche B12) |
+| `seed [--reinitialiser] [--sortie dossier]` | jeu de démonstration dans le conteneur `backend` (`manage.py semer_demo`) : voir « Se connecter en local » |
 | `reset [--oui]` | **efface la base et les volumes locaux**, rejoue l'initialisation, redémarre |
 
 ## 5. Organisation Docker

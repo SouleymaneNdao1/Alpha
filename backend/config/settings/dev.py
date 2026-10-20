@@ -14,3 +14,6 @@ ALPHA_DOC_API_ACTIVE = True
 LOGGING["loggers"]["django.db.backends"]["level"] = env(  # noqa: F405
     "ALPHA_NIVEAU_JOURNAL_SQL", default="WARNING"
 )
+
+# Jeu de démonstration (manage.py semer_demo) : autorisé sur le poste de développement.
+ALPHA_DEMO_AUTORISEE = True
