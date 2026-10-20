@@ -19,7 +19,7 @@ import {
 import { formatDateHeureCourte, formatHorodatage } from "@/lib/format";
 import { possede } from "@/lib/permissions";
 
-const CATEGORIES = [
+export const CATEGORIES = [
   { valeur: "", libelle: "Toutes les actions" },
   { valeur: "CONNEXION", libelle: "Connexions" },
   { valeur: "DECISION", libelle: "Décisions" },
@@ -30,7 +30,7 @@ const CATEGORIES = [
   { valeur: "DOCUMENT", libelle: "Documents" },
 ];
 
-const PERIODES: Array<{ valeur: Periode; libelle: string }> = [
+export const PERIODES: Array<{ valeur: Periode; libelle: string }> = [
   { valeur: "aujourdhui", libelle: "Aujourd'hui" },
   { valeur: "7j", libelle: "7 derniers jours" },
   { valeur: "30j", libelle: "30 derniers jours" },
@@ -358,7 +358,7 @@ function differences(e: EvenementAudit): string[] {
   return cles.map((c) => `${c} : ${valeur(avant[c])} → ${valeur(apres[c])}`);
 }
 
-function LigneEvenement({ e }: { e: EvenementAudit }) {
+export function LigneEvenement({ e }: { e: EvenementAudit }) {
   const { toast } = useToast();
   const diffs = differences(e);
   const copier = async () => {

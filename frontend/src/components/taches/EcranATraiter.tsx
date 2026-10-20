@@ -58,9 +58,11 @@ function SansEtablissement() {
   return (
     <Card>
       <p className="m-0 text-[15px] text-texte-2" role="status">
-        Votre compte de super-administrateur FYXOP n&apos;est rattaché à aucun établissement : il n&apos;a pas de tâches à traiter. La console FYXOP sera
-        disponible prochainement.
+        Votre compte de super-administrateur FYXOP n&apos;est rattaché à aucun établissement : il n&apos;a pas de tâches à traiter.
       </p>
+      <div className="mt-3">
+        <LienBouton href="/console">Ouvrir la console FYXOP</LienBouton>
+      </div>
     </Card>
   );
 }

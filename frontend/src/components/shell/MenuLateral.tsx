@@ -92,17 +92,19 @@ export function MenuLateral({ moi, compteurTaches, onNavigation }: MenuLateralPr
         <div ref={pied} className="relative">
           {ouvert && (
             <div role="menu" aria-label="Compte" className="absolute inset-x-0 bottom-full mb-2 rounded-carte border border-menu-survol bg-menu-survol p-1.5 shadow-flottante">
-              <Link
-                role="menuitem"
-                href="/mon-compte"
-                onClick={() => {
-                  setOuvert(false);
-                  onNavigation?.();
-                }}
-                className="flex min-h-[40px] items-center rounded-champ px-3 text-[14px] text-menu-texte no-underline hover:bg-encre hover:text-white"
-              >
-                Mon compte
-              </Link>
+              {!moi.est_super_admin && (
+                <Link
+                  role="menuitem"
+                  href="/mon-compte"
+                  onClick={() => {
+                    setOuvert(false);
+                    onNavigation?.();
+                  }}
+                  className="flex min-h-[40px] items-center rounded-champ px-3 text-[14px] text-menu-texte no-underline hover:bg-encre hover:text-white"
+                >
+                  Mon compte
+                </Link>
+              )}
               <button
                 type="button"
                 role="menuitem"
